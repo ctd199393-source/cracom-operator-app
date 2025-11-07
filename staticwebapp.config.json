@@ -6,7 +6,7 @@
           "clientIdSettingName": "ENTRA_CLIENT_ID",
           "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
           "openIdConnectConfiguration": {
-            "wellKnownOpenIdConfiguration": "https://cracomoperator.onmicrosoft.com/41456790-9a33-42f0-a473-260d54e8d1b6/SUSI_operator/v2.0/.well-known/openid-configuration"
+            "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/41456790-9a33-42f0-a473-260d54e8d1b6/SUSI_operator/v2.0/.well-known/openid-configuration"
           }
         },
         "login": {
