@@ -1,0 +1,33 @@
+{
+  "auth": {
+    "identityProviders": {
+      "custom": {
+        "registration": {
+          "clientIdSettingName": "ENTRA_CLIENT_ID",
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
+          "openIdConnectConfiguration": {
+            "wellKnownOpenIdConfiguration": "https://cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration"
+          }
+        },
+        "login": {
+          "nameClaimType": "name",
+          "scopes": [
+            "openid",
+            "profile"
+          ]
+        }
+      }
+    },
+    "routes": [
+      {
+        "route": "/*",
+        "allowedRoles": [
+          "authenticated"
+        ]
+      }
+    ]
+  },
+  "globalHeaders": {
+    "Cache-Control": "no-cache"
+  }
+}
