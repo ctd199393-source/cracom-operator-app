@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>クラコム オペレーターアプリ</title>
+</head>
+<body>
+  <h1>認証成功</h1>
+  <p>オペレーターアプリへようこそ。</p>
+
+  <div data-client-principal-encoded></div>
+
+  <script>
+    // SWAから渡される認証情報をデコードして表示する
+    (async () => {
+      const el = document.querySelector('[data-client-principal-encoded]');
+      const encoded = el.getAttribute('data-client-principal-encoded');
+
+      if (encoded) {
+        try {
+          // Base64デコード
+          const decoded = atob(encoded);
+          const principal = JSON.parse(decoded);
+
+          const displayName = principal.claims.find(c => c.typ === 'name')?.val || '不明なユーザー';
+          const email = principal.claims.find(c => c.typ.includes('emailaddress'))?.val || 'メールアドレス不明';
+
+          el.innerHTML = `
+            <p><b>ようこそ、${displayName} さん</b></p>
+            <p>メールアドレス: ${email}</p>
+            <p><a href="/.auth/logout">ログアウト</a></p>
+          `;
+        } catch (e) {
+          el.textContent = '認証情報の読み取りに失敗しました。';
+        }
+      } else {
+        el.innerHTML = '<p><a href="/.auth/login/custom">ログイン</a></p>';
+      }
+    })();
+  </script>
+</body>
+</html>
