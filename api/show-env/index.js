@@ -1,17 +1,14 @@
-export default async function (context, req) {
-  context.log('Environment variable check invoked.');
+module.exports = function (context, req) {
+    context.log('JavaScript HTTP trigger function processed a request.');
 
-  const clientId = process.env.ENTRA_CLIENT_ID || "(未設定)";
-  const tenantId = process.env.ENTRA_TENANT_ID || "(未設定)";
-  const hasSecret = !!process.env.ENTRA_CLIENT_SECRET;
+    // Azureポータル（SWA）の「環境変数」から値を取得
+    const clientId = process.env.ENTRA_CLIENT_ID || "（CLIENT_IDが設定されていません）";
+    const tenantId = process.env.ENTRA_TENANT_ID || "（TENANT_IDが設定されていません）";
 
-  context.res = {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-    body: {
-      ENTRA_CLIENT_ID: clientId,
-      ENTRA_TENANT_ID: tenantId,
-      ENTRA_CLIENT_SECRET: hasSecret ? "(設定済み)" : "(未設定)"
-    }
-  };
-}
+    // JSON形式で結果を返す
+    context.res.json({
+        ENTRA_CLIENT_ID_Check: clientId,
+        ENTRA_TENANT_ID_Check: tenantId,
+        ENTRA_CLIENT_SECRET_Check: "（シークレットはセキュリティ上、このAPIでは確認できません）"
+    });
+};
