@@ -1,21 +1,17 @@
-module.exports = async function (context, req) {
-  context.log('JavaScript HTTP trigger function processed a request.');
+export default async function (context, req) {
+  context.log('Environment variable check invoked.');
 
-  const clientId = process.env.ENTRA_CLIENT_ID || "（CLIENT_IDが設定されていません）";
-  const tenantId = process.env.ENTRA_TENANT_ID || "（TENANT_IDが設定されていません）";
-
-  // 注意： CLIENT_SECRET はセキュリティ上、絶対に表示させてはいけません。
-  // SWAの仕様により、そもそもこのAPIには渡されません（nullになります）。
+  const clientId = process.env.ENTRA_CLIENT_ID || "(未設定)";
+  const tenantId = process.env.ENTRA_TENANT_ID || "(未設定)";
+  const hasSecret = !!process.env.ENTRA_CLIENT_SECRET;
 
   context.res = {
-    // status: 200, /* Defaults to 200 */
-    headers: {
-        'Content-Type': 'application/json'
-    },
+    status: 200,
+    headers: { "Content-Type": "application/json" },
     body: {
-      ENTRA_CLIENT_ID_Check: clientId,
-      ENTRA_TENANT_ID_Check: tenantId,
-      ENTRA_CLIENT_SECRET_Check: "（シークレットはセキュリティ上表示できません）"
+      ENTRA_CLIENT_ID: clientId,
+      ENTRA_TENANT_ID: tenantId,
+      ENTRA_CLIENT_SECRET: hasSecret ? "(設定済み)" : "(未設定)"
     }
   };
-};
+}
