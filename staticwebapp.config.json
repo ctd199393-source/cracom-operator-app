@@ -19,6 +19,10 @@
     },
     "routes": [
       {
+        "route": "/api/*",
+        "allowedRoles": [ "anonymous" ]
+      },
+      {
         "route": "/*",
         "allowedRoles": [
           "authenticated"
