@@ -16,21 +16,19 @@
           ]
         }
       }
-    },
-    "routes": [
-      {
-        "route": "/api/*",
-        "allowedRoles": [ "anonymous" ]
-      },
-      {
-        "route": "/*",
-        "allowedRoles": [
-          "authenticated"
-        ]
-      }
-    ]
+    }
   },
+  "routes": [
+    {
+      "route": "/*",
+      "allowedRoles": ["authenticated"]
+    }
+  ],
   "globalHeaders": {
     "Cache-Control": "no-cache"
+  },
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/api/*"]
   }
 }
