@@ -3,9 +3,8 @@
     "identityProviders": {
       "custom": {
         "registration": {
-          "clientSecretSettingName": "ENTRA_CLIENT_SECRET", // シークレットのみ環境変数を参照
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
           "openIdConnectConfiguration": {
-            // ↓ appid をURLにハードコードする
             "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=3f113cb1-9657-47c4-8de1-3f3744e0dcb9"
           }
         },
