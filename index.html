@@ -10,231 +10,240 @@
     <style>
         body { background-color: #f0f2f5; font-family: "Helvetica Neue", Arial, sans-serif; padding-bottom: 100px; }
         
-        /* ヘッダー */
+        /* 画面切り替え用クラス */
+        .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .view-section.active { display: flex; }
+        /* アプリ本体は通常表示 */
+        #app-content { display: none; }
+        #app-content.active { display: block; }
+
+        /* ウェルカム画面のデザイン */
+        .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
+        .welcome-title { font-weight: bold; color: #333; margin-bottom: 10px; }
+        .welcome-text { color: #666; margin-bottom: 30px; }
+        .btn-login-start { background-color: #0056b3; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 30px; font-weight: bold; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-decoration: none; }
+        .btn-login-start:hover { background-color: #004494; color: white; }
+
+        /* 以下、アプリ本体のスタイル (変更なし) */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
         .company-name { font-weight: bold; color: #333; font-size: 1.1rem; }
         .greeting-bar { background-color: #fff; text-align: center; color: #0056b3; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
-        
-        /* リスト画面カード */
         .today-card { border: 2px solid #0056b3; background: white; border-radius: 5px; margin: 15px 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
         .today-card:active { transform: scale(0.98); background-color: #f8f9fa; }
         .today-body { padding: 15px; }
         .time-badge { font-size: 1.3rem; font-weight: bold; }
         .tag-badge { border: 1px solid #0056b3; color: #0056b3; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 10px; }
-        
-        /* 詳細画面 */
         .info-box { background: #fff; border: 2px solid #0056b3; border-radius: 5px; padding: 5px 10px; width: 100%; margin-bottom: 8px; }
         .info-label { color: #0056b3; font-size: 0.8rem; font-weight: bold; margin-bottom: 2px; }
         .info-value { font-size: 1.1rem; font-weight: bold; color: #333; white-space: pre-wrap; }
-        
-        /* 詳細：上段ボックス */
         .detail-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .box-time { flex: 2; text-align: center; }
         .box-type { flex: 1; text-align: center; }
         .box-car { flex: 2; text-align: right; }
         .car-number { font-size: 1.3rem; color: #0056b3; font-weight: 900; }
-        
-        /* 詳細：特別なボックス */
         .box-contact { border-color: #8B4513; color: #8B4513; }
         .box-contact .info-label { color: #8B4513; }
         .box-notes { border-color: #0056b3; min-height: 100px; }
         .note-text { font-size: 1rem; line-height: 1.5; color: #333; white-space: pre-wrap; }
-
-        /* ボタン類 */
         .btn-action-row { display: flex; gap: 10px; margin-bottom: 10px; }
         .btn-map { background: #e0e0e0; border: none; color: #333; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 5px; }
         .btn-files { background: #e0e0e0; border: none; color: #0056b3; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 5px; }
-        
         .footer-actions { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); padding: 10px; display: flex; gap: 10px; border-top: 1px solid #ccc; z-index: 2000; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
         .btn-back { background: #0056b3; color: white; font-weight: bold; flex: 1; border-radius: 5px; border: none; }
         .btn-photo { background: #e0e0e0; color: #333; font-weight: bold; flex: 1; border-radius: 5px; border: none; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
         .btn-complete { background: #d35400; color: white; font-weight: bold; flex: 2; border-radius: 5px; border: none; font-size: 1.1rem; }
-
-        /* 画面切り替え制御 */
         .screen { display: none; }
         .screen.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* 読み込み中ローダー */
         .loading-spinner { text-align: center; padding: 50px; color: #0056b3; }
     </style>
 </head>
 <body>
 
-    <div class="app-header d-flex justify-content-between align-items-center">
-        <div class="company-name">
-            <i class="fas fa-building"></i> 
-            <span id="header-company">読み込み中...</span>
-        </div>
-        <div class="text-end">
-            <div id="header-date" style="font-size:1.2rem; font-weight:bold;">...</div>
-            <div id="header-name" style="font-weight:bold;">...</div>
-        </div>
-    </div>
-    <div class="greeting-bar">本日もご安全に！</div>
-
-    <div id="screen-list" class="screen active">
-        <div class="container mt-3">
-            <h5 class="fw-bold text-primary border-bottom border-primary pb-2 mb-3">本日の予定</h5>
-            
-            <div id="job-list-container">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i><br>データ取得中...
-                </div>
-            </div>
-        </div>
-
-        <div class="fixed-bottom bg-white border-top py-2 d-flex justify-content-around">
-            <div class="text-center text-primary"><i class="fas fa-calendar-check fa-lg"></i><br><small>今日の稼働</small></div>
-            <div class="text-center text-muted"><i class="fas fa-bell fa-lg"></i><br><small>お知らせ</small></div>
-            <div class="text-center text-muted"><i class="fas fa-ellipsis-h fa-lg"></i><br><small>その他</small></div>
-        </div>
+    <div id="view-welcome" class="view-section">
+        <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
+        <h2 class="welcome-title">クラコム オペレーターアプリ</h2>
+        <p class="welcome-text">業務を開始するにはログインしてください</p>
+        <a href="/.auth/login/aad" class="btn-login-start">
+            <i class="fab fa-microsoft me-2"></i> ログイン
+        </a>
     </div>
 
-    <div id="screen-detail" class="screen">
-        <div class="container mt-3 px-2">
-            <div class="detail-row">
-                <div class="info-box box-time">
-                    <div class="info-label">時 間</div>
-                    <div class="info-value" id="detail-time">-</div>
+    <div id="view-checking" class="view-section">
+        <div class="mb-3"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i></div>
+        <h4 class="fw-bold text-secondary">認証情報を確認中...</h4>
+        <p class="text-muted">Dataverseのマスタと照合しています</p>
+    </div>
+
+    <div id="view-error" class="view-section">
+        <div class="mb-3 text-danger"><i class="fas fa-exclamation-circle fa-4x"></i></div>
+        <h4 class="fw-bold">利用が許可されていません</h4>
+        <p class="text-muted px-4" id="error-msg-detail">作業員マスタにあなたのメールアドレスが登録されていません。<br>管理者に連絡してください。</p>
+        <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウトして終了</a>
+    </div>
+
+    <div id="app-content">
+        <div class="app-header d-flex justify-content-between align-items-center">
+            <div class="company-name"><i class="fas fa-building"></i> <span id="header-company">読み込み中...</span></div>
+            <div class="text-end">
+                <div id="header-date" style="font-size:1.2rem; font-weight:bold;">...</div>
+                <div id="header-name" style="font-weight:bold;">...</div>
+            </div>
+        </div>
+        <div class="greeting-bar">本日もご安全に！</div>
+
+        <div id="screen-list" class="screen active">
+            <div class="container mt-3">
+                <h5 class="fw-bold text-primary border-bottom border-primary pb-2 mb-3">本日の予定</h5>
+                <div id="job-list-container">
+                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><br>データ取得中...</div>
                 </div>
-                <div class="info-box box-type">
-                    <div class="info-label">区 分</div>
-                    <div class="info-value" id="detail-type">-</div>
-                </div>
-                <div class="info-box box-car">
-                    <div class="info-label">車 輛</div>
-                    <div class="info-value" id="detail-car">-</div>
-                </div>
             </div>
-
-            <div class="info-box">
-                <div class="info-label">得 意 先</div>
-                <div class="info-value" id="detail-client">-</div>
+            <div class="fixed-bottom bg-white border-top py-2 d-flex justify-content-around">
+                <div class="text-center text-primary"><i class="fas fa-calendar-check fa-lg"></i><br><small>今日の稼働</small></div>
+                <div class="text-center text-muted"><i class="fas fa-bell fa-lg"></i><br><small>お知らせ</small></div>
+                <div class="text-center text-muted"><i class="fas fa-ellipsis-h fa-lg"></i><br><small>その他</small></div>
             </div>
-
-            <div class="info-box">
-                <div class="info-label">現 場 名</div>
-                <div class="info-value" id="detail-location">-</div>
-            </div>
-
-            <div class="info-box">
-                <div class="info-label">作 業 内 容</div>
-                <div class="info-value" id="detail-work">-</div>
-            </div>
-
-            <div class="info-box box-contact">
-                <div class="info-label">連 絡 先</div>
-                <div class="info-value" id="detail-contact">-</div>
-            </div>
-
-            <div class="info-box box-notes mb-3">
-                <div class="info-label">連 絡 事 項</div>
-                <div class="note-text" id="detail-notes">なし</div>
-            </div>
-
-            <div class="btn-action-row px-2">
-                <button class="btn-map" onclick="openMap()">
-                    <i class="fas fa-map-marker-alt text-danger fa-lg"></i> 現場地図
-                </button>
-                <button class="btn-files" onclick="openFiles()">
-                    <i class="fas fa-paperclip fa-lg"></i> 資料を見る
-                </button>
-            </div>
-            
-            <div style="height: 80px;"></div> 
         </div>
 
-        <div class="footer-actions">
-            <button class="btn-back" onclick="goBack()">戻る</button>
-            <button class="btn-photo">
-                <i class="fas fa-camera"></i><small>写真/メモ</small>
-            </button>
-            <button class="btn-complete" onclick="completeWork()">作業完了通知</button>
+        <div id="screen-detail" class="screen">
+            <div class="container mt-3 px-2">
+                <div class="detail-row">
+                    <div class="info-box box-time"><div class="info-label">時 間</div><div class="info-value" id="detail-time">-</div></div>
+                    <div class="info-box box-type"><div class="info-label">区 分</div><div class="info-value" id="detail-type">-</div></div>
+                    <div class="info-box box-car"><div class="info-label">車 輛</div><div class="info-value" id="detail-car">-</div></div>
+                </div>
+                <div class="info-box"><div class="info-label">得 意 先</div><div class="info-value" id="detail-client">-</div></div>
+                <div class="info-box"><div class="info-label">現 場 名</div><div class="info-value" id="detail-location">-</div></div>
+                <div class="info-box"><div class="info-label">作 業 内 容</div><div class="info-value" id="detail-work">-</div></div>
+                <div class="info-box box-contact"><div class="info-label">連 絡 先</div><div class="info-value" id="detail-contact">-</div></div>
+                <div class="info-box box-notes mb-3"><div class="info-label">連 絡 事 項</div><div class="note-text" id="detail-notes">なし</div></div>
+                <div class="btn-action-row px-2">
+                    <button class="btn-map" onclick="openMap()"><i class="fas fa-map-marker-alt text-danger fa-lg"></i> 現場地図</button>
+                    <button class="btn-files" onclick="openFiles()"><i class="fas fa-paperclip fa-lg"></i> 資料を見る</button>
+                </div>
+                <div style="height: 80px;"></div> 
+            </div>
+            <div class="footer-actions">
+                <button class="btn-back" onclick="goBack()">戻る</button>
+                <button class="btn-photo"><i class="fas fa-camera"></i><small>写真/メモ</small></button>
+                <button class="btn-complete" onclick="completeWork()">作業完了通知</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // グローバル変数
         let currentJobs = [];
         let selectedJob = null;
 
-        // --- 初期化 & データ取得 ---
+        // --- エントリーポイント ---
         (async () => {
-            // 日付表示
+            // 1. ログイン状態の確認
+            const authRes = await fetch('/.auth/me');
+            const authData = await authRes.json();
+            const clientPrincipal = authData.clientPrincipal;
+
+            if (!clientPrincipal) {
+                // 未ログイン -> ウェルカム画面を表示
+                switchView('view-welcome');
+                return;
+            }
+
+            // 2. ログイン済み -> 確認中画面へ
+            switchView('view-checking');
+
+            // 3. APIでDataverse照合 & データ取得
+            try {
+                const response = await fetch('/api/show-env');
+                
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    // 403ならマスタ登録なし -> エラー画面へ
+                    if (response.status === 403) {
+                        document.getElementById('error-msg-detail').innerHTML = "作業員マスタにあなたのアカウントが登録されていません。<br>管理者に連絡してください。";
+                        switchView('view-error');
+                    } else {
+                        // その他のエラー
+                        document.getElementById('error-msg-detail').textContent = `システムエラー: ${errData.details || response.statusText}`;
+                        switchView('view-error');
+                    }
+                    return;
+                }
+
+                // 4. 成功 -> アプリ画面へ (着席)
+                const data = await response.json();
+                switchView('app-content'); // アプリ本体を表示
+                setupApp(data); // データをセット
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`;
+                switchView('view-error');
+            }
+        })();
+
+        // 画面切り替えヘルパー
+        function switchView(id) {
+            // すべて隠す
+            document.querySelectorAll('.view-section, #app-content').forEach(el => {
+                el.classList.remove('active');
+                el.style.display = 'none'; // 明示的に消す
+            });
+            
+            // 指定IDだけ表示
+            const target = document.getElementById(id);
+            if (id === 'app-content') {
+                target.classList.add('active');
+                target.style.display = 'block';
+            } else {
+                target.classList.add('active');
+                target.style.display = 'flex';
+            }
+        }
+
+        // アプリデータのセットアップ
+        function setupApp(data) {
             const now = new Date();
             const days = ['日', '月', '火', '水', '木', '金', '土'];
             document.getElementById('header-date').textContent = `${now.getMonth()+1}月${now.getDate()}日(${days[now.getDay()]})`;
 
-            // APIからデータ取得
-            try {
-                const response = await fetch('/api/show-env');
-                if (!response.ok) throw new Error('API Error');
-                
-                const data = await response.json();
-                
-                // ★追加: 部署名の表示
-                if (data.businessUnitName) {
-                    document.getElementById('header-company').textContent = data.businessUnitName;
-                } else {
-                    document.getElementById('header-company').textContent = "所属なし";
-                }
+            if (data.businessUnitName) document.getElementById('header-company').textContent = data.businessUnitName;
+            if (data.userName) document.getElementById('header-name').textContent = data.userName + " 様";
 
-                // ユーザー名セット
-                if (data.userName) {
-                    document.getElementById('header-name').textContent = data.userName + " 様";
-                }
+            currentJobs = data.results || [];
+            renderList(currentJobs);
+        }
 
-                // リスト描画
-                currentJobs = data.results || [];
-                renderList(currentJobs);
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('job-list-container').innerHTML = `<div class="text-danger text-center p-3">データの取得に失敗しました。<br>${e.message}</div>`;
-            }
-        })();
-
-        // --- リスト描画 ---
+        // --- リスト・詳細ロジック (変更なし) ---
         function renderList(jobs) {
             const container = document.getElementById('job-list-container');
-            container.innerHTML = ''; // クリア
-
+            container.innerHTML = ''; 
             if (jobs.length === 0) {
                 container.innerHTML = '<div class="text-center text-muted p-4">本日の予定はありません</div>';
                 return;
             }
-
             jobs.forEach((job, index) => {
                 const card = document.createElement('div');
                 card.className = 'today-card';
                 card.onclick = () => showDetail(index);
-
                 let statusBadge = `<button class="btn btn-outline-primary btn-sm fw-bold">${job.status}</button>`;
-                
                 card.innerHTML = `
                     <div class="today-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <span class="time-badge">${job.time} ～</span>
-                                <span class="tag-badge">${job.type}</span>
-                            </div>
+                            <div><span class="time-badge">${job.time} ～</span><span class="tag-badge">${job.type}</span></div>
                             ${statusBadge}
                         </div>
                         <div class="fw-bold fs-5 mb-1">${job.client}</div>
                         <div class="fw-bold text-primary mb-2">${job.location}</div>
                         <div class="text-muted small">${job.workContent}</div>
-                    </div>
-                `;
+                    </div>`;
                 container.appendChild(card);
             });
         }
 
-        // --- 詳細画面表示 ---
         function showDetail(index) {
             selectedJob = currentJobs[index];
             if (!selectedJob) return;
-
             document.getElementById('detail-time').textContent = selectedJob.time;
             document.getElementById('detail-type').textContent = selectedJob.type;
             document.getElementById('detail-car').textContent = selectedJob.car;
@@ -243,7 +252,6 @@
             document.getElementById('detail-work').textContent = selectedJob.workContent;
             document.getElementById('detail-contact').textContent = selectedJob.contact;
             document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
-
             document.getElementById('screen-list').classList.remove('active');
             document.getElementById('screen-detail').classList.add('active');
             window.scrollTo(0, 0);
@@ -254,21 +262,13 @@
             document.getElementById('screen-list').classList.add('active');
         }
 
-        // --- アクションボタン (実装予定) ---
         function openMap() {
             const query = selectedJob.location || "";
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
         }
-
-        function openFiles() {
-            alert('添付ファイル機能は後ほど実装します');
-        }
-
+        function openFiles() { alert('添付ファイル機能は後ほど実装します'); }
         function completeWork() {
-            if(confirm('作業完了通知を送りますか？')) {
-                alert('送信しました(デモ)');
-                goBack();
-            }
+            if(confirm('作業完了通知を送りますか？')) { alert('送信しました(デモ)'); goBack(); }
         }
     </script>
 </body>
