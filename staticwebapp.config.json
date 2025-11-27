@@ -1,7 +1,7 @@
 {
   "auth": {
     "identityProviders": {
-      "custom": {
+      "azureActiveDirectory": {
         "registration": {
           "clientIdSettingName": "ENTRA_CLIENT_ID",
           "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
@@ -10,11 +10,7 @@
           }
         },
         "login": {
-          "nameClaimType": "name",
-          "scopes": [
-            "openid",
-            "profile"
-          ]
+          "nameClaimType": "name"
         }
       }
     },
@@ -29,9 +25,7 @@
       },
       {
         "route": "/*",
-        "allowedRoles": [
-          "authenticated"
-        ]
+        "allowedRoles": [ "authenticated" ]
       }
     ]
   },
