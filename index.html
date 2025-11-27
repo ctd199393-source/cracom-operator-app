@@ -25,7 +25,7 @@
         /* 詳細画面 */
         .info-box { background: #fff; border: 2px solid #0056b3; border-radius: 5px; padding: 5px 10px; width: 100%; margin-bottom: 8px; }
         .info-label { color: #0056b3; font-size: 0.8rem; font-weight: bold; margin-bottom: 2px; }
-        .info-value { font-size: 1.1rem; font-weight: bold; color: #333; white-space: pre-wrap; } /* 改行維持 */
+        .info-value { font-size: 1.1rem; font-weight: bold; color: #333; white-space: pre-wrap; }
         
         /* 詳細：上段ボックス */
         .detail-row { display: flex; gap: 5px; margin-bottom: 10px; }
@@ -62,7 +62,10 @@
 <body>
 
     <div class="app-header d-flex justify-content-between align-items-center">
-        <div class="company-name"><i class="fas fa-building"></i> 株式会社 元山クレーン建設</div>
+        <div class="company-name">
+            <i class="fas fa-building"></i> 
+            <span id="header-company">読み込み中...</span>
+        </div>
         <div class="text-end">
             <div id="header-date" style="font-size:1.2rem; font-weight:bold;">...</div>
             <div id="header-name" style="font-weight:bold;">...</div>
@@ -139,7 +142,8 @@
                 </button>
             </div>
             
-            <div style="height: 80px;"></div> </div>
+            <div style="height: 80px;"></div> 
+        </div>
 
         <div class="footer-actions">
             <button class="btn-back" onclick="goBack()">戻る</button>
@@ -151,7 +155,7 @@
     </div>
 
     <script>
-        // グローバル変数: 取得したデータを保持
+        // グローバル変数
         let currentJobs = [];
         let selectedJob = null;
 
@@ -169,6 +173,13 @@
                 
                 const data = await response.json();
                 
+                // ★追加: 部署名の表示
+                if (data.businessUnitName) {
+                    document.getElementById('header-company').textContent = data.businessUnitName;
+                } else {
+                    document.getElementById('header-company').textContent = "所属なし";
+                }
+
                 // ユーザー名セット
                 if (data.userName) {
                     document.getElementById('header-name').textContent = data.userName + " 様";
@@ -195,12 +206,10 @@
             }
 
             jobs.forEach((job, index) => {
-                // カードのHTML生成
                 const card = document.createElement('div');
                 card.className = 'today-card';
-                card.onclick = () => showDetail(index); // クリックで詳細へ
+                card.onclick = () => showDetail(index);
 
-                // ステータスボタンの見た目 (未確認/確認済/完了)
                 let statusBadge = `<button class="btn btn-outline-primary btn-sm fw-bold">${job.status}</button>`;
                 
                 card.innerHTML = `
@@ -226,7 +235,6 @@
             selectedJob = currentJobs[index];
             if (!selectedJob) return;
 
-            // 画面要素に値をセット
             document.getElementById('detail-time').textContent = selectedJob.time;
             document.getElementById('detail-type').textContent = selectedJob.type;
             document.getElementById('detail-car').textContent = selectedJob.car;
@@ -236,7 +244,6 @@
             document.getElementById('detail-contact').textContent = selectedJob.contact;
             document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
 
-            // 画面切り替え
             document.getElementById('screen-list').classList.remove('active');
             document.getElementById('screen-detail').classList.add('active');
             window.scrollTo(0, 0);
@@ -249,7 +256,6 @@
 
         // --- アクションボタン (実装予定) ---
         function openMap() {
-            // Google Maps検索 (現場名 or 住所があれば使用)
             const query = selectedJob.location || "";
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
         }
@@ -260,7 +266,6 @@
 
         function completeWork() {
             if(confirm('作業完了通知を送りますか？')) {
-                // ここでPower Automate呼び出し
                 alert('送信しました(デモ)');
                 goBack();
             }
