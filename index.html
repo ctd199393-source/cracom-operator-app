@@ -8,33 +8,33 @@
   <h1>認証成功　再デプロイ</h1>
   <p>オペレーターアプリへようこそ。</p>
 
-  <div data-client-principal-encoded></div>
+  <div id="user-info">読み込み中...</div>
 
   <script>
-    // SWAから渡される認証情報をデコードして表示する
     (async () => {
-      const el = document.querySelector('[data-client-principal-encoded]');
-      const encoded = el.getAttribute('data-client-principal-encoded');
+      const el = document.getElementById('user-info');
 
-      if (encoded) {
-        try {
-          // Base64デコード
-          const decoded = atob(encoded);
-          const principal = JSON.parse(decoded);
+      try {
+        // SWAの標準機能を使ってユーザー情報を取得する
+        const response = await fetch('/.auth/me');
+        const payload = await response.json();
+        const { clientPrincipal } = payload;
 
-          const displayName = principal.claims.find(c => c.typ === 'name')?.val || '不明なユーザー';
-          const email = principal.claims.find(c => c.typ.includes('emailaddress'))?.val || 'メールアドレス不明';
-
+        if (clientPrincipal) {
+          // ログイン済みの場合
+          // clientPrincipal.userDetails には通常メールアドレスが入ります
           el.innerHTML = `
-            <p><b>ようこそ、${displayName} さん</b></p>
-            <p>メールアドレス: ${email}</p>
+            <p><b>ようこそ、${clientPrincipal.userDetails} さん</b></p>
             <p><a href="/.auth/logout">ログアウト</a></p>
           `;
-        } catch (e) {
-          el.textContent = '認証情報の読み取りに失敗しました。';
+        } else {
+          // 未ログインの場合
+          // 【重要】ここを 'custom' から 'aad' に変更しました
+          el.innerHTML = '<p><a href="/.auth/login/aad">ログイン</a></p>';
         }
-      } else {
-        el.innerHTML = '<p><a href="/.auth/login/custom">ログイン</a></p>';
+      } catch (error) {
+        el.innerHTML = '<p>ユーザー情報の取得に失敗しました。</p>';
+        console.error(error);
       }
     })();
   </script>
