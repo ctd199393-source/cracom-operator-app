@@ -9,7 +9,7 @@
         },
         "login": {
           "nameClaimType": "name",
-          "userDetailsClaim": "emails",
+          "userDetailsClaim": "email",
           "loginParameters": [
             "p=SUSI_operator"
           ]
@@ -27,12 +27,6 @@
       "allowedRoles": [ "anonymous" ]
     }
   ],
-  "responseOverrides": {
-    "401": {
-      "redirect": "/.auth/login/aad?p=SUSI_operator",
-      "statusCode": 302
-    }
-  },
   "globalHeaders": {
     "Cache-Control": "no-cache"
   }
