@@ -15,25 +15,28 @@ module.exports = async function (context, req) {
             throw new Error("環境変数が不足しています");
         }
 
-        // 2. ユーザー情報 (Gmail対応版)
-        let userEmail = req.headers["x-ms-client-principal-name"];
-        const header = req.headers["x-ms-client-principal"];
-        if (header) {
-            const encoded = Buffer.from(header, "base64");
-            const decoded = JSON.parse(encoded.toString("ascii"));
-            const emailClaim = decoded.claims.find(c => c.typ === "emails" || c.typ === "email" || c.typ === "preferred_username");
-            if (emailClaim) userEmail = emailClaim.val;
-        }
-
-        if (!userEmail) {
+        // 2. ユーザー情報の取得 (シンプル版)
+        const principalName = req.headers["x-ms-client-principal-name"];
+        
+        if (!principalName) {
             context.res = { status: 401, body: { error: "ログインが必要です" } };
             return;
         }
+
+        // Gmailなどのゲストユーザーは "live.com#user@gmail.com" となる場合があるため整形
+        let userEmail = principalName;
+        // ゲストIDのプレフィックスを除去して純粋なメールアドレスにする
+        if (userEmail.includes("#") && userEmail.includes("@")) {
+            userEmail = userEmail.split("#").pop();
+        }
+        
+        context.log(`Formatted User Email: ${userEmail}`);
 
         // 3. 認証
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         const tokenResponse = await credential.getToken(`${dataverseUrl}/.default`);
         const accessToken = tokenResponse.token;
+        
         const headers = {
             "Authorization": `Bearer ${accessToken}`,
             "Accept": "application/json",
@@ -52,6 +55,7 @@ module.exports = async function (context, req) {
         const workerData = await workerRes.json();
 
         if (!workerData.value || workerData.value.length === 0) {
+            context.log(`Not found in master: ${userEmail}`);
             context.res = { status: 403, body: { error: "作業員マスタに登録がありません" } };
             return;
         }
@@ -63,8 +67,7 @@ module.exports = async function (context, req) {
         const myBusinessUnitName = worker["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"] || "";
 
         // 5. 配車データ取得
-        // ★修正: ここを小文字の 'new_table2s' に戻しました
-        const dispatchTable = "new_table2s"; 
+        const dispatchTable = "new_table2s"; // 小文字
 
         const selectCols = [
             "new_table2id",
@@ -77,8 +80,7 @@ module.exports = async function (context, req) {
             "new_sagyou_naiyou",    
             "new_renraku_jikou"     
         ].join(",");
-
-        // フィルタ: 部署一致 && 自分担当
+        
         let filter = `_owningbusinessunit_value eq ${myBusinessUnit}`;
         filter += ` and _new_operator_value eq ${myWorkerId}`; 
 
@@ -89,7 +91,7 @@ module.exports = async function (context, req) {
         
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Dataverse Error (${dispatchTable}): ${response.status} - ${errorText}`);
+            throw new Error(`Dataverse Error: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
@@ -119,13 +121,7 @@ module.exports = async function (context, req) {
 
         context.res = {
             status: 200,
-            body: { 
-                message: "Success", 
-                userName: myName,
-                businessUnitName: myBusinessUnitName,
-                count: results.length,
-                results: results 
-            }
+            body: { message: "Success", userName: myName, businessUnitName: myBusinessUnitName, count: results.length, results: results }
         };
 
     } catch (error) {
