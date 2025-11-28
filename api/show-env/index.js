@@ -5,6 +5,7 @@ module.exports = async function (context, req) {
     context.log('Dataverse API request started.');
 
     try {
+        // 1. 環境変数チェック
         const tenantId = process.env.TENANT_ID; 
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
@@ -15,42 +16,46 @@ module.exports = async function (context, req) {
         }
 
         // -----------------------------------------------------------
-        // 2. ユーザー情報 (メールアドレス) の確実な抽出
+        // 2. ユーザー情報の「メールアドレス」を確実に取り出すロジック
         // -----------------------------------------------------------
-        let userEmail = req.headers["x-ms-client-principal-name"];
+        let userEmail = null;
         const header = req.headers["x-ms-client-principal"];
 
-        // (A) クレームデータがあれば、そこから 'email' を探す (一番確実)
         if (header) {
             try {
+                // Base64デコードして中身(JSON)を取り出す
                 const encoded = Buffer.from(header, "base64");
                 const decoded = JSON.parse(encoded.toString("ascii"));
-                const emailClaim = decoded.claims.find(c => c.typ === "email" || c.typ === "emails");
+                
+                // クレームの中から「メールアドレス」を探す
+                // 優先順位: email > emails > name > preferred_username
+                const claims = decoded.claims;
+                const emailClaim = claims.find(c => c.typ === "email" || c.typ === "emails" || c.typ === "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress");
+                
                 if (emailClaim) {
                     userEmail = emailClaim.val;
+                } else {
+                    // メールが見つからない場合、nameクレームを使う（ここがメアドの場合がある）
+                    const nameClaim = claims.find(c => c.typ === "name");
+                    if (nameClaim) userEmail = nameClaim.val;
                 }
             } catch(e) {
-                context.log("Failed to parse client principal header");
+                context.log("Header decode failed: " + e.message);
             }
         }
 
-        // (B) UPNからの抽出 (フォールバック)
-        // ゲストユーザー (例: c.t.d..._gmail.com#EXT#@cracom...) の場合
+        // ヘッダー解読に失敗、またはローカルでテストしている場合のフォールバック
+        if (!userEmail) {
+            userEmail = req.headers["x-ms-client-principal-name"];
+        }
+
+        // ★重要: それでもまだ "live.com#..." や乱数IDの可能性がある場合の最終整形
         if (userEmail && userEmail.includes("#EXT#")) {
-            // #EXT# の前を取り出す -> c.t.d.1993.93_gmail.com
-            let extracted = userEmail.split("#EXT#")[0];
-            // 最後の "_gmail.com" の "_" を "@" に戻す簡易ロジック
-            // (※完全な復元は難しいが、多くのケースで "_" を "@" に置換すれば通る)
-            // ここでは単純に "gmail.com" などの主要ドメインの前の "_" を "@" に変える
-            extracted = extracted.replace("_gmail.com", "@gmail.com")
-                                 .replace("_yahoo.co.jp", "@yahoo.co.jp")
-                                 .replace("_icloud.com", "@icloud.com");
-            // 汎用的な置換 (最後のアンダースコアを@に)
-            if (!extracted.includes("@")) {
-                 const lastUnderscore = extracted.lastIndexOf("_");
-                 if (lastUnderscore !== -1) {
-                     extracted = extracted.substring(0, lastUnderscore) + "@" + extracted.substring(lastUnderscore + 1);
-                 }
+             // ゲストユーザーの場合の整形
+             let extracted = userEmail.split("#EXT#")[0];
+             const lastUnderscore = extracted.lastIndexOf("_");
+             if (lastUnderscore !== -1) {
+                 extracted = extracted.substring(0, lastUnderscore) + "@" + extracted.substring(lastUnderscore + 1);
             }
             userEmail = extracted;
         }
@@ -60,9 +65,13 @@ module.exports = async function (context, req) {
             return;
         }
         
-        context.log(`Target Email for Search: ${userEmail}`);
+        // ログ出力：ここで正しいメアド（gmail.com）になっているか確認できます
+        context.log(`Searching Dataverse for User: ${userEmail}`);
 
-        // 3. 認証
+
+        // -----------------------------------------------------------
+        // 3. Dataverse認証
+        // -----------------------------------------------------------
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         const tokenResponse = await credential.getToken(`${dataverseUrl}/.default`);
         const accessToken = tokenResponse.token;
@@ -81,12 +90,12 @@ module.exports = async function (context, req) {
         const workerQuery = `?$select=_owningbusinessunit_value,new_sagyouin_mastaid,new_mei&$filter=new_mail eq '${userEmail}'`;
         const workerRes = await fetch(`${dataverseUrl}/api/data/v9.2/${workerTable}${workerQuery}`, { method: "GET", headers });
         
-        if (!workerRes.ok) {
-            throw new Error(`Worker Search Error: ${workerRes.status}`);
-        }
+        if (!workerRes.ok) throw new Error(`Worker Search Error: ${workerRes.status}`);
         const workerData = await workerRes.json();
 
+        // マスタにいない場合
         if (!workerData.value || workerData.value.length === 0) {
+            context.log(`User not found in master. Input was: ${userEmail}`);
             context.res = { status: 403, body: { error: "作業員マスタに登録がありません" } };
             return;
         }
@@ -97,7 +106,7 @@ module.exports = async function (context, req) {
         const myName = worker.new_mei || "担当者";
         const myBusinessUnitName = worker["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"] || "";
 
-        // 5. 配車データ取得
+        // 5. 配車データ取得 (正しいテーブル名: new_table2s)
         const dispatchTable = "new_table2s"; 
 
         const selectCols = [
@@ -111,7 +120,8 @@ module.exports = async function (context, req) {
             "new_sagyou_naiyou",    
             "new_renraku_jikou"     
         ].join(",");
-
+        
+        // フィルタ: 部署一致 && 自分担当
         let filter = `_owningbusinessunit_value eq ${myBusinessUnit}`;
         filter += ` and _new_operator_value eq ${myWorkerId}`; 
 
@@ -154,9 +164,9 @@ module.exports = async function (context, req) {
             status: 200,
             body: { 
                 message: "Success", 
-                userName: myName,
-                businessUnitName: myBusinessUnitName,
-                count: results.length,
+                userName: myName, 
+                businessUnitName: myBusinessUnitName, 
+                count: results.length, 
                 results: results 
             }
         };
