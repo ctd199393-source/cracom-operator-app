@@ -10,20 +10,27 @@
     <style>
         body { background-color: #f0f2f5; font-family: "Helvetica Neue", Arial, sans-serif; padding-bottom: 100px; }
         
-        /* 画面切り替え制御 */
-        .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .view-section.active { display: flex; }
+        /* 画面切り替え制御 (ここを修正) */
+        .view-section { display: none !important; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .view-section.active { display: flex !important; }
+        
         #app-content { display: none; }
         #app-content.active { display: block; }
+
+        /* アプリ内の画面切り替え */
+        .screen { display: none !important; }
+        .screen.active { display: block !important; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* ウェルカム画面 */
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
         .btn-login-start { background-color: #0056b3; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 30px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-login-start:hover { background-color: #004494; color: white; }
 
-        /* アプリ画面 */
+        /* アプリヘッダー */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
         .greeting-bar { background-color: #fff; text-align: center; color: #0056b3; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
+
+        /* リスト画面カード */
         .today-card { border: 2px solid #0056b3; background: white; border-radius: 5px; margin: 15px; padding: 15px; cursor: pointer; transition: transform 0.1s; }
         .today-card:active { transform: scale(0.98); background-color: #f8f9fa; }
         .time-badge { font-size: 1.3rem; font-weight: bold; }
@@ -43,10 +50,9 @@
         .btn-map { background: #e0e0e0; border: none; color: #333; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 5px; }
         .btn-files { background: #e0e0e0; border: none; color: #0056b3; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 5px; }
         .footer-actions { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); padding: 10px; display: flex; gap: 10px; border-top: 1px solid #ccc; z-index: 2000; }
-        .btn-back, .btn-photo, .btn-complete { border: none; border-radius: 5px; font-weight: bold; }
-        .btn-back { background: #0056b3; color: white; flex: 1; }
-        .btn-photo { background: #e0e0e0; color: #333; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; font-size: 0.8rem; }
-        .btn-complete { background: #d35400; color: white; flex: 2; font-size: 1.1rem; }
+        .btn-back { background: #0056b3; color: white; flex: 1; border:none; border-radius:5px; font-weight:bold; }
+        .btn-photo { background: #e0e0e0; color: #333; flex: 1; border:none; border-radius:5px; font-size:0.8rem; }
+        .btn-complete { background: #d35400; color: white; flex: 2; border:none; border-radius:5px; font-size:1.1rem; font-weight:bold; }
 
         .loading-spinner { text-align: center; padding: 50px; color: #0056b3; }
     </style>
@@ -65,7 +71,6 @@
     <div id="view-checking" class="view-section">
         <div class="mb-3"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i></div>
         <h4 class="fw-bold text-secondary">認証情報を確認中...</h4>
-        <p class="text-muted">Dataverseのマスタと照合しています</p>
     </div>
 
     <div id="view-error" class="view-section">
@@ -89,176 +94,3 @@
             <div class="container mt-3">
                 <h5 class="fw-bold text-primary border-bottom border-primary pb-2 mb-3">本日の予定</h5>
                 <div id="job-list-container">
-                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><br>データ取得中...</div>
-                </div>
-            </div>
-            <div class="fixed-bottom bg-white border-top py-2 d-flex justify-content-around">
-                <div class="text-center text-primary"><i class="fas fa-calendar-check fa-lg"></i><br><small>今日の稼働</small></div>
-                <div class="text-center text-muted"><i class="fas fa-bell fa-lg"></i><br><small>お知らせ</small></div>
-                <div class="text-center text-muted"><i class="fas fa-ellipsis-h fa-lg"></i><br><small>その他</small></div>
-            </div>
-        </div>
-
-        <div id="screen-detail" class="screen">
-            <div class="container mt-3 px-2">
-                <div class="detail-row">
-                    <div class="info-box box-time"><div class="info-label">時 間</div><div class="info-value" id="detail-time">-</div></div>
-                    <div class="info-box box-type"><div class="info-label">区 分</div><div class="info-value" id="detail-type">-</div></div>
-                    <div class="info-box box-car"><div class="info-label">車 輛</div><div class="info-value" id="detail-car">-</div></div>
-                </div>
-                <div class="info-box"><div class="info-label">得 意 先</div><div class="info-value" id="detail-client">-</div></div>
-                <div class="info-box"><div class="info-label">現 場 名</div><div class="info-value" id="detail-location">-</div></div>
-                <div class="info-box"><div class="info-label">作 業 内 容</div><div class="info-value" id="detail-work">-</div></div>
-                <div class="info-box box-contact"><div class="info-label">連 絡 先</div><div class="info-value" id="detail-contact">-</div></div>
-                <div class="info-box box-notes mb-3"><div class="info-label">連 絡 事 項</div><div class="note-text" id="detail-notes">なし</div></div>
-                
-                <div class="btn-action-row px-2">
-                    <button class="btn-map" onclick="openMap()"><i class="fas fa-map-marker-alt text-danger fa-lg"></i> 現場地図</button>
-                    <button class="btn-files" onclick="openFiles()"><i class="fas fa-paperclip fa-lg"></i> 資料を見る</button>
-                </div>
-                <div style="height: 80px;"></div> 
-            </div>
-            <div class="footer-actions">
-                <button class="btn-back" onclick="goBack()">戻る</button>
-                <button class="btn-photo"><i class="fas fa-camera"></i><small>写真/メモ</small></button>
-                <button class="btn-complete" onclick="completeWork()">作業完了通知</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentJobs = [];
-        let selectedJob = null;
-
-        // --- メイン処理 ---
-        (async () => {
-            // 1. ログイン状態の確認
-            const authRes = await fetch('/.auth/me');
-            const authData = await authRes.json();
-            const clientPrincipal = authData.clientPrincipal;
-
-            if (!clientPrincipal) {
-                // 未ログイン -> ウェルカム画面を表示
-                switchView('view-welcome');
-                return;
-            }
-
-            // 2. ログイン済み -> 確認中画面へ
-            switchView('view-checking');
-
-            // 3. APIでDataverse照合 & データ取得
-            try {
-                const response = await fetch('/api/show-env');
-                
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    
-                    if (response.status === 403) {
-                        document.getElementById('error-msg-detail').innerHTML = "作業員マスタにあなたのアカウントが登録されていません。<br>管理者に連絡してください。";
-                    } else {
-                        document.getElementById('error-msg-detail').textContent = `システムエラー: ${errData.details || response.statusText}`;
-                    }
-                    switchView('view-error');
-                    return;
-                }
-
-                // 4. 成功 -> アプリ画面へ
-                const data = await response.json();
-                switchView('app-content');
-                setupApp(data);
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`;
-                switchView('view-error');
-            }
-        })();
-
-        // 画面切り替えヘルパー
-        function switchView(id) {
-            document.querySelectorAll('.view-section, #app-content').forEach(el => {
-                el.classList.remove('active');
-                el.style.display = 'none';
-            });
-            const target = document.getElementById(id);
-            if (id === 'app-content') {
-                target.classList.add('active');
-                target.style.display = 'block';
-            } else {
-                target.classList.add('active');
-                target.style.display = 'flex';
-            }
-        }
-
-        // アプリデータのセットアップ
-        function setupApp(data) {
-            const now = new Date();
-            const days = ['日', '月', '火', '水', '木', '金', '土'];
-            document.getElementById('header-date').textContent = `${now.getMonth()+1}月${now.getDate()}日(${days[now.getDay()]})`;
-
-            if (data.businessUnitName) document.getElementById('header-company').textContent = data.businessUnitName;
-            if (data.userName) document.getElementById('header-name').textContent = data.userName + " 様";
-
-            currentJobs = data.results || [];
-            renderList(currentJobs);
-        }
-
-        // --- リスト・詳細ロジック ---
-        function renderList(jobs) {
-            const container = document.getElementById('job-list-container');
-            container.innerHTML = ''; 
-            if (jobs.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定はありません</div>';
-                return;
-            }
-            jobs.forEach((job, index) => {
-                const card = document.createElement('div');
-                card.className = 'today-card';
-                card.onclick = () => showDetail(index);
-                let statusBadge = `<button class="btn btn-outline-primary btn-sm fw-bold">${job.status}</button>`;
-                card.innerHTML = `
-                    <div class="today-body">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div><span class="time-badge">${job.time} ～</span><span class="tag-badge">${job.type}</span></div>
-                            ${statusBadge}
-                        </div>
-                        <div class="fw-bold fs-5 mb-1">${job.client}</div>
-                        <div class="fw-bold text-primary mb-2">${job.location}</div>
-                        <div class="text-muted small">${job.workContent}</div>
-                    </div>`;
-                container.appendChild(card);
-            });
-        }
-
-        function showDetail(index) {
-            selectedJob = currentJobs[index];
-            if (!selectedJob) return;
-            document.getElementById('detail-time').textContent = selectedJob.time;
-            document.getElementById('detail-type').textContent = selectedJob.type;
-            document.getElementById('detail-car').textContent = selectedJob.car;
-            document.getElementById('detail-client').textContent = selectedJob.client;
-            document.getElementById('detail-location').textContent = selectedJob.location;
-            document.getElementById('detail-work').textContent = selectedJob.workContent;
-            document.getElementById('detail-contact').textContent = selectedJob.contact;
-            document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
-            document.getElementById('screen-list').classList.remove('active');
-            document.getElementById('screen-detail').classList.add('active');
-            window.scrollTo(0, 0);
-        }
-
-        function goBack() {
-            document.getElementById('screen-detail').classList.remove('active');
-            document.getElementById('screen-list').classList.add('active');
-        }
-
-        function openMap() {
-            const query = selectedJob.location || "";
-            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
-        }
-        function openFiles() { alert('添付ファイル機能は後ほど実装します'); }
-        function completeWork() {
-            if(confirm('作業完了通知を送りますか？')) { alert('送信しました(デモ)'); goBack(); }
-        }
-    </script>
-</body>
-</html>
