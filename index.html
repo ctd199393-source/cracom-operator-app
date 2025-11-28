@@ -6,17 +6,22 @@
     <title>オペレーター指示書アプリ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
         body { background-color: #f0f2f5; font-family: "Helvetica Neue", Arial, sans-serif; padding-bottom: 100px; }
+        
+        /* 画面切り替え制御 */
         .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         #view-checking { display: flex; } /* 初期表示 */
         #app-content { display: none; }
         
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
         .btn-login-start { background-color: #0056b3; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 30px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-login-start:hover { background-color: #004494; color: white; }
         
         /* アプリ共通 */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
+        .greeting-bar { background-color: #fff; text-align: center; color: #0056b3; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
         .today-card { border: 2px solid #0056b3; background: white; border-radius: 5px; margin: 15px; padding: 15px; cursor: pointer; }
         .time-badge { font-size: 1.3rem; font-weight: bold; }
         .tag-badge { border: 1px solid #0056b3; color: #0056b3; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 10px; }
@@ -40,7 +45,8 @@
         <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
         <p class="text-muted mb-4">業務を開始するには<br>ログインしてください</p>
-        <a href="/.auth/login/aad" class="btn-login-start">
+        
+        <a href="https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/oauth2/v2.0/authorize?client_id=3f113cb1-9657-47c4-8de1-3f3744e0dcb9&response_type=id_token&redirect_uri=https%3A%2F%2Fmango-mushroom-026570700.3.azurestaticapps.net%2F.auth%2Flogin%2Faad%2Fcallback&scope=openid+profile+email&response_mode=form_post&nonce=12345" class="btn-login-start">
             <i class="fab fa-microsoft me-2"></i> ログイン
         </a>
     </div>
@@ -48,7 +54,7 @@
     <div id="view-checking" class="view-section">
         <div class="mb-3"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i></div>
         <h4 class="fw-bold text-secondary">読み込み中...</h4>
-        <p class="text-muted">認証情報を確認しています</p>
+        <p class="text-muted" id="checking-text">認証情報を確認しています</p>
     </div>
 
     <div id="view-error" class="view-section">
@@ -60,7 +66,7 @@
 
     <div id="app-content">
         <div class="app-header d-flex justify-content-between align-items-center">
-            <div class="fw-bold"><i class="fas fa-building"></i> <span id="header-company">...</span></div>
+            <div class="fw-bold"><i class="fas fa-building"></i> <span id="header-company">読み込み中...</span></div>
             <div class="text-end fw-bold">
                 <div id="header-date">...</div>
                 <div id="header-name">...</div>
@@ -87,7 +93,7 @@
                 <div class="detail-row">
                     <div class="info-box box-time"><div class="info-label">時間</div><div class="info-value" id="detail-time"></div></div>
                     <div class="info-box box-type"><div class="info-label">区分</div><div class="info-value" id="detail-type"></div></div>
-                    <div class="info-box box-car"><div class="info-label">車両</div><div class="info-value" id="detail-car"></div></div>
+                    <div class="info-box box-car"><div class="info-label">車 輛</div><div class="info-value" id="detail-car"></div></div>
                 </div>
                 <div class="info-box"><div class="info-label">得意先</div><div class="info-value" id="detail-client"></div></div>
                 <div class="info-box"><div class="info-label">現場名</div><div class="info-value" id="detail-location"></div></div>
@@ -124,6 +130,7 @@
             try {
                 const authRes = await fetch('/.auth/me');
                 const authData = await authRes.json();
+                
                 if (!authData.clientPrincipal) {
                     showSection('view-welcome');
                     return;
