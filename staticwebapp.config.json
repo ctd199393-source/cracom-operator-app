@@ -3,11 +3,9 @@
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0",
           "clientIdSettingName": "ENTRA_CLIENT_ID",
-          "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
-          "openIdConnectConfiguration": {
-            "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration"
-          }
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
         },
         "login": {
           "nameClaimType": "name"
@@ -18,11 +16,11 @@
   "routes": [
     {
       "route": "/api/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": [ "authenticated" ]
     },
     {
       "route": "/*",
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": [ "anonymous" ]
     }
   ],
   "responseOverrides": {
