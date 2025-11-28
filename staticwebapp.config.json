@@ -3,12 +3,13 @@
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {
-          "openIdIssuer": "https://cracomoperator.ciamlogin.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0",
+          "openIdIssuer": "https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0",
           "clientIdSettingName": "ENTRA_CLIENT_ID",
           "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
         },
         "login": {
           "nameClaimType": "name",
+          "userDetailsClaim": "emails",
           "loginParameters": [
             "p=SUSI_operator"
           ]
