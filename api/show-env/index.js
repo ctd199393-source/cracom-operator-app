@@ -15,22 +15,21 @@ module.exports = async function (context, req) {
             throw new Error("環境変数が不足しています");
         }
 
-        // 2. ユーザー情報の取得 (シンプル版)
-        const principalName = req.headers["x-ms-client-principal-name"];
+        // 2. ユーザー情報の取得と整形 (標準ログイン対応)
+        let userEmail = req.headers["x-ms-client-principal-name"];
         
-        if (!principalName) {
+        if (!userEmail) {
             context.res = { status: 401, body: { error: "ログインが必要です" } };
             return;
         }
 
-        // Gmailなどのゲストユーザーは "live.com#user@gmail.com" となる場合があるため整形
-        let userEmail = principalName;
-        // ゲストIDのプレフィックスを除去して純粋なメールアドレスにする
+        // 外部ユーザー(Guest)の場合、プレフィックスが付くことがあるので除去
+        // 例: "live.com#c.t.d...@gmail.com" -> "c.t.d...@gmail.com"
         if (userEmail.includes("#") && userEmail.includes("@")) {
             userEmail = userEmail.split("#").pop();
         }
         
-        context.log(`Formatted User Email: ${userEmail}`);
+        context.log(`Checking User: ${userEmail}`);
 
         // 3. 認証
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
@@ -46,7 +45,7 @@ module.exports = async function (context, req) {
             "Prefer": "odata.include-annotations=\"*\""
         };
 
-        // 4. 作業員マスタ検索
+        // 4. 作業員マスタ検索 (テーブル名: new_sagyouin_mastas)
         const workerTable = "new_sagyouin_mastas"; 
         const workerQuery = `?$select=_owningbusinessunit_value,new_sagyouin_mastaid,new_mei&$filter=new_mail eq '${userEmail}'`;
         const workerRes = await fetch(`${dataverseUrl}/api/data/v9.2/${workerTable}${workerQuery}`, { method: "GET", headers });
@@ -55,7 +54,7 @@ module.exports = async function (context, req) {
         const workerData = await workerRes.json();
 
         if (!workerData.value || workerData.value.length === 0) {
-            context.log(`Not found in master: ${userEmail}`);
+            context.log(`User not found in master: ${userEmail}`);
             context.res = { status: 403, body: { error: "作業員マスタに登録がありません" } };
             return;
         }
@@ -66,8 +65,8 @@ module.exports = async function (context, req) {
         const myName = worker.new_mei || "担当者";
         const myBusinessUnitName = worker["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"] || "";
 
-        // 5. 配車データ取得
-        const dispatchTable = "new_table2s"; // 小文字
+        // 5. 配車データ取得 (テーブル名: new_table2s)
+        const dispatchTable = "new_table2s"; 
 
         const selectCols = [
             "new_table2id",
@@ -81,6 +80,7 @@ module.exports = async function (context, req) {
             "new_renraku_jikou"     
         ].join(",");
         
+        // フィルタ: 部署一致 && 自分担当
         let filter = `_owningbusinessunit_value eq ${myBusinessUnit}`;
         filter += ` and _new_operator_value eq ${myWorkerId}`; 
 
@@ -91,7 +91,7 @@ module.exports = async function (context, req) {
         
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Dataverse Error: ${response.status} - ${errorText}`);
+            throw new Error(`Dataverse Error (${dispatchTable}): ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
