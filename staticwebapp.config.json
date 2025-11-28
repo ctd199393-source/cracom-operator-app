@@ -1,34 +1,20 @@
 {
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0",
-          "clientIdSettingName": "ENTRA_CLIENT_ID",
-          "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
-          "openIdConnectConfiguration": {
-            "wellKnownOpenIdConfiguration": "https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0/.well-known/openid-configuration?p=SUSI_operator"
-          }
-        },
-        "login": {
-          "nameClaimType": "name",
-          "loginParameters": [
-            "p=SUSI_operator"
-          ]
-        }
-      }
-    }
-  },
   "routes": [
     {
       "route": "/api/*",
-      "allowedRoles": [ "authenticated" ]
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/*",
-      "allowedRoles": [ "anonymous" ]
+      "allowedRoles": ["anonymous"]
     }
   ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
+    }
+  },
   "globalHeaders": {
     "Cache-Control": "no-cache"
   }
