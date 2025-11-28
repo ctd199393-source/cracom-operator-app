@@ -5,6 +5,7 @@ module.exports = async function (context, req) {
     context.log('Dataverse API request started.');
 
     try {
+        // 1. 環境変数チェック
         const tenantId = process.env.TENANT_ID; 
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
@@ -14,12 +15,30 @@ module.exports = async function (context, req) {
             throw new Error("環境変数が不足しています");
         }
 
-        const userEmail = req.headers["x-ms-client-principal-name"];
+        // -------------------------------------------------------------
+        // ★重要修正：ログイン情報の詳細(ClientPrincipal)からメールアドレスを抽出
+        // -------------------------------------------------------------
+        let userEmail = req.headers["x-ms-client-principal-name"];
+        const header = req.headers["x-ms-client-principal"];
+        
+        if (header) {
+            const encoded = Buffer.from(header, "base64");
+            const decoded = JSON.parse(encoded.toString("ascii"));
+            
+            // クレームの中から 'emails' または 'email' を探す
+            const emailClaim = decoded.claims.find(c => c.typ === "emails" || c.typ === "email" || c.typ === "preferred_username");
+            if (emailClaim) {
+                userEmail = emailClaim.val;
+                context.log(`Identified User Email via Claims: ${userEmail}`);
+            }
+        }
+
         if (!userEmail) {
             context.res = { status: 401, body: { error: "ログインが必要です" } };
             return;
         }
 
+        // 3. Dataverse認証
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         const tokenResponse = await credential.getToken(`${dataverseUrl}/.default`);
         const accessToken = tokenResponse.token;
@@ -33,15 +52,21 @@ module.exports = async function (context, req) {
             "Prefer": "odata.include-annotations=\"*\""
         };
 
-        // 作業員マスタ検索
+        // 4. 作業員マスタ検索
         const workerTable = "new_sagyouin_mastas"; 
         const workerQuery = `?$select=_owningbusinessunit_value,new_sagyouin_mastaid,new_mei&$filter=new_mail eq '${userEmail}'`;
         const workerRes = await fetch(`${dataverseUrl}/api/data/v9.2/${workerTable}${workerQuery}`, { method: "GET", headers });
         
-        if (!workerRes.ok) throw new Error(`Worker Search Error: ${workerRes.status}`);
+        if (!workerRes.ok) {
+            const err = await workerRes.text();
+            throw new Error(`Worker Search Error: ${workerRes.status} ${err}`);
+        }
+
         const workerData = await workerRes.json();
 
         if (!workerData.value || workerData.value.length === 0) {
+            // どのメアドで検索して失敗したかをログに出す
+            context.log(`User not found in Master: ${userEmail}`);
             context.res = { status: 403, body: { error: "作業員マスタに登録がありません" } };
             return;
         }
@@ -52,9 +77,8 @@ module.exports = async function (context, req) {
         const myName = worker.new_mei || "担当者";
         const myBusinessUnitName = worker["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"] || "";
 
-        // 配車データ取得
-        // ★重要: 診断結果に基づき小文字の 'new_table2s' を使用
-        const dispatchTable = "new_table2s"; 
+        // 5. 配車データ取得
+        const dispatchTable = "new_Table2s"; 
 
         const selectCols = [
             "new_table2id",
@@ -70,10 +94,9 @@ module.exports = async function (context, req) {
 
         const todayStr = new Date().toISOString().split('T')[0];
         
-        // フィルタ: 部署一致 && 自分担当 && 今日以降
         let filter = `_owningbusinessunit_value eq ${myBusinessUnit}`;
         filter += ` and _new_operator_value eq ${myWorkerId}`; 
-        // filter += ` and new_start_time ge ${todayStr}`; // 全件テスト用
+        // filter += ` and new_start_time ge ${todayStr}`; 
 
         const query = `?$select=${selectCols}&$filter=${filter}&$orderby=new_start_time asc`;
         const apiUrl = `${dataverseUrl}/api/data/v9.2/${dispatchTable}${query}`;
@@ -111,7 +134,13 @@ module.exports = async function (context, req) {
 
         context.res = {
             status: 200,
-            body: { message: "Success", userName: myName, businessUnitName: myBusinessUnitName, count: results.length, results: results }
+            body: { 
+                message: "Success", 
+                userName: myName,
+                businessUnitName: myBusinessUnitName,
+                count: results.length,
+                results: results 
+            }
         };
 
     } catch (error) {
