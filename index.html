@@ -2,145 +2,74 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>オペレーター指示書アプリ</title>
+    <title>診断モード</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        body { background-color: #f0f2f5; font-family: "Helvetica Neue", Arial, sans-serif; padding-bottom: 100px; }
-        
-        /* 画面切り替え制御 */
-        .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .view-section.active { display: flex; }
-        #app-content { display: none; }
-        #app-content.active { display: block; }
-
-        /* ウェルカム画面 */
-        .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
-        .btn-login-start { background-color: #0056b3; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 30px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-login-start:hover { background-color: #004494; color: white; }
-
-        /* アプリヘッダー */
-        .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
-        .greeting-bar { background-color: #fff; text-align: center; color: #0056b3; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
-
-        /* リスト画面カード */
-        .today-card { border: 2px solid #0056b3; background: white; border-radius: 5px; margin: 15px; padding: 15px; cursor: pointer; transition: transform 0.1s; }
-        .today-card:active { transform: scale(0.98); background-color: #f8f9fa; }
-        .time-badge { font-size: 1.3rem; font-weight: bold; }
-        .tag-badge { border: 1px solid #0056b3; color: #0056b3; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-left: 10px; }
-
-        /* 詳細画面 */
-        .info-box { background: #fff; border: 2px solid #0056b3; border-radius: 5px; padding: 5px 10px; width: 100%; margin-bottom: 8px; }
-        .info-label { color: #0056b3; font-size: 0.8rem; font-weight: bold; }
-        .info-value { font-size: 1.1rem; font-weight: bold; color: #333; white-space: pre-wrap; }
-        .detail-row { display: flex; gap: 5px; margin-bottom: 10px; }
-        .box-time { flex: 2; text-align: center; } .box-type { flex: 1; text-align: center; } .box-car { flex: 2; text-align: right; }
-        .box-contact { border-color: #8B4513; color: #8B4513; } .box-contact .info-label { color: #8B4513; }
-        .box-notes { border-color: #0056b3; min-height: 100px; }
-
-        /* ボタン類 */
-        .btn-action-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .btn-map { background: #e0e0e0; border: none; color: #333; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 5px; }
-        .btn-files { background: #e0e0e0; border: none; color: #0056b3; font-weight: bold; flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; border-radius: 5px; }
-        .footer-actions { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); padding: 10px; display: flex; gap: 10px; border-top: 1px solid #ccc; z-index: 2000; }
-        .btn-back, .btn-photo, .btn-complete { border: none; border-radius: 5px; font-weight: bold; }
-        .btn-back { background: #0056b3; color: white; flex: 1; }
-        .btn-photo { background: #e0e0e0; color: #333; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; font-size: 0.8rem; }
-        .btn-complete { background: #d35400; color: white; flex: 2; font-size: 1.1rem; }
-
-        .loading-spinner { text-align: center; padding: 50px; color: #0056b3; }
-    </style>
+    <style>body{padding:20px;}</style>
 </head>
 <body>
-
-    <div id="view-welcome" class="view-section">
-        <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
-        <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
-        <p class="text-muted mb-4">アカウントをお持ちの方は<br>こちらからログインしてください</p>
-        <a href="/.auth/login/aad" class="btn-login-start">
-            <i class="fab fa-microsoft me-2"></i> ログイン
-        </a>
+    <h3>🔍 診断モード</h3>
+    <div id="status" class="alert alert-info">初期化中...</div>
+    <div class="mb-3">
+        <button onclick="window.location.reload()" class="btn btn-secondary">再読み込み</button>
+        <a href="/.auth/logout" class="btn btn-outline-danger">ログアウト</a>
     </div>
+    
+    <h5>1. 認証情報 (/.auth/me)</h5>
+    <pre id="auth-debug" class="bg-light p-3 border">取得中...</pre>
 
-    <div id="view-checking" class="view-section">
-        <div class="mb-3"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i></div>
-        <h4 class="fw-bold text-secondary">認証情報を確認中...</h4>
-        <p class="text-muted">Dataverseのマスタと照合しています</p>
-    </div>
-
-    <div id="view-error" class="view-section">
-        <div class="mb-3 text-danger"><i class="fas fa-exclamation-circle fa-4x"></i></div>
-        <h4 class="fw-bold">利用が許可されていません</h4>
-        <p class="text-muted px-4" id="error-msg-detail">...</p>
-        <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウト</a>
-    </div>
-
-    <div id="app-content">
-        <div class="app-header d-flex justify-content-between align-items-center">
-            <div class="fw-bold"><i class="fas fa-building"></i> <span id="header-company">読み込み中...</span></div>
-            <div class="text-end fw-bold">
-                <div id="header-date">...</div>
-                <div id="header-name">...</div>
-            </div>
-        </div>
-        <div class="greeting-bar">本日もご安全に！</div>
-
-        <div id="screen-list" class="screen active">
-            <div class="container mt-3">
-                <h5 class="fw-bold text-primary border-bottom border-primary pb-2 mb-3">本日の予定</h5>
-                <div id="job-list-container">
-                    <div class="loading-spinner"><i class="fas fa-spinner fa-spin fa-2x"></i><br>データ取得中...</div>
-                </div>
-            </div>
-            <div class="fixed-bottom bg-white border-top py-2 d-flex justify-content-around">
-                <div class="text-center text-primary"><i class="fas fa-calendar-check fa-lg"></i><br><small>今日の稼働</small></div>
-                <div class="text-center text-muted"><i class="fas fa-bell fa-lg"></i><br><small>お知らせ</small></div>
-                <div class="text-center text-muted"><i class="fas fa-ellipsis-h fa-lg"></i><br><small>その他</small></div>
-            </div>
-        </div>
-
-        <div id="screen-detail" class="screen">
-            <div class="container mt-3 px-2">
-                <div class="detail-row">
-                    <div class="info-box box-time"><div class="info-label">時 間</div><div class="info-value" id="detail-time">-</div></div>
-                    <div class="info-box box-type"><div class="info-label">区 分</div><div class="info-value" id="detail-type">-</div></div>
-                    <div class="info-box box-car"><div class="info-label">車 輛</div><div class="info-value" id="detail-car">-</div></div>
-                </div>
-                <div class="info-box"><div class="info-label">得 意 先</div><div class="info-value" id="detail-client">-</div></div>
-                <div class="info-box"><div class="info-label">現 場 名</div><div class="info-value" id="detail-location">-</div></div>
-                <div class="info-box"><div class="info-label">作 業 内 容</div><div class="info-value" id="detail-work">-</div></div>
-                <div class="info-box box-contact"><div class="info-label">連 絡 先</div><div class="info-value" id="detail-contact">-</div></div>
-                <div class="info-box box-notes mb-3"><div class="info-label">連 絡 事 項</div><div class="note-text" id="detail-notes">なし</div></div>
-                
-                <div class="btn-action-row px-2">
-                    <button class="btn-map" onclick="openMap()"><i class="fas fa-map-marker-alt text-danger fa-lg"></i> 現場地図</button>
-                    <button class="btn-files" onclick="openFiles()"><i class="fas fa-paperclip fa-lg"></i> 資料を見る</button>
-                </div>
-                <div style="height: 80px;"></div> 
-            </div>
-            <div class="footer-actions">
-                <button class="btn-back" onclick="goBack()">戻る</button>
-                <button class="btn-photo"><i class="fas fa-camera"></i><small>写真/メモ</small></button>
-                <button class="btn-complete" onclick="completeWork()">作業完了通知</button>
-            </div>
-        </div>
-    </div>
+    <h5>2. API応答 (/api/show-env)</h5>
+    <pre id="api-debug" class="bg-light p-3 border">待機中...</pre>
 
     <script>
-        let currentJobs = [];
-        let selectedJob = null;
-
-        // --- メイン処理 ---
         (async () => {
-            // 1. ログイン状態確認
-            const authRes = await fetch('/.auth/me');
-            const authData = await authRes.json();
-            const clientPrincipal = authData.clientPrincipal;
+            const statusEl = document.getElementById('status');
+            const authEl = document.getElementById('auth-debug');
+            const apiEl = document.getElementById('api-debug');
 
-            if (!clientPrincipal) {
-                // 未ログイン -> ウェルカム画面
-                switchView('view-welcome');
-                return;
+            // 1. 認証チェック
+            try {
+                const authRes = await fetch('/.auth/me');
+                const authData = await authRes.json();
+                authEl.textContent = JSON.stringify(authData, null, 2);
+
+                if (!authData.clientPrincipal) {
+                    statusEl.className = 'alert alert-warning';
+                    statusEl.innerHTML = '未ログインです。<a href="/.auth/login/aad">ここからログイン</a>してください。';
+                    return;
+                }
+            } catch (e) {
+                authEl.textContent = "エラー: " + e.message;
             }
+
+            // 2. APIチェック
+            try {
+                statusEl.textContent = 'APIに問い合わせ中...';
+                const apiRes = await fetch('/api/show-env');
+                
+                const apiText = await apiRes.text(); // 生のテキストを取得
+                try {
+                    // JSONパースを試みる
+                    const apiJson = JSON.parse(apiText);
+                    apiEl.textContent = JSON.stringify(apiJson, null, 2);
+                } catch (e) {
+                    // HTMLエラーなどが返ってきている場合
+                    apiEl.textContent = "JSONではありません:\n" + apiText;
+                }
+
+                if (apiRes.ok) {
+                    statusEl.className = 'alert alert-success';
+                    statusEl.textContent = 'API通信成功 (200 OK)';
+                } else {
+                    statusEl.className = 'alert alert-danger';
+                    statusEl.textContent = `APIエラー: ${apiRes.status} ${apiRes.statusText}`;
+                }
+
+            } catch (e) {
+                statusEl.className = 'alert alert-danger';
+                statusEl.textContent = '通信エラー発生';
+                apiEl.textContent = e.toString();
+            }
+        })();
+    </script>
+</body>
+</html>
