@@ -9,7 +9,6 @@
         },
         "login": {
           "nameClaimType": "name",
-          "userDetailsClaim": "email",
           "loginParameters": [
             "p=SUSI_operator"
           ]
