@@ -16,27 +16,25 @@ module.exports = async function (context, req) {
         }
 
         // -------------------------------------------------------------
-        // ★重要修正：ログイン情報の詳細(ClientPrincipal)からメールアドレスを抽出
+        // 2. ユーザー情報の取得と整形 (ここが重要)
         // -------------------------------------------------------------
-        let userEmail = req.headers["x-ms-client-principal-name"];
-        const header = req.headers["x-ms-client-principal"];
+        const principalName = req.headers["x-ms-client-principal-name"];
         
-        if (header) {
-            const encoded = Buffer.from(header, "base64");
-            const decoded = JSON.parse(encoded.toString("ascii"));
-            
-            // クレームの中から 'emails' または 'email' を探す
-            const emailClaim = decoded.claims.find(c => c.typ === "emails" || c.typ === "email" || c.typ === "preferred_username");
-            if (emailClaim) {
-                userEmail = emailClaim.val;
-                context.log(`Identified User Email via Claims: ${userEmail}`);
-            }
-        }
-
-        if (!userEmail) {
+        if (!principalName) {
             context.res = { status: 401, body: { error: "ログインが必要です" } };
             return;
         }
+
+        // Gmailなどのゲストユーザーの場合、"live.com#user@gmail.com" のようになることがあるため整形する
+        // 内部アカウント(daimon@...)はそのままでOK
+        let userEmail = principalName;
+        if (userEmail.includes("#")) {
+            // "#"が含まれていたら、それより後ろの部分（本当のメアド）を取得する
+            userEmail = userEmail.split("#").pop();
+        }
+        
+        context.log(`Raw Principal: ${principalName}, Cleaned Email: ${userEmail}`);
+
 
         // 3. Dataverse認証
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
@@ -53,6 +51,7 @@ module.exports = async function (context, req) {
         };
 
         // 4. 作業員マスタ検索
+        // 整形した userEmail を使って検索します
         const workerTable = "new_sagyouin_mastas"; 
         const workerQuery = `?$select=_owningbusinessunit_value,new_sagyouin_mastaid,new_mei&$filter=new_mail eq '${userEmail}'`;
         const workerRes = await fetch(`${dataverseUrl}/api/data/v9.2/${workerTable}${workerQuery}`, { method: "GET", headers });
@@ -64,8 +63,8 @@ module.exports = async function (context, req) {
 
         const workerData = await workerRes.json();
 
+        // マスタにいない場合 -> 403 Forbidden
         if (!workerData.value || workerData.value.length === 0) {
-            // どのメアドで検索して失敗したかをログに出す
             context.log(`User not found in Master: ${userEmail}`);
             context.res = { status: 403, body: { error: "作業員マスタに登録がありません" } };
             return;
@@ -78,7 +77,7 @@ module.exports = async function (context, req) {
         const myBusinessUnitName = worker["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"] || "";
 
         // 5. 配車データ取得
-        const dispatchTable = "new_Table2s"; 
+        const dispatchTable = "new_Table2s"; // Tは大文字
 
         const selectCols = [
             "new_table2id",
@@ -94,6 +93,7 @@ module.exports = async function (context, req) {
 
         const todayStr = new Date().toISOString().split('T')[0];
         
+        // フィルタ: 部署一致 && 自分担当
         let filter = `_owningbusinessunit_value eq ${myBusinessUnit}`;
         filter += ` and _new_operator_value eq ${myWorkerId}`; 
         // filter += ` and new_start_time ge ${todayStr}`; 
@@ -110,6 +110,7 @@ module.exports = async function (context, req) {
         
         const data = await response.json();
 
+        // 6. 整形
         const results = data.value.map(item => {
             let timeStr = "--:--";
             if (item.new_start_time) {
