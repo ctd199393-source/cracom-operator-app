@@ -30,7 +30,7 @@
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/login_select.html",
+      "redirect": "/.auth/login/cracomauth",
       "statusCode": 302
     }
   },
