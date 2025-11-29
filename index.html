@@ -12,12 +12,24 @@
         
         /* 画面切り替え制御 */
         .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        #view-checking { display: flex; } /* 初期表示は読み込み中 */
+        #view-checking { display: flex; }
         #app-content { display: none; }
         
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
-        .btn-login-start { background-color: #0056b3; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 30px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-login-start:hover { background-color: #004494; color: white; }
+        
+        /* ボタンデザインの整理 */
+        .btn-login-operator { 
+            background-color: #0056b3; color: white; padding: 15px 30px; font-size: 1.2rem; 
+            border-radius: 30px; font-weight: bold; text-decoration: none; display: block; width: 300px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .btn-login-operator:hover { background-color: #004494; color: white; }
+
+        .btn-login-employee { 
+            background-color: #444; color: white; padding: 12px 30px; font-size: 1rem; 
+            border-radius: 30px; text-decoration: none; display: block; width: 300px;
+        }
+        .btn-login-employee:hover { background-color: #222; color: white; }
         
         /* アプリ共通 */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
@@ -36,8 +48,6 @@
         .btn-complete { background: #d35400; color: white; flex: 2; border:none; border-radius:5px; font-size:1.1rem; font-weight:bold; }
         .loading-spinner { text-align: center; padding: 50px; color: #0056b3; }
         #debug-error { display:none; position:fixed; bottom:0; left:0; width:100%; background:red; color:white; padding:10px; z-index:9999; font-size:12px; }
-        
-        /* エラー画面用 */
         .error-detail-box { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 20px; font-size: 0.9rem; word-break: break-all; text-align: left; }
     </style>
 </head>
@@ -47,12 +57,17 @@
     <div id="view-welcome" class="view-section">
         <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
-        <p class="text-muted mb-4">業務を開始するには<br>ログインまたは登録してください</p>
+        <p class="text-muted mb-4">業務を開始します</p>
         
-        <a href="/.auth/login/cracomauth?post_login_redirect_uri=/" class="btn-login-start">
-            <i class="fab fa-microsoft me-2"></i> ログイン / 新規登録
+        <a href="/.auth/login/cracomauth?post_login_redirect_uri=/" class="btn-login-operator">
+            <i class="far fa-user me-2"></i> オペレーターの方<br>
+            <span style="font-size:0.8rem; font-weight:normal;">(ログイン / 新規登録)</span>
         </a>
-        </div>
+
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-employee">
+            <i class="fab fa-microsoft me-2"></i> 社員の方
+        </a>
+    </div>
 
     <div id="view-checking" class="view-section">
         <div class="mb-3"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i></div>
@@ -63,11 +78,7 @@
     <div id="view-error" class="view-section">
         <div class="mb-3 text-danger"><i class="fas fa-exclamation-circle fa-4x"></i></div>
         <h4 class="fw-bold">利用できません</h4>
-        
-        <div id="error-msg-detail" class="error-detail-box">
-            確認中...
-        </div>
-        
+        <div id="error-msg-detail" class="error-detail-box">確認中...</div>
         <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウトして戻る</a>
     </div>
 
@@ -118,72 +129,52 @@
     </div>
 
     <script>
-        // デバッグ用: 画面上にJSエラーが出たら表示する
-        window.onerror = function(msg,url,line){ 
-            const el = document.getElementById('debug-error');
-            el.style.display='block'; 
-            el.textContent=`JS Error:${msg} (Line:${line})`; 
-        };
+        window.onerror = function(msg,url,line){ document.getElementById('debug-error').style.display='block'; document.getElementById('debug-error').textContent=`Error:${msg} (${line})`; };
 
         let currentJobs = [];
         let selectedJob = null;
 
-        // 画面切り替え関数
         function showSection(id) {
-            document.querySelectorAll('.view-section, #app-content').forEach(el => {
-                el.style.display = 'none';
-            });
+            document.querySelectorAll('.view-section, #app-content').forEach(el => { el.style.display = 'none'; });
             const target = document.getElementById(id);
             if(id === 'app-content') target.style.display = 'block';
             else target.style.display = 'flex';
         }
 
-        // --- メイン処理開始 ---
+        // --- メイン処理 ---
         (async () => {
             try {
-                // 1. SWAの認証情報を確認
                 const authRes = await fetch('/.auth/me');
-                if(!authRes.ok) throw new Error("Auth check failed");
                 const authData = await authRes.json();
-                
                 const clientPrincipal = authData.clientPrincipal;
 
-                // 未ログインならウェルカム画面へ
                 if (!clientPrincipal) {
-                    console.log("Not logged in");
                     showSection('view-welcome');
                     return;
                 }
                 
-                console.log("Logged in as:", clientPrincipal.userDetails);
-
-                // 2. ログイン済みならAPIへデータ問い合わせ
+                // ログイン済みならAPIへ
                 const res = await fetch('/api/show-env');
                 
                 if (!res.ok) {
                     const err = await res.json().catch(()=>({}));
-                    
-                    // 403: マスタ登録なしの場合
                     if (res.status === 403) {
                         const detected = err.detectedEmail ? `<br><strong>認識されたID:</strong> ${err.detectedEmail}` : "";
                         document.getElementById('error-msg-detail').innerHTML = 
                             `作業員マスタにあなたの登録がありません。<br>管理者に以下を伝えてください。<hr>${err.details}${detected}`;
                     } else {
-                        // その他のシステムエラー
-                        document.getElementById('error-msg-detail').textContent = 
-                            `システムエラーが発生しました: ${err.details || res.status}`;
+                        document.getElementById('error-msg-detail').textContent = `システムエラー: ${err.details || res.status}`;
                     }
                     showSection('view-error');
                     return;
                 }
                 
-                // 3. データ取得成功 -> アプリ画面セットアップ
                 const data = await res.json();
                 setupApp(data);
                 showSection('app-content');
 
             } catch (e) {
-                document.getElementById('error-msg-detail').textContent = `通信/不明なエラー: ${e.message}`;
+                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`;
                 showSection('view-error');
             }
         })();
@@ -201,7 +192,7 @@
             const container = document.getElementById('job-list-container');
             container.innerHTML = '';
             if(jobs.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定データはありません</div>';
+                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定はありません</div>';
                 return;
             }
             jobs.forEach((job, i) => {
@@ -231,7 +222,6 @@
             document.getElementById('detail-work').textContent = selectedJob.workContent;
             document.getElementById('detail-contact').textContent = selectedJob.contact;
             document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
-            
             document.getElementById('screen-list').style.display = 'none';
             document.getElementById('screen-detail').style.display = 'block';
             window.scrollTo(0,0);
@@ -241,18 +231,8 @@
             document.getElementById('screen-detail').style.display = 'none';
             document.getElementById('screen-list').style.display = 'block';
         }
-
-        function openMap() {
-            const query = selectedJob.location || "";
-            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
-        }
-
         function completeWork() { 
-            // まだ書き込み機能はないのでアラートのみ
-            if(confirm('送信しますか？(現在はデモ機能です)')) { 
-                alert('完了しました'); 
-                goBack(); 
-            } 
+            if(confirm('送信しますか？(デモ)')) { alert('完了'); goBack(); } 
         }
     </script>
 </body>
