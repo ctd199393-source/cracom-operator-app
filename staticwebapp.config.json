@@ -4,8 +4,8 @@
       "customOpenIdConnectProviders": {
         "cracomauth": {
           "registration": {
-            "clientIdSettingName": "CLIENT_ID",
-            "clientCredentialSettingName": "CLIENT_SECRET",
+            "clientIdSettingName": "ENTRA_CLIENT_ID",
+            "clientCredentialSettingName": "ENTRA_CLIENT_SECRET",
             "openIdConnectConfiguration": {
               "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=3f113cb1-9657-47c4-8de1-3f3744e0dcb9"
             }
@@ -30,7 +30,7 @@
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/.auth/login/cracomauth",
+      "redirect": "/login_select.html",
       "statusCode": 302
     }
   },
