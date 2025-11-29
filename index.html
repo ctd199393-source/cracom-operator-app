@@ -17,19 +17,14 @@
         
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
         
-        /* ボタンデザインの整理 */
-        .btn-login-operator { 
-            background-color: #0056b3; color: white; padding: 15px 30px; font-size: 1.2rem; 
-            border-radius: 30px; font-weight: bold; text-decoration: none; display: block; width: 300px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+        /* 入力フォームのデザイン */
+        .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
+        .form-control-lg { border-radius: 30px; font-size: 1rem; }
+        .btn-next { 
+            background-color: #0056b3; color: white; padding: 12px 0; font-size: 1.1rem; 
+            border-radius: 30px; font-weight: bold; width: 100%; border: none; margin-top: 15px;
         }
-        .btn-login-operator:hover { background-color: #004494; color: white; }
-
-        .btn-login-employee { 
-            background-color: #444; color: white; padding: 12px 30px; font-size: 1rem; 
-            border-radius: 30px; text-decoration: none; display: block; width: 300px;
-        }
-        .btn-login-employee:hover { background-color: #222; color: white; }
+        .btn-next:hover { background-color: #004494; }
         
         /* アプリ共通 */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
@@ -56,17 +51,18 @@
 
     <div id="view-welcome" class="view-section">
         <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
-        <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
-        <p class="text-muted mb-4">業務を開始します</p>
+        <h2 class="fw-bold mb-3">オペレーターアプリ</h2>
+        <p class="text-muted mb-4">メールアドレスを入力して<br>業務を開始してください</p>
         
-        <a href="/.auth/login/cracomauth?post_login_redirect_uri=/" class="btn-login-operator">
-            <i class="far fa-user me-2"></i> オペレーターの方<br>
-            <span style="font-size:0.8rem; font-weight:normal;">(ログイン / 新規登録)</span>
-        </a>
-
-        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-employee">
-            <i class="fab fa-microsoft me-2"></i> 社員の方
-        </a>
+        <div class="login-box">
+            <div class="mb-3 text-start">
+                <label for="login-email" class="form-label fw-bold text-muted small ms-2">メールアドレス</label>
+                <input type="email" class="form-control form-control-lg" id="login-email" placeholder="name@example.com">
+            </div>
+            <button onclick="handleSmartLogin()" class="btn-next">
+                次へ <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
     </div>
 
     <div id="view-checking" class="view-section">
@@ -131,15 +127,39 @@
     <script>
         window.onerror = function(msg,url,line){ document.getElementById('debug-error').style.display='block'; document.getElementById('debug-error').textContent=`Error:${msg} (${line})`; };
 
-        let currentJobs = [];
-        let selectedJob = null;
-
         function showSection(id) {
             document.querySelectorAll('.view-section, #app-content').forEach(el => { el.style.display = 'none'; });
             const target = document.getElementById(id);
             if(id === 'app-content') target.style.display = 'block';
             else target.style.display = 'flex';
         }
+
+        // ▼▼▼ スマートログイン処理 (ここがポイントです) ▼▼▼
+        function handleSmartLogin() {
+            const emailInput = document.getElementById('login-email');
+            const email = emailInput.value.trim().toLowerCase();
+
+            if (!email) {
+                alert("メールアドレスを入力してください");
+                return;
+            }
+
+            // ドメインで振り分け
+            // 社内ドメインが含まれていれば、標準AADへ
+            if (email.includes("cracomsystem")) { 
+                // login_hintをつけることでメアド入力を省略できる場合もあります
+                window.location.href = `/.auth/login/aad?post_login_redirect_uri=/&login_hint=${encodeURIComponent(email)}`;
+            } else {
+                // それ以外（Gmail等）は、カスタム認証へ
+                // 未登録なら、遷移先で「新規作成」を選んでもらう
+                window.location.href = `/.auth/login/cracomauth?post_login_redirect_uri=/&login_hint=${encodeURIComponent(email)}`;
+            }
+        }
+        // Enterキーでも次へ進めるようにする
+        document.getElementById('login-email').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleSmartLogin();
+        });
+        // ▲▲▲ ▲▲▲
 
         // --- メイン処理 ---
         (async () => {
@@ -153,7 +173,6 @@
                     return;
                 }
                 
-                // ログイン済みならAPIへ
                 const res = await fetch('/api/show-env');
                 
                 if (!res.ok) {
@@ -179,6 +198,9 @@
             }
         })();
 
+        // (以下、アプリ機能は変更なし)
+        let currentJobs = [];
+        let selectedJob = null;
         function setupApp(data) {
             const now = new Date();
             document.getElementById('header-date').textContent = `${now.getMonth()+1}月${now.getDate()}日`;
@@ -187,7 +209,6 @@
             currentJobs = data.results || [];
             renderList(currentJobs);
         }
-
         function renderList(jobs) {
             const container = document.getElementById('job-list-container');
             container.innerHTML = '';
@@ -210,7 +231,6 @@
                 container.appendChild(div);
             });
         }
-
         function showDetail(i) {
             selectedJob = currentJobs[i];
             if (!selectedJob) return;
@@ -226,7 +246,6 @@
             document.getElementById('screen-detail').style.display = 'block';
             window.scrollTo(0,0);
         }
-
         function goBack() {
             document.getElementById('screen-detail').style.display = 'none';
             document.getElementById('screen-list').style.display = 'block';
