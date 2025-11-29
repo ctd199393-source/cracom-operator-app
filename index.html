@@ -46,7 +46,7 @@
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
         <p class="text-muted mb-4">業務を開始するには<br>ログインしてください</p>
         
-        <a href="https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/oauth2/v2.0/authorize?client_id=3f113cb1-9657-47c4-8de1-3f3744e0dcb9&response_type=id_token&redirect_uri=https%3A%2F%2Fmango-mushroom-026570700.3.azurestaticapps.net%2F.auth%2Flogin%2Faad%2Fcallback&scope=openid+profile+email&response_mode=form_post&nonce=12345" class="btn-login-start">
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-start">
             <i class="fab fa-microsoft me-2"></i> ログイン
         </a>
     </div>
@@ -93,7 +93,7 @@
                 <div class="detail-row">
                     <div class="info-box box-time"><div class="info-label">時間</div><div class="info-value" id="detail-time"></div></div>
                     <div class="info-box box-type"><div class="info-label">区分</div><div class="info-value" id="detail-type"></div></div>
-                    <div class="info-box box-car"><div class="info-label">車 輛</div><div class="info-value" id="detail-car"></div></div>
+                    <div class="info-box box-car"><div class="info-label">車両</div><div class="info-value" id="detail-car"></div></div>
                 </div>
                 <div class="info-box"><div class="info-label">得意先</div><div class="info-value" id="detail-client"></div></div>
                 <div class="info-box"><div class="info-label">現場名</div><div class="info-value" id="detail-location"></div></div>
