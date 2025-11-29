@@ -1,19 +1,19 @@
 {
   "auth": {
     "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "clientIdSettingName": "ENTRA_CLIENT_ID",
-          "clientSecretSettingName": "ENTRA_CLIENT_SECRET",
-          "openIdConnectConfiguration": {
-            "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0/.well-known/openid-configuration?p=SUSI_operator"
+      "customOpenIdConnectProviders": {
+        "cracomauth": {
+          "registration": {
+            "clientIdSettingName": "CLIENT_ID",
+            "clientCredentialSettingName": "CLIENT_SECRET",
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=3f113cb1-9657-47c4-8de1-3f3744e0dcb9"
+            }
+          },
+          "login": {
+            "nameClaimType": "name",
+            "scopes": ["openid", "profile", "email"]
           }
-        },
-        "login": {
-          "nameClaimType": "name",
-          "loginParameters": [
-            "p=SUSI_operator"
-          ]
         }
       }
     }
@@ -28,6 +28,12 @@
       "allowedRoles": ["anonymous"]
     }
   ],
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/cracomauth",
+      "statusCode": 302
+    }
+  },
   "globalHeaders": {
     "Cache-Control": "no-cache"
   }
