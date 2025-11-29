@@ -12,7 +12,7 @@
         
         /* 画面切り替え制御 */
         .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        #view-checking { display: flex; } /* 初期表示 */
+        #view-checking { display: flex; } /* 初期表示は読み込み中 */
         #app-content { display: none; }
         
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
@@ -36,6 +36,9 @@
         .btn-complete { background: #d35400; color: white; flex: 2; border:none; border-radius:5px; font-size:1.1rem; font-weight:bold; }
         .loading-spinner { text-align: center; padding: 50px; color: #0056b3; }
         #debug-error { display:none; position:fixed; bottom:0; left:0; width:100%; background:red; color:white; padding:10px; z-index:9999; font-size:12px; }
+        
+        /* エラー画面用 */
+        .error-detail-box { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 20px; font-size: 0.9rem; word-break: break-all; text-align: left; }
     </style>
 </head>
 <body>
@@ -59,14 +62,18 @@
 
     <div id="view-error" class="view-section">
         <div class="mb-3 text-danger"><i class="fas fa-exclamation-circle fa-4x"></i></div>
-        <h4 class="fw-bold">利用が許可されていません</h4>
-        <p class="text-muted px-4" id="error-msg-detail">...</p>
-        <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウト</a>
+        <h4 class="fw-bold">利用できません</h4>
+        
+        <div id="error-msg-detail" class="error-detail-box">
+            確認中...
+        </div>
+        
+        <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウトして戻る</a>
     </div>
 
     <div id="app-content">
         <div class="app-header d-flex justify-content-between align-items-center">
-            <div class="fw-bold"><i class="fas fa-building"></i> <span id="header-company">読み込み中...</span></div>
+            <div class="fw-bold"><i class="fas fa-building"></i> <span id="header-company">...</span></div>
             <div class="text-end fw-bold">
                 <div id="header-date">...</div>
                 <div id="header-name">...</div>
@@ -93,7 +100,7 @@
                 <div class="detail-row">
                     <div class="info-box box-time"><div class="info-label">時間</div><div class="info-value" id="detail-time"></div></div>
                     <div class="info-box box-type"><div class="info-label">区分</div><div class="info-value" id="detail-type"></div></div>
-                    <div class="info-box box-car"><div class="info-label">車両</div><div class="info-value" id="detail-car"></div></div>
+                    <div class="info-box box-car"><div class="info-label">車 輛</div><div class="info-value" id="detail-car"></div></div>
                 </div>
                 <div class="info-box"><div class="info-label">得意先</div><div class="info-value" id="detail-client"></div></div>
                 <div class="info-box"><div class="info-label">現場名</div><div class="info-value" id="detail-location"></div></div>
@@ -111,11 +118,17 @@
     </div>
 
     <script>
-        window.onerror = function(msg,url,line){ document.getElementById('debug-error').style.display='block'; document.getElementById('debug-error').textContent=`Error:${msg} (${line})`; };
+        // デバッグ用: 画面上にJSエラーが出たら表示する
+        window.onerror = function(msg,url,line){ 
+            const el = document.getElementById('debug-error');
+            el.style.display='block'; 
+            el.textContent=`JS Error:${msg} (Line:${line})`; 
+        };
 
         let currentJobs = [];
         let selectedJob = null;
 
+        // 画面切り替え関数
         function showSection(id) {
             document.querySelectorAll('.view-section, #app-content').forEach(el => {
                 el.style.display = 'none';
@@ -125,36 +138,52 @@
             else target.style.display = 'flex';
         }
 
-        // メイン処理
+        // --- メイン処理開始 ---
         (async () => {
             try {
+                // 1. SWAの認証情報を確認
                 const authRes = await fetch('/.auth/me');
+                if(!authRes.ok) throw new Error("Auth check failed");
                 const authData = await authRes.json();
                 
-                if (!authData.clientPrincipal) {
+                const clientPrincipal = authData.clientPrincipal;
+
+                // 未ログインならウェルカム画面へ
+                if (!clientPrincipal) {
+                    console.log("Not logged in");
                     showSection('view-welcome');
                     return;
                 }
                 
-                // ログイン済み
+                console.log("Logged in as:", clientPrincipal.userDetails);
+
+                // 2. ログイン済みならAPIへデータ問い合わせ
                 const res = await fetch('/api/show-env');
+                
                 if (!res.ok) {
                     const err = await res.json().catch(()=>({}));
+                    
+                    // 403: マスタ登録なしの場合
                     if (res.status === 403) {
-                        document.getElementById('error-msg-detail').innerHTML = "作業員マスタに登録がありません。<br>管理者に連絡してください。";
+                        const detected = err.detectedEmail ? `<br><strong>認識されたID:</strong> ${err.detectedEmail}` : "";
+                        document.getElementById('error-msg-detail').innerHTML = 
+                            `作業員マスタにあなたの登録がありません。<br>管理者に以下を伝えてください。<hr>${err.details}${detected}`;
                     } else {
-                        document.getElementById('error-msg-detail').textContent = `システムエラー: ${err.details || res.status}`;
+                        // その他のシステムエラー
+                        document.getElementById('error-msg-detail').textContent = 
+                            `システムエラーが発生しました: ${err.details || res.status}`;
                     }
                     showSection('view-error');
                     return;
                 }
                 
+                // 3. データ取得成功 -> アプリ画面セットアップ
                 const data = await res.json();
                 setupApp(data);
                 showSection('app-content');
 
             } catch (e) {
-                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`;
+                document.getElementById('error-msg-detail').textContent = `通信/不明なエラー: ${e.message}`;
                 showSection('view-error');
             }
         })();
@@ -172,7 +201,7 @@
             const container = document.getElementById('job-list-container');
             container.innerHTML = '';
             if(jobs.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-4">予定はありません</div>';
+                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定データはありません</div>';
                 return;
             }
             jobs.forEach((job, i) => {
@@ -202,6 +231,7 @@
             document.getElementById('detail-work').textContent = selectedJob.workContent;
             document.getElementById('detail-contact').textContent = selectedJob.contact;
             document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
+            
             document.getElementById('screen-list').style.display = 'none';
             document.getElementById('screen-detail').style.display = 'block';
             window.scrollTo(0,0);
@@ -211,12 +241,19 @@
             document.getElementById('screen-detail').style.display = 'none';
             document.getElementById('screen-list').style.display = 'block';
         }
+
         function openMap() {
             const query = selectedJob.location || "";
             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
         }
-        function openFiles() { alert('添付ファイル機能は後ほど実装します'); }
-        function completeWork() { if(confirm('送信しますか？')) { alert('完了'); goBack(); } }
+
+        function completeWork() { 
+            // まだ書き込み機能はないのでアラートのみ
+            if(confirm('送信しますか？(現在はデモ機能です)')) { 
+                alert('完了しました'); 
+                goBack(); 
+            } 
+        }
     </script>
 </body>
 </html>
