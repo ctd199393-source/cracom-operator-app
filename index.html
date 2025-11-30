@@ -43,7 +43,8 @@
         <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
         <p class="text-muted mb-4">業務を開始するには<br>ログインしてください</p>
-        <a href="/.auth/login/cracomauth" class="btn-login-start">
+        
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-start">
             <i class="fas fa-sign-in-alt me-2"></i> ログイン
         </a>
     </div>
@@ -111,7 +112,7 @@
         }
         (async () => {
             try {
-                // 1. ログイン確認 (SWA認証)
+                // 1. ログイン確認 (標準のAADエンドポイント)
                 const authRes = await fetch('/.auth/me');
                 if(!authRes.ok) throw new Error("Auth check failed");
                 const authData = await authRes.json();
