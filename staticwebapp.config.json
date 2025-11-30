@@ -1,19 +1,14 @@
 {
   "auth": {
     "identityProviders": {
-      "customOpenIdConnectProviders": {
-        "cracomauth": {
-          "registration": {
-            "clientIdSettingName": "ENTRA_CLIENT_ID",
-            "clientCredentialSettingName": "ENTRA_CLIENT_SECRET",
-            "openIdConnectConfiguration": {
-              "wellKnownOpenIdConfiguration": "https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0/.well-known/openid-configuration"
-            }
-          },
-          "login": {
-            "nameClaimType": "name",
-            "scopes": ["openid", "profile", "email"]
-          }
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/41456790-9a33-42f0-a473-260d54e8d1b6/v2.0",
+          "clientIdSettingName": "ENTRA_CLIENT_ID",
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
+        },
+        "login": {
+          "nameClaimType": "name"
         }
       }
     }
@@ -22,12 +17,16 @@
     {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": ["anonymous"]
     }
   ],
   "responseOverrides": {
     "401": {
-      "statusCode": 302,
-      "redirect": "/.auth/login/cracomauth"
+      "redirect": "/.auth/login/aad",
+      "statusCode": 302
     }
   },
   "globalHeaders": {
