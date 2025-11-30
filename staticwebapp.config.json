@@ -29,5 +29,8 @@
       "statusCode": 302,
       "redirect": "/.auth/login/aad"
     }
+  },
+  "globalHeaders": {
+    "Cache-Control": "no-cache"
   }
 }
