@@ -22,19 +22,12 @@
     {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/*",
-      "allowedRoles": ["anonymous"]
     }
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/.auth/login/cracomauth",
-      "statusCode": 302
+      "statusCode": 302,
+      "redirect": "/.auth/login/aad"
     }
-  },
-  "globalHeaders": {
-    "Cache-Control": "no-cache"
   }
 }
