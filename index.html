@@ -12,22 +12,12 @@
         #view-checking { display: flex; }
         #app-content { display: none; }
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
-        
-        /* ボタンデザイン */
-        .btn-login-operator { 
-            background-color: #0056b3; color: white; padding: 15px 30px; font-size: 1.2rem; 
-            border-radius: 30px; font-weight: bold; text-decoration: none; display: block; width: 280px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+        .btn-login-start { 
+            background-color: #0056b3; color: white; padding: 15px 50px; font-size: 1.3rem; 
+            border-radius: 50px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block;
         }
-        .btn-login-operator:hover { background-color: #004494; color: white; }
-
-        .btn-login-employee { 
-            background-color: #666; color: white; padding: 12px 30px; font-size: 1rem; 
-            border-radius: 30px; text-decoration: none; display: block; width: 280px;
-        }
-        .btn-login-employee:hover { background-color: #444; color: white; }
-
-        /* その他スタイル */
+        .btn-login-start:hover { background-color: #004494; color: white; }
+        /* 以下、アプリ共通スタイル */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
         .greeting-bar { background-color: #fff; text-align: center; color: #0056b3; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
         .today-card { border: 2px solid #0056b3; background: white; border-radius: 5px; margin: 15px; padding: 15px; cursor: pointer; }
@@ -53,14 +43,10 @@
     <div id="view-welcome" class="view-section">
         <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
-        <p class="text-muted mb-4">ログインして業務を開始してください</p>
+        <p class="text-muted mb-4">業務を開始するには<br>ログインしてください</p>
         
-        <a href="/.auth/login/cracomauth?post_login_redirect_uri=/" class="btn-login-operator">
-            <i class="far fa-user me-2"></i> オペレーターの方
-        </a>
-
-        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-employee">
-            <i class="fab fa-microsoft me-2"></i> 社員の方
+        <a href="/.auth/login/cracomauth?post_login_redirect_uri=/" class="btn-login-start">
+            <i class="fas fa-sign-in-alt me-2"></i> ログイン
         </a>
     </div>
 
@@ -74,7 +60,7 @@
         <div class="mb-3 text-danger"><i class="fas fa-exclamation-circle fa-4x"></i></div>
         <h4 class="fw-bold">利用できません</h4>
         <div id="error-msg-detail" class="error-detail-box">確認中...</div>
-        <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウトして戻る</a>
+        <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウト</a>
     </div>
 
     <div id="app-content">
@@ -136,19 +122,16 @@
         // --- メイン処理 ---
         (async () => {
             try {
-                // 1. ログイン状態の確認
                 const authRes = await fetch('/.auth/me');
                 if(!authRes.ok) throw new Error("Auth check failed");
                 const authData = await authRes.json();
                 const clientPrincipal = authData.clientPrincipal;
 
-                // 2. 未ログインならボタン画面を表示
                 if (!clientPrincipal) {
                     showSection('view-welcome');
                     return;
                 }
                 
-                // 3. ログイン済みならAPIへデータ問い合わせ
                 const res = await fetch('/api/show-env');
                 
                 if (!res.ok) {
@@ -174,10 +157,9 @@
             }
         })();
 
-        // (以下、アプリロジックは変更なし)
+        // (以下、アプリ機能は変更なし)
         let currentJobs = [];
         let selectedJob = null;
-
         function setupApp(data) {
             const now = new Date();
             document.getElementById('header-date').textContent = `${now.getMonth()+1}月${now.getDate()}日`;
@@ -186,7 +168,6 @@
             currentJobs = data.results || [];
             renderList(currentJobs);
         }
-
         function renderList(jobs) {
             const container = document.getElementById('job-list-container');
             container.innerHTML = '';
@@ -209,7 +190,6 @@
                 container.appendChild(div);
             });
         }
-
         function showDetail(i) {
             selectedJob = currentJobs[i];
             if (!selectedJob) return;
@@ -221,17 +201,14 @@
             document.getElementById('detail-work').textContent = selectedJob.workContent;
             document.getElementById('detail-contact').textContent = selectedJob.contact;
             document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
-            
             document.getElementById('screen-list').style.display = 'none';
             document.getElementById('screen-detail').style.display = 'block';
             window.scrollTo(0,0);
         }
-
         function goBack() {
             document.getElementById('screen-detail').style.display = 'none';
             document.getElementById('screen-list').style.display = 'block';
         }
-
         function completeWork() { 
             if(confirm('送信しますか？(デモ)')) { alert('完了'); goBack(); } 
         }
