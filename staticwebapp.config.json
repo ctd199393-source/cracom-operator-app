@@ -24,12 +24,6 @@
       "allowedRoles": ["authenticated"]
     }
   ],
-  "responseOverrides": {
-    "401": {
-      "statusCode": 302,
-      "redirect": "/.auth/login/cracomauth"
-    }
-  },
   "globalHeaders": {
     "Cache-Control": "no-cache"
   }
