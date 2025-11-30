@@ -6,27 +6,16 @@
     <title>オペレーター指示書アプリ</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
     <style>
         body { background-color: #f0f2f5; font-family: "Helvetica Neue", Arial, sans-serif; padding-bottom: 100px; }
-        
-        /* 画面切り替え制御 */
         .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         #view-checking { display: flex; }
         #app-content { display: none; }
-        
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
-        
-        /* 入力フォームのデザイン */
         .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
         .form-control-lg { border-radius: 30px; font-size: 1rem; }
-        .btn-next { 
-            background-color: #0056b3; color: white; padding: 12px 0; font-size: 1.1rem; 
-            border-radius: 30px; font-weight: bold; width: 100%; border: none; margin-top: 15px;
-        }
+        .btn-next { background-color: #0056b3; color: white; padding: 12px 0; font-size: 1.1rem; border-radius: 30px; font-weight: bold; width: 100%; border: none; margin-top: 15px; }
         .btn-next:hover { background-color: #004494; }
-        
-        /* アプリ共通 */
         .app-header { background-color: #fff; border-bottom: 3px solid #cf2e2e; padding: 10px 15px; position: sticky; top: 0; z-index: 1000; }
         .greeting-bar { background-color: #fff; text-align: center; color: #0056b3; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
         .today-card { border: 2px solid #0056b3; background: white; border-radius: 5px; margin: 15px; padding: 15px; cursor: pointer; }
@@ -48,46 +37,35 @@
 </head>
 <body>
     <div id="debug-error"></div>
-
     <div id="view-welcome" class="view-section">
         <div class="welcome-logo"><i class="fas fa-truck-moving"></i></div>
         <h2 class="fw-bold mb-3">オペレーターアプリ</h2>
         <p class="text-muted mb-4">メールアドレスを入力して<br>業務を開始してください</p>
-        
         <div class="login-box">
             <div class="mb-3 text-start">
                 <label for="login-email" class="form-label fw-bold text-muted small ms-2">メールアドレス</label>
                 <input type="email" class="form-control form-control-lg" id="login-email" placeholder="name@example.com">
             </div>
-            <button onclick="handleSmartLogin()" class="btn-next">
-                次へ <i class="fas fa-arrow-right ms-2"></i>
-            </button>
+            <button onclick="handleSmartLogin()" class="btn-next">次へ <i class="fas fa-arrow-right ms-2"></i></button>
         </div>
     </div>
-
     <div id="view-checking" class="view-section">
         <div class="mb-3"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i></div>
         <h4 class="fw-bold text-secondary">読み込み中...</h4>
         <p class="text-muted" id="checking-text">認証情報を確認しています</p>
     </div>
-
     <div id="view-error" class="view-section">
         <div class="mb-3 text-danger"><i class="fas fa-exclamation-circle fa-4x"></i></div>
         <h4 class="fw-bold">利用できません</h4>
         <div id="error-msg-detail" class="error-detail-box">確認中...</div>
         <a href="/.auth/logout" class="btn btn-outline-secondary mt-3">ログアウトして戻る</a>
     </div>
-
     <div id="app-content">
         <div class="app-header d-flex justify-content-between align-items-center">
             <div class="fw-bold"><i class="fas fa-building"></i> <span id="header-company">...</span></div>
-            <div class="text-end fw-bold">
-                <div id="header-date">...</div>
-                <div id="header-name">...</div>
-            </div>
+            <div class="text-end fw-bold"><div id="header-date">...</div><div id="header-name">...</div></div>
         </div>
         <div class="greeting-bar">本日もご安全に！</div>
-
         <div id="screen-list" style="display:block">
             <div class="container mt-3">
                 <h5 class="fw-bold text-primary border-bottom border-primary pb-2 mb-3">本日の予定</h5>
@@ -101,7 +79,6 @@
                 <div class="text-center text-muted"><i class="fas fa-ellipsis-h fa-lg"></i><br><small>その他</small></div>
             </div>
         </div>
-
         <div id="screen-detail" style="display:none">
             <div class="container mt-3 px-2">
                 <div class="detail-row">
@@ -123,117 +100,66 @@
             </div>
         </div>
     </div>
-
     <script>
         window.onerror = function(msg,url,line){ document.getElementById('debug-error').style.display='block'; document.getElementById('debug-error').textContent=`Error:${msg} (${line})`; };
-
         function showSection(id) {
             document.querySelectorAll('.view-section, #app-content').forEach(el => { el.style.display = 'none'; });
             const target = document.getElementById(id);
-            if(id === 'app-content') target.style.display = 'block';
-            else target.style.display = 'flex';
+            if(id === 'app-content') target.style.display = 'block'; else target.style.display = 'flex';
         }
-
-        // ▼▼▼ スマートログイン処理 (ここがポイントです) ▼▼▼
         function handleSmartLogin() {
             const emailInput = document.getElementById('login-email');
             const email = emailInput.value.trim().toLowerCase();
-
-            if (!email) {
-                alert("メールアドレスを入力してください");
-                return;
-            }
-
-            // ドメインで振り分け
-            // 社内ドメインが含まれていれば、標準AADへ
+            if (!email) { alert("メールアドレスを入力してください"); return; }
             if (email.includes("cracomsystem")) { 
-                // login_hintをつけることでメアド入力を省略できる場合もあります
                 window.location.href = `/.auth/login/aad?post_login_redirect_uri=/&login_hint=${encodeURIComponent(email)}`;
             } else {
-                // それ以外（Gmail等）は、カスタム認証へ
-                // 未登録なら、遷移先で「新規作成」を選んでもらう
                 window.location.href = `/.auth/login/cracomauth?post_login_redirect_uri=/&login_hint=${encodeURIComponent(email)}`;
             }
         }
-        // Enterキーでも次へ進めるようにする
-        document.getElementById('login-email').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') handleSmartLogin();
-        });
-        // ▲▲▲ ▲▲▲
-
-        // --- メイン処理 ---
+        document.getElementById('login-email').addEventListener('keypress', function (e) { if (e.key === 'Enter') handleSmartLogin(); });
         (async () => {
             try {
                 const authRes = await fetch('/.auth/me');
                 const authData = await authRes.json();
                 const clientPrincipal = authData.clientPrincipal;
-
-                if (!clientPrincipal) {
-                    showSection('view-welcome');
-                    return;
-                }
-                
+                if (!clientPrincipal) { showSection('view-welcome'); return; }
                 const res = await fetch('/api/show-env');
-                
                 if (!res.ok) {
                     const err = await res.json().catch(()=>({}));
                     if (res.status === 403) {
                         const detected = err.detectedEmail ? `<br><strong>認識されたID:</strong> ${err.detectedEmail}` : "";
-                        document.getElementById('error-msg-detail').innerHTML = 
-                            `作業員マスタにあなたの登録がありません。<br>管理者に以下を伝えてください。<hr>${err.details}${detected}`;
+                        document.getElementById('error-msg-detail').innerHTML = `作業員マスタにあなたの登録がありません。<br>管理者に以下を伝えてください。<hr>${err.details}${detected}`;
                     } else {
                         document.getElementById('error-msg-detail').textContent = `システムエラー: ${err.details || res.status}`;
                     }
-                    showSection('view-error');
-                    return;
+                    showSection('view-error'); return;
                 }
-                
                 const data = await res.json();
-                setupApp(data);
-                showSection('app-content');
-
+                setupApp(data); showSection('app-content');
             } catch (e) {
-                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`;
-                showSection('view-error');
+                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`; showSection('view-error');
             }
         })();
-
-        // (以下、アプリ機能は変更なし)
-        let currentJobs = [];
-        let selectedJob = null;
+        let currentJobs = []; let selectedJob = null;
         function setupApp(data) {
             const now = new Date();
             document.getElementById('header-date').textContent = `${now.getMonth()+1}月${now.getDate()}日`;
             if(data.businessUnitName) document.getElementById('header-company').textContent = data.businessUnitName;
             if(data.userName) document.getElementById('header-name').textContent = data.userName + " 様";
-            currentJobs = data.results || [];
-            renderList(currentJobs);
+            currentJobs = data.results || []; renderList(currentJobs);
         }
         function renderList(jobs) {
-            const container = document.getElementById('job-list-container');
-            container.innerHTML = '';
-            if(jobs.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定はありません</div>';
-                return;
-            }
+            const container = document.getElementById('job-list-container'); container.innerHTML = '';
+            if(jobs.length === 0) { container.innerHTML = '<div class="text-center text-muted p-4">本日の予定はありません</div>'; return; }
             jobs.forEach((job, i) => {
-                const div = document.createElement('div');
-                div.className = 'today-card';
-                div.onclick = () => showDetail(i);
-                div.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div><span class="time-badge">${job.time} ～</span><span class="tag-badge">${job.type}</span></div>
-                        <button class="btn btn-outline-primary btn-sm fw-bold">${job.status}</button>
-                    </div>
-                    <div class="fw-bold fs-5">${job.client}</div>
-                    <div class="fw-bold text-primary">${job.location}</div>
-                    <div class="text-muted small">${job.workContent}</div>`;
+                const div = document.createElement('div'); div.className = 'today-card'; div.onclick = () => showDetail(i);
+                div.innerHTML = `<div class="d-flex justify-content-between align-items-center mb-2"><div><span class="time-badge">${job.time} ～</span><span class="tag-badge">${job.type}</span></div><button class="btn btn-outline-primary btn-sm fw-bold">${job.status}</button></div><div class="fw-bold fs-5">${job.client}</div><div class="fw-bold text-primary">${job.location}</div><div class="text-muted small">${job.workContent}</div>`;
                 container.appendChild(div);
             });
         }
         function showDetail(i) {
-            selectedJob = currentJobs[i];
-            if (!selectedJob) return;
+            selectedJob = currentJobs[i]; if (!selectedJob) return;
             document.getElementById('detail-time').textContent = selectedJob.time;
             document.getElementById('detail-type').textContent = selectedJob.type;
             document.getElementById('detail-car').textContent = selectedJob.car;
@@ -242,17 +168,10 @@
             document.getElementById('detail-work').textContent = selectedJob.workContent;
             document.getElementById('detail-contact').textContent = selectedJob.contact;
             document.getElementById('detail-notes').textContent = selectedJob.notes || "なし";
-            document.getElementById('screen-list').style.display = 'none';
-            document.getElementById('screen-detail').style.display = 'block';
-            window.scrollTo(0,0);
+            document.getElementById('screen-list').style.display = 'none'; document.getElementById('screen-detail').style.display = 'block'; window.scrollTo(0,0);
         }
-        function goBack() {
-            document.getElementById('screen-detail').style.display = 'none';
-            document.getElementById('screen-list').style.display = 'block';
-        }
-        function completeWork() { 
-            if(confirm('送信しますか？(デモ)')) { alert('完了'); goBack(); } 
-        }
+        function goBack() { document.getElementById('screen-detail').style.display = 'none'; document.getElementById('screen-list').style.display = 'block'; }
+        function completeWork() { if(confirm('送信しますか？(デモ)')) { alert('完了'); goBack(); } }
     </script>
 </body>
 </html>
