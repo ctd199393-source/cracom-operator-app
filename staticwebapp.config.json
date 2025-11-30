@@ -7,7 +7,7 @@
             "clientIdSettingName": "ENTRA_CLIENT_ID",
             "clientCredentialSettingName": "ENTRA_CLIENT_SECRET",
             "openIdConnectConfiguration": {
-              "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=3f113cb1-9657-47c4-8de1-3f3744e0dcb9"
+              "wellKnownOpenIdConfiguration": "https://cracomoperator.ciamlogin.com/cracomoperator.onmicrosoft.com/v2.0/.well-known/openid-configuration"
             }
           },
           "login": {
@@ -29,8 +29,5 @@
       "statusCode": 302,
       "redirect": "/.auth/login/aad"
     }
-  },
-  "globalHeaders": {
-    "Cache-Control": "no-cache"
   }
 }
