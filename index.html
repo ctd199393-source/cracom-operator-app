@@ -7,77 +7,136 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; font-family: 'Helvetica Neue', Arial, sans-serif; }
-        .view-section { display: none; padding: 20px; }
-        .btn-login-start {
-            display: inline-block; padding: 15px 30px; background-color: #0078d4;
-            color: white; text-decoration: none; border-radius: 8px; font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s;
+        body { background-color: #f8f9fa; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+        .view-section { display: none; padding-bottom: 80px; } /* 下部余白 */
+        
+        /* ヘッダー */
+        .app-header { background-color: #fff; padding: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .safety-first { color: #28a745; font-weight: bold; font-size: 1.1rem; }
+        .user-info { font-size: 0.85rem; color: #6c757d; }
+
+        /* カードデザイン（打ち合わせ内容準拠） */
+        .job-card { 
+            background: #fff; 
+            border: 1px solid #e9ecef; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.1s;
         }
-        .btn-login-start:hover { background-color: #005a9e; transform: translateY(-2px); }
-        .card-custom { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .card-label { font-size: 0.85rem; color: #6c757d; width: 80px; display: inline-block; }
+        .job-card:active { transform: scale(0.98); background-color: #f1f3f5; }
+        
+        .time-box { 
+            background-color: #e9ecef; 
+            padding: 10px; 
+            text-align: center; 
+            border-radius: 6px;
+            min-width: 70px;
+        }
+        .time-text { font-size: 1.2rem; font-weight: bold; color: #333; display: block; }
+        .ampm { font-size: 0.7rem; color: #666; }
+
+        .job-details { padding-left: 15px; flex-grow: 1; }
+        .client-name { font-size: 0.85rem; color: #666; margin-bottom: 2px; }
+        .site-name { font-size: 1.1rem; font-weight: bold; color: #000; margin-bottom: 4px; line-height: 1.3; }
+        .work-content { font-size: 0.9rem; color: #0078d4; margin-bottom: 0; }
+        
+        .vehicle-badge {
+            background-color: #333; color: #fff; 
+            font-size: 0.75rem; padding: 2px 6px; 
+            border-radius: 4px; margin-left: 5px;
+        }
+
+        /* ステータスボタン */
+        .btn-status { width: 100%; border-radius: 0 0 8px 8px; font-weight: bold; padding: 8px; }
+        .btn-confirm { background-color: #fff; color: #0078d4; border-top: 1px solid #e9ecef; }
+        .btn-complete { background-color: #dc3545; color: #fff; }
+
+        /* フッターナビ */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 1px solid #ddd;
+            display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000;
+        }
+        .nav-item { text-align: center; color: #6c757d; font-size: 0.75rem; text-decoration: none; }
+        .nav-item.active { color: #0078d4; }
+        .nav-icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="view-welcome" class="view-section text-center mt-5">
-        <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
-        <p class="text-muted mb-4">アカウントをお持ちでない方も、<br>以下のボタンから登録へ進めます。</p>
-        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-start">
-            <i class="fas fa-sign-in-alt me-2"></i> ログイン / 新規登録
+    <div id="view-welcome" class="view-section text-center mt-5" style="display:block;">
+        <h2 class="fw-bold mb-4">クラコム配車アプリ</h2>
+        <p class="text-muted mb-4">アカウントをお持ちでない方も<br>以下から登録できます。</p>
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary btn-lg px-5">
+            <i class="fas fa-sign-in-alt me-2"></i> ログイン / 登録
         </a>
     </div>
 
     <div id="view-loading" class="view-section text-center mt-5">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">データを照合中...</p>
+        <p class="mt-2">データを読み込んでいます...</p>
     </div>
 
     <div id="view-error" class="view-section text-center mt-5">
-        <div class="alert alert-danger d-inline-block text-start">
-            <h5 class="alert-heading"><i class="fas fa-exclamation-circle"></i> 利用権限がありません</h5>
-            <hr>
-            <p id="error-message">マスタに登録されていません。</p>
+        <div class="alert alert-danger mx-3">
+            <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> エラー</h5>
+            <p id="error-message">データの取得に失敗しました。</p>
         </div>
-        <div class="mt-3">
-            <a href="/.auth/logout" class="btn btn-outline-secondary btn-sm">ログアウト</a>
-        </div>
+        <a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a>
     </div>
 
-    <div id="view-app" class="view-section container" style="max-width: 800px;">
-        <div class="d-flex justify-content-between align-items-center mb-4 pt-3">
-            <h4 class="fw-bold"><i class="fas fa-truck-pickup me-2"></i>配車指示書</h4>
-            <div class="text-end">
-                <small id="user-display-name" class="d-block text-muted" style="font-size:0.8rem;"></small>
-                <a href="/.auth/logout" class="text-danger small" style="text-decoration:none;">ログアウト</a>
+    <div id="view-app" class="view-section">
+        <div class="app-header d-flex justify-content-between align-items-center">
+            <div>
+                <div class="user-info" id="header-date">11月18日(火)</div>
+                <div class="user-info fw-bold" id="user-display-name">未ログイン</div>
             </div>
+            <div class="safety-first">本日もご安全に！</div>
         </div>
-        
-        <div id="data-container">
+
+        <div class="container mt-3" id="data-container">
             </div>
+    </div>
+
+    <div class="bottom-nav" id="footer-nav" style="display:none;">
+        <a href="#" class="nav-item active">
+            <i class="fas fa-calendar-day nav-icon"></i>今日の稼働
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>お知らせ <span class="badge rounded-pill bg-danger" id="nav-badge" style="display:none">1</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-cog nav-icon"></i>その他
+        </a>
     </div>
 
     <script>
-        function showSection(id) {
-            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-        }
-
-        // 日付整形用のヘルパー関数 (例: 2025-12-01T00:00:00Z -> 2025/12/01)
-        function formatDate(isoString) {
-            if (!isoString) return '-';
-            const d = new Date(isoString);
-            return d.toLocaleDateString('ja-JP'); 
-        }
-
-        // 時間整形用のヘルパー関数 (例: 2025-12-01T08:30:00Z -> 08:30)
+        // 日付フォーマット (例: 2025-11-18T08:00:00Z -> 08:00)
         function formatTime(isoString) {
-            if (!isoString) return '-';
+            if (!isoString) return '--:--';
             const d = new Date(isoString);
             return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
         }
 
+        // 日付文字列生成 (ヘッダー用)
+        function getHeaderDate() {
+            const d = new Date();
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            return `${d.getMonth() + 1}月${d.getDate()}日(${days[d.getDay()]})`;
+        }
+
+        // 画面切り替え
+        function showSection(id) {
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            
+            // フッター表示制御
+            const footer = document.getElementById('footer-nav');
+            if (id === 'view-app') footer.style.display = 'flex';
+            else footer.style.display = 'none';
+        }
+
+        // メイン処理
         (async () => {
             try {
                 // 1. 認証確認
@@ -89,63 +148,79 @@
                     return;
                 }
 
+                // ログイン済みならヘッダー設定
+                document.getElementById('header-date').textContent = getHeaderDate();
                 showSection('view-loading');
-                
-                // 2. API呼び出し
+
+                // 2. Dataverseデータ取得
                 const apiRes = await fetch('/api/show-env');
-                
                 if (!apiRes.ok) {
                     const errBody = await apiRes.json();
-                    document.getElementById('error-message').textContent = 
-                        errBody.error || "データ取得エラーが発生しました。";
+                    document.getElementById('error-message').textContent = errBody.error || "システムエラー";
                     showSection('view-error');
                     return;
                 }
 
                 const data = await apiRes.json();
                 
-                // ユーザー名表示 (Dataverseのマスタ名を使用)
+                // ユーザー名表示
                 const userName = data.user ? data.user.name : authData.clientPrincipal.userDetails;
                 document.getElementById('user-display-name').textContent = userName;
 
                 // 3. データ描画
                 const container = document.getElementById('data-container');
-                
+                let html = '';
+
                 if (data.records && data.records.length > 0) {
-                    let html = '';
                     data.records.forEach(rec => {
-                        // ★修正ポイント: 列名をDataverseに合わせて正しくマッピング
-                        // new_genbamei (現場名), new_day (日付), new_start_time (開始時間), new_sagyou_naiyou (作業内容)
+                        // データマッピング（APIの列名に合わせる）
+                        // ※得意先名はまだAPIで取得していないため、一旦現場名を表示します
+                        const timeStr = formatTime(rec.new_start_time);
+                        const siteName = rec.new_genbamei || '現場名未定';
+                        const workContent = rec.new_sagyou_naiyou || '作業内容未定';
                         
+                        // 車両（トン数）は現在APIにないので仮置き。後でマスタ連携が必要。
+                        const vehicleClass = "25t"; 
+
                         html += `
-                        <div class="card card-custom p-4">
-                            <h5 class="card-title text-primary fw-bold mb-3">
-                                ${rec.new_genbamei || '現場名未定'}
-                            </h5>
-                            <div class="mb-2">
-                                <span class="card-label"><strong><i class="far fa-calendar-alt"></i> 日付:</strong></span>
-                                <span>${formatDate(rec.new_day)}</span>
+                        <div class="job-card" onclick="alert('詳細画面へ遷移します（実装予定）')">
+                            <div class="d-flex p-3">
+                                <div class="time-box">
+                                    <span class="time-text">${timeStr}</span>
+                                    <span class="ampm">開始</span>
+                                </div>
+                                
+                                <div class="job-details">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="client-name">得意先名 (API未取得)</div>
+                                        <div class="vehicle-badge">${vehicleClass}</div>
+                                    </div>
+                                    <div class="site-name">${siteName}</div>
+                                    <div class="work-content"><i class="fas fa-tools me-1"></i>${workContent}</div>
+                                </div>
                             </div>
-                            <div class="mb-2">
-                                <span class="card-label"><strong><i class="far fa-clock"></i> 時間:</strong></span>
-                                <span>${formatTime(rec.new_start_time)}</span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="card-label"><strong><i class="fas fa-tasks"></i> 内容:</strong></span>
-                                <span>${rec.new_sagyou_naiyou || '-'}</span>
-                            </div>
+                            
+                            <div class="d-flex">
+                                <button class="btn btn-status btn-confirm" onclick="event.stopPropagation(); alert('確認済にしました');">
+                                    確認済
+                                </button>
+                                </div>
                         </div>`;
                     });
-                    container.innerHTML = html;
                 } else {
-                    container.innerHTML = '<div class="alert alert-info">現在、担当する配車データはありません。</div>';
+                    html = `
+                    <div class="text-center mt-5 text-muted">
+                        <i class="fas fa-coffee fa-3x mb-3"></i>
+                        <p>本日の予定はありません。<br>ゆっくり休んでください。</p>
+                    </div>`;
                 }
 
+                container.innerHTML = html;
                 showSection('view-app');
 
             } catch (e) {
                 console.error(e);
-                document.getElementById('error-message').textContent = "アプリケーションエラーが発生しました。";
+                document.getElementById('error-message').textContent = e.message;
                 showSection('view-error');
             }
         })();
