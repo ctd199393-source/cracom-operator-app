@@ -12,7 +12,7 @@
         
         /* 画面切り替え制御 */
         .view-section { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        #view-checking { display: flex; }
+        #view-checking { display: flex; } /* 初期表示は読み込み中 */
         #app-content { display: none; }
         
         .welcome-logo { color: #cf2e2e; font-size: 3rem; margin-bottom: 20px; }
@@ -50,7 +50,7 @@
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
         <p class="text-muted mb-4">業務を開始するには<br>ログインしてください</p>
         
-        <a href="/.auth/login/cracomauth?post_login_redirect_uri=/" class="btn-login-start">
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-start">
             <i class="fas fa-sign-in-alt me-2"></i> ログイン
         </a>
     </div>
@@ -115,11 +115,17 @@
     </div>
 
     <script>
-        window.onerror = function(msg,url,line){ document.getElementById('debug-error').style.display='block'; document.getElementById('debug-error').textContent=`Error:${msg} (${line})`; };
+        // デバッグ用: 画面上にJSエラーが出たら表示する
+        window.onerror = function(msg,url,line){ 
+            const el = document.getElementById('debug-error');
+            el.style.display='block'; 
+            el.textContent=`JS Error:${msg} (Line:${line})`; 
+        };
 
         let currentJobs = [];
         let selectedJob = null;
 
+        // 画面切り替え関数
         function showSection(id) {
             document.querySelectorAll('.view-section, #app-content').forEach(el => {
                 el.style.display = 'none';
@@ -129,42 +135,52 @@
             else target.style.display = 'flex';
         }
 
-        // --- メイン処理 ---
+        // --- メイン処理開始 ---
         (async () => {
             try {
-                // 1. ログイン確認
+                // 1. SWAの認証情報を確認
                 const authRes = await fetch('/.auth/me');
                 if(!authRes.ok) throw new Error("Auth check failed");
                 const authData = await authRes.json();
                 
+                const clientPrincipal = authData.clientPrincipal;
+
                 // 未ログインならウェルカム画面へ
-                if (!authData.clientPrincipal) {
+                if (!clientPrincipal) {
+                    console.log("Not logged in");
                     showSection('view-welcome');
                     return;
                 }
                 
-                // 2. ログイン済み -> APIへデータ要求
+                console.log("Logged in as:", clientPrincipal.userDetails);
+
+                // 2. ログイン済みならAPIへデータ問い合わせ
                 const res = await fetch('/api/show-env');
                 
                 if (!res.ok) {
                     const err = await res.json().catch(()=>({}));
+                    
+                    // 403: マスタ登録なしの場合
                     if (res.status === 403) {
                         const detected = err.detectedEmail ? `<br><strong>認識されたID:</strong> ${err.detectedEmail}` : "";
                         document.getElementById('error-msg-detail').innerHTML = 
                             `作業員マスタにあなたの登録がありません。<br>管理者に以下を伝えてください。<hr>${err.details}${detected}`;
                     } else {
-                        document.getElementById('error-msg-detail').textContent = `システムエラー: ${err.details || res.status}`;
+                        // その他のシステムエラー
+                        document.getElementById('error-msg-detail').textContent = 
+                            `システムエラーが発生しました: ${err.details || res.status}`;
                     }
                     showSection('view-error');
                     return;
                 }
                 
+                // 3. データ取得成功 -> アプリ画面セットアップ
                 const data = await res.json();
                 setupApp(data);
                 showSection('app-content');
 
             } catch (e) {
-                document.getElementById('error-msg-detail').textContent = `通信エラー: ${e.message}`;
+                document.getElementById('error-msg-detail').textContent = `通信/不明なエラー: ${e.message}`;
                 showSection('view-error');
             }
         })();
@@ -182,7 +198,7 @@
             const container = document.getElementById('job-list-container');
             container.innerHTML = '';
             if(jobs.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定はありません</div>';
+                container.innerHTML = '<div class="text-center text-muted p-4">本日の予定データはありません</div>';
                 return;
             }
             jobs.forEach((job, i) => {
@@ -223,8 +239,17 @@
             document.getElementById('screen-list').style.display = 'block';
         }
 
+        function openMap() {
+            const query = selectedJob.location || "";
+            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank');
+        }
+
         function completeWork() { 
-            if(confirm('送信しますか？(デモ)')) { alert('完了'); goBack(); } 
+            // まだ書き込み機能はないのでアラートのみ
+            if(confirm('送信しますか？(現在はデモ機能です)')) { 
+                alert('完了しました'); 
+                goBack(); 
+            } 
         }
     </script>
 </body>
