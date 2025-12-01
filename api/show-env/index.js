@@ -3,14 +3,14 @@ const fetch = require("node-fetch");
 
 module.exports = async function (context, req) {
     try {
-        // --- 1. 環境変数の取得 ---
+        // --- 1. 環境設定 ---
         const tenantId = process.env.TENANT_ID;
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
         const dataverseUrl = process.env.DATAVERSE_URL;
 
         if (!tenantId || !clientId || !clientSecret || !dataverseUrl) {
-            throw new Error("サーバー設定エラー: 環境変数が不足しています。");
+            throw new Error("環境変数が不足しています。");
         }
 
         // --- 2. ユーザー特定 ---
@@ -20,7 +20,6 @@ module.exports = async function (context, req) {
             const decoded = JSON.parse(Buffer.from(header, "base64").toString("ascii"));
             userEmail = decoded.userDetails;
         }
-        // ゲスト対応
         if (userEmail.includes("#EXT#")) {
             let temp = userEmail.split("#EXT#")[0];
             const lastUnderscore = temp.lastIndexOf("_");
@@ -29,19 +28,19 @@ module.exports = async function (context, req) {
             }
         }
 
-        // --- 3. Dataverse接続 (トークン取得) ---
+        // --- 3. Dataverse接続 ---
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         const tokenResp = await credential.getToken(`${dataverseUrl}/.default`);
         const token = tokenResp.token;
 
-        // --- 4. マスタ検索 (ユーザー情報) ---
+        // --- 4. 作業員マスタ検索 ---
         const userFilter = `new_mail eq '${userEmail}'`;
         const userQuery = `${dataverseUrl}/api/data/v9.2/new_sagyouin_mastas?$filter=${encodeURIComponent(userFilter)}&$select=new_sagyouin_id,_owningbusinessunit_value`;
         
         const userRes = await fetch(userQuery, { 
             headers: { 
                 "Authorization": `Bearer ${token}`,
-                "Prefer": "odata.include-annotations=\"*\""
+                "Prefer": "odata.include-annotations=\"*\"" 
             } 
         });
 
@@ -52,7 +51,7 @@ module.exports = async function (context, req) {
 
         const userData = await userRes.json();
         if (!userData.value || userData.value.length === 0) {
-            context.res = { status: 403, body: { error: `未登録のユーザーです (${userEmail})` } };
+            context.res = { status: 403, body: { error: "マスタ未登録ユーザーです" } };
             return;
         }
 
@@ -61,7 +60,7 @@ module.exports = async function (context, req) {
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
         // --- 5. 配車データ取得 ---
-        // ★修正: 確実に存在する列のみを指定 (現場Lookupを削除)
+        // ★修正点: Lookup列は「論理名」で指定しないとエラーになります
         const selectCols = [
             "new_day", 
             "new_start_time", 
@@ -70,10 +69,10 @@ module.exports = async function (context, req) {
             "new_shinkoujoukyou", 
             "new_table2id",
             "new_tokuisaki_meinvarchar", 
-            "_new_kyakusaki_value", 
-            "_new_sharyou_value", 
+            "new_kyakusaki",      // 修正: _new_kyakusaki_value -> new_kyakusaki
+            "new_sharyou",        // 修正: _new_sharyou_value -> new_sharyou
             "new_kashikiripicklist", 
-            "_new_renraku1_value", 
+            "new_renraku1",       // 修正: _new_renraku1_value -> new_renraku1
             "new_renraku_jikountext"
         ].join(",");
 
@@ -83,11 +82,10 @@ module.exports = async function (context, req) {
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { 
                 "Authorization": `Bearer ${token}`,
-                "Prefer": "odata.include-annotations=\"*\"" 
+                "Prefer": "odata.include-annotations=\"*\"" // これがあれば _value や FormattedValue が自動で返ってきます
             } 
         });
 
-        // ★エラー詳細をキャッチ
         if (!dispatchRes.ok) {
             const errTxt = await dispatchRes.text();
             throw new Error(`配車データ取得エラー: ${errTxt}`);
@@ -96,20 +94,21 @@ module.exports = async function (context, req) {
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
 
-        // --- 6. 資料データの取得 (Docs) ---
+        // --- 6. 資料データの取得 ---
         if (records.length > 0) {
             const haishaIds = records.map(r => r.new_table2id);
-            // 配車IDで紐づく資料を検索
+            // フィルタ条件: 配車IDで検索
             const docFilter = haishaIds.map(id => `_new_haisha_value eq '${id}'`).join(" or ");
             
-            const docQuery = `${dataverseUrl}/api/data/v9.2/new_docment_tables?$filter=${encodeURIComponent(docFilter)}&$select=new_namenvarchar,new_kakuchoushin,new_url,new_blobthmbnailurl,_new_haisha_value`;
+            // ★修正点: 資料テーブルの配車Lookupも論理名(new_haisha)を指定
+            const docQuery = `${dataverseUrl}/api/data/v9.2/new_docment_tables?$filter=${encodeURIComponent(docFilter)}&$select=new_namenvarchar,new_kakuchoushin,new_url,new_blobthmbnailurl,new_haisha`;
 
             const docRes = await fetch(docQuery, { headers: { "Authorization": `Bearer ${token}` } });
             
-            // 資料取得は失敗してもメイン処理は止めない
             if (docRes.ok) {
                 const docData = await docRes.json();
                 const docs = docData.value;
+                // 配車ID (_value) でマッチング
                 records = records.map(rec => {
                     rec.documents = docs.filter(d => d._new_haisha_value === rec.new_table2id);
                     return rec;
@@ -117,7 +116,7 @@ module.exports = async function (context, req) {
             }
         }
 
-        // --- 7. 部署稼働数カウント ---
+        // --- 7. 部署稼働数 ---
         const today = new Date().toISOString().split('T')[0];
         const countFilter = `_owningbusinessunit_value eq '${buId}' and new_day eq ${today}`;
         const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`;
@@ -127,7 +126,6 @@ module.exports = async function (context, req) {
         });
         const buCount = countRes.ok ? (await countRes.json())["@odata.count"] : 0;
 
-        // 結果返却
         context.res = {
             status: 200,
             body: {
@@ -139,10 +137,6 @@ module.exports = async function (context, req) {
 
     } catch (e) {
         context.log.error(e);
-        // エラー詳細を画面に返す
-        context.res = { 
-            status: 500, 
-            body: { error: `System Error: ${e.message}` } 
-        };
+        context.res = { status: 500, body: { error: `System Error: ${e.message}` } };
     }
 };
