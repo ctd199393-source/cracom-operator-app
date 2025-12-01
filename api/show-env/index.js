@@ -19,7 +19,6 @@ module.exports = async function (context, req) {
             const decoded = JSON.parse(Buffer.from(header, "base64").toString("ascii"));
             userEmail = decoded.userDetails;
         }
-        // ゲストユーザー対応
         if (userEmail.includes("#EXT#")) {
             let temp = userEmail.split("#EXT#")[0];
             const lastUnderscore = temp.lastIndexOf("_");
@@ -37,7 +36,13 @@ module.exports = async function (context, req) {
         const userFilter = `new_mail eq '${userEmail}'`;
         const userQuery = `${dataverseUrl}/api/data/v9.2/new_sagyouin_mastas?$filter=${encodeURIComponent(userFilter)}&$select=new_sagyouin_id,_owningbusinessunit_value`;
         
-        const userRes = await fetch(userQuery, { headers: { "Authorization": `Bearer ${token}` } });
+        const userRes = await fetch(userQuery, { 
+            headers: { 
+                "Authorization": `Bearer ${token}`,
+                // ★追加: これを入れると、IDだけでなく「名前（FormattedValue）」も取れるようになります
+                "Prefer": "odata.include-annotations=\"*\"" 
+            } 
+        });
         const userData = await userRes.json();
 
         if (!userData.value || userData.value.length === 0) {
@@ -47,26 +52,25 @@ module.exports = async function (context, req) {
 
         const user = userData.value[0];
         const buId = user._owningbusinessunit_value;
+        // ★追加: 部署名を取得 (Dataverseの仕様で @OData...FormattedValue に入っています)
+        const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
-        // 4. 配車データ取得（自分の予定）
-        // 過去1週間～未来のデータを取得（フィルタリングはJS側で行うため広めに取る）
-        // 必要な列: 日付, 開始時間, 現場名, 作業内容, 進行状況, 案件ID
-        const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0`; // statecode 0 = Active
+        // 4. 配車データ取得
+        const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0`; 
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=new_day,new_start_time,new_genbamei,new_sagyou_naiyou,new_shinkoujoukyou,new_table2id&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { headers: { "Authorization": `Bearer ${token}` } });
         const dispatchData = await dispatchRes.json();
 
-        // 5. 今日の部署稼働数のカウント (集計)
-        // 条件: 同じBusinessUnit かつ 日付が今日
+        // 5. 今日の部署稼働数のカウント
         const today = new Date().toISOString().split('T')[0];
         const countFilter = `_owningbusinessunit_value eq '${buId}' and new_day eq ${today}`;
-        const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`; // データは取らず件数だけ
+        const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`;
         
         const countRes = await fetch(countQuery, { 
             headers: { 
                 "Authorization": `Bearer ${token}`,
-                "Prefer": "odata.include-annotations=\"*\"" // カウント取得に必要
+                "Prefer": "odata.include-annotations=\"*\"" 
             } 
         });
         const countJson = await countRes.json();
@@ -75,7 +79,11 @@ module.exports = async function (context, req) {
         context.res = {
             status: 200,
             body: {
-                user: { name: user.new_sagyouin_id, buId: buId },
+                user: { 
+                    name: user.new_sagyouin_id, 
+                    buId: buId,
+                    buName: buName // ★ここに追加しました
+                },
                 records: dispatchData.value,
                 todayCount: buCount
             }
