@@ -60,7 +60,7 @@ module.exports = async function (context, req) {
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
         // --- 5. 配車データ取得 ---
-        // ★修正点: Lookup列は「論理名」で指定しないとエラーになります
+        // ★修正点: 列名から型名(nvarcharなど)を削除して正しい論理名にしました
         const selectCols = [
             "new_day", 
             "new_start_time", 
@@ -68,12 +68,12 @@ module.exports = async function (context, req) {
             "new_sagyou_naiyou", 
             "new_shinkoujoukyou", 
             "new_table2id",
-            "new_tokuisaki_meinvarchar", 
-            "new_kyakusaki",      // 修正: _new_kyakusaki_value -> new_kyakusaki
-            "new_sharyou",        // 修正: _new_sharyou_value -> new_sharyou
-            "new_kashikiripicklist", 
-            "new_renraku1",       // 修正: _new_renraku1_value -> new_renraku1
-            "new_renraku_jikountext"
+            "new_tokuisaki_mei",    // 修正: meinvarchar -> mei
+            "new_kyakusaki",        // 修正: lookup -> (削除)
+            "new_sharyou",          // 修正: lookup -> (削除)
+            "new_kashikiri",        // 修正: picklist -> (削除)
+            "new_renraku1",         // 修正: lookup -> (削除)
+            "new_renraku_jikou"     // 修正: jikountext -> jikou
         ].join(",");
 
         const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0`; 
@@ -82,7 +82,7 @@ module.exports = async function (context, req) {
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { 
                 "Authorization": `Bearer ${token}`,
-                "Prefer": "odata.include-annotations=\"*\"" // これがあれば _value や FormattedValue が自動で返ってきます
+                "Prefer": "odata.include-annotations=\"*\""
             } 
         });
 
@@ -97,18 +97,18 @@ module.exports = async function (context, req) {
         // --- 6. 資料データの取得 ---
         if (records.length > 0) {
             const haishaIds = records.map(r => r.new_table2id);
-            // フィルタ条件: 配車IDで検索
             const docFilter = haishaIds.map(id => `_new_haisha_value eq '${id}'`).join(" or ");
             
-            // ★修正点: 資料テーブルの配車Lookupも論理名(new_haisha)を指定
-            const docQuery = `${dataverseUrl}/api/data/v9.2/new_docment_tables?$filter=${encodeURIComponent(docFilter)}&$select=new_namenvarchar,new_kakuchoushin,new_url,new_blobthmbnailurl,new_haisha`;
+            // ★修正点: こちらも型名を削除
+            // new_namenvarchar -> new_name
+            // new_kakuchoushinvarchar -> new_kakuchoushi
+            const docQuery = `${dataverseUrl}/api/data/v9.2/new_docment_tables?$filter=${encodeURIComponent(docFilter)}&$select=new_name,new_kakuchoushi,new_url,new_blobthmbnailurl,_new_haisha_value`;
 
             const docRes = await fetch(docQuery, { headers: { "Authorization": `Bearer ${token}` } });
             
             if (docRes.ok) {
                 const docData = await docRes.json();
                 const docs = docData.value;
-                // 配車ID (_value) でマッチング
                 records = records.map(rec => {
                     rec.documents = docs.filter(d => d._new_haisha_value === rec.new_table2id);
                     return rec;
