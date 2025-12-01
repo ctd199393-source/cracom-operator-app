@@ -2,160 +2,117 @@ const { ClientSecretCredential } = require("@azure/identity");
 const fetch = require("node-fetch");
 
 module.exports = async function (context, req) {
-    context.log('▼ API Request Started');
+    context.log("API Triggered: show-env");
 
     try {
-        // -----------------------------------------------------------
-        // 0. 環境変数の取得 (Dataverse接続用)
-        // -----------------------------------------------------------
-        const tenantId = process.env.TENANT_ID; 
+        // 1. 環境変数の取得
+        const tenantId = process.env.TENANT_ID;
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
         const dataverseUrl = process.env.DATAVERSE_URL;
 
         if (!tenantId || !clientId || !clientSecret || !dataverseUrl) {
-            throw new Error("API Config Error: 環境変数が不足しています。");
+            throw new Error("Server configurations are missing.");
         }
 
-        // -----------------------------------------------------------
-        // 1. ユーザーのメールアドレスを「確実に」取得する処理
-        // -----------------------------------------------------------
-        let userEmail = null;
+        // 2. ユーザー情報の取得と正規化
         const header = req.headers["x-ms-client-principal"];
+        let rawEmail = "unknown";
+        let searchEmail = "";
 
         if (header) {
-            try {
-                const encoded = Buffer.from(header, "base64");
-                const decoded = JSON.parse(encoded.toString("ascii"));
-                
-                // デバッグ用: どんな情報が来ているかログに残す（後で確認可能）
-                context.log(`User Claims: ${JSON.stringify(decoded.claims)}`);
-                context.log(`User Details: ${decoded.userDetails}`);
-
-                // 【重要】以下の優先順位で「メールアドレス」を探す
-                // 1. claim: "email" (一番確実)
-                // 2. claim: "emails" (複数形の場合あり)
-                // 3. claim: "preferred_username" (UPNだが、メール形式の場合がある)
-                // 4. claim: "name" (メールの場合がある)
-                // 5. userDetails (SWAが判定したID。ここがランダムIDの場合があるので優先度を下げる)
-                
-                const claims = decoded.claims || [];
-                
-                userEmail = claims.find(c => c.typ === "email" || c.typ === "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.val
-                         || claims.find(c => c.typ === "emails")?.val
-                         || claims.find(c => c.typ === "preferred_username")?.val
-                         || claims.find(c => c.typ === "name")?.val
-                         || decoded.userDetails;
-
-            } catch(e) {
-                context.log.error("Header decode failed: " + e.message);
-            }
+            const decoded = JSON.parse(Buffer.from(header, "base64").toString("ascii"));
+            // SWA認証では userDetails にメールアドレス(またはUPN)が入る
+            rawEmail = decoded.userDetails; 
         }
 
-        // もしヘッダーから取れなければ、SWAのデフォルトIDを使う（最終手段）
-        if (!userEmail) {
-            userEmail = req.headers["x-ms-client-principal-name"];
-        }
-
-        // メールアドレスの正規化（ゲストユーザー等のゴミ除去）
-        if (userEmail && userEmail.includes("#EXT#")) {
-            // 例: user_gmail.com#EXT#@... -> user@gmail.com
-            userEmail = userEmail.split("#")[0].replace(/_$/, "").replace(/_/, "@");
-        }
-
-        // ★ここで「ランダムID（UUID）」が残っていないか最終チェック
-        // メールアドレス形式（@があるか）でなければエラーにする
-        if (!userEmail || !userEmail.includes("@")) {
-            context.log(`Invalid Email Detected: ${userEmail}`);
-            context.res = { status: 403, body: { error: "InvalidID", details: `システムがメールアドレスを特定できませんでした。(ID: ${userEmail})` } };
+        if (!rawEmail || rawEmail === "unknown") {
+            context.res = { status: 401, body: { error: "ユーザー情報を取得できませんでした。" } };
             return;
         }
 
-        context.log(`Target Email: ${userEmail}`);
+        // ★ ゲストユーザー特有の #EXT# 形式を元のメアドに戻す処理
+        // 例: user_gmail.com#EXT#@cracomsystem.onmicrosoft.com -> user@gmail.com
+        if (rawEmail.includes("#EXT#")) {
+            // #EXT# より前を取得
+            let temp = rawEmail.split("#EXT#")[0];
+            // 最後の _ を @ に戻す (Azure ADの仕様に基づく変換)
+            // ただし、単純な置換だと email_with_underscore@gmail.com で誤爆する可能性があるため
+            // 一般的には「末尾のドメイン部分の直前のアンダースコア」を置換しますが、
+            // 簡易的に「最後のアンダースコアを@にする」で実装します。
+            const lastUnderscoreIndex = temp.lastIndexOf("_");
+            if (lastUnderscoreIndex !== -1) {
+                searchEmail = temp.substring(0, lastUnderscoreIndex) + "@" + temp.substring(lastUnderscoreIndex + 1);
+            } else {
+                searchEmail = temp; // 変換不能な場合はそのまま
+            }
+        } else {
+            // 社内ユーザーなどはそのまま
+            searchEmail = rawEmail;
+        }
 
-        // -----------------------------------------------------------
-        // 2. Dataverse 検索
-        // -----------------------------------------------------------
+        context.log(`Searching Dataverse for: ${searchEmail} (Raw: ${rawEmail})`);
+
+        // 3. Dataverse 接続設定
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         const tokenResponse = await credential.getToken(`${dataverseUrl}/.default`);
         const accessToken = tokenResponse.token;
-        
-        const headers = {
-            "Authorization": `Bearer ${accessToken}`,
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "OData-MaxVersion": "4.0",
-            "OData-Version": "4.0",
-            "Prefer": "odata.include-annotations=\"*\""
-        };
 
-        const workerTable = "new_sagyouin_mastas"; 
-        const workerQuery = `?$select=_owningbusinessunit_value,new_sagyouin_mastaid,new_mei,new_mail&$filter=new_mail eq '${userEmail}'`;
-        
-        const workerRes = await fetch(`${dataverseUrl}/api/data/v9.2/${workerTable}${workerQuery}`, { method: "GET", headers });
-        if (!workerRes.ok) throw new Error(`Dataverse Error: ${workerRes.status}`);
-        
-        const workerData = await workerRes.json();
+        // 4. Dataverse検索 (作業員マスタ)
+        // ※emailaddress1 は標準的なメール列名です。実際の列名に合わせてください (例: new_email)
+        const filter = `emailaddress1 eq '${searchEmail}'`; 
+        const queryUrl = `${dataverseUrl}/api/data/v9.2/new_sagyouin_mastas?$filter=${encodeURIComponent(filter)}&$select=new_name,_new_businessunit_value`;
 
-        if (!workerData.value || workerData.value.length === 0) {
+        const dvRes = await fetch(queryUrl, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Accept": "application/json",
+                "OData-MaxVersion": "4.0",
+                "OData-Version": "4.0"
+            }
+        });
+
+        if (!dvRes.ok) {
+            const errText = await dvRes.text();
+            throw new Error(`Dataverse Error: ${dvRes.status} ${errText}`);
+        }
+
+        const dvData = await dvRes.json();
+
+        // 5. 判定とデータ取得
+        if (dvData.value.length === 0) {
+            context.log("User not found in Dataverse.");
             context.res = { 
                 status: 403, 
-                body: { 
-                    error: "NoRegistration", 
-                    details: `メールアドレス [${userEmail}] はマスタにありません。`,
-                    detectedEmail: userEmail
-                } 
+                body: { error: `メールアドレス (${searchEmail}) は作業員マスタに登録されていません。` } 
             };
             return;
         }
 
-        const worker = workerData.value[0];
-        const myBusinessUnit = worker._owningbusinessunit_value;
-        const myWorkerId = worker.new_sagyouin_mastaid;
-        const myName = worker.new_mei || "担当者";
-        const myBusinessUnitName = worker["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"] || "";
+        const userRecord = dvData.value[0];
+        const businessUnitId = userRecord._new_businessunit_value;
 
-        // -----------------------------------------------------------
-        // 3. 配車データ取得
-        // -----------------------------------------------------------
-        const dispatchTable = "new_table2s"; 
-        const selectCols = "new_table2id,new_start_time,new_kashikiri,statuscode,new_sharyou,new_tokuisaki_mei,new_genbamei,new_sagyou_naiyou,new_renraku_jikou";
+        // 6. 配車データの取得 (BusinessUnitでフィルタ)
+        // ※new_table2 は実際の配車テーブル名に、craca_businessunit は実際の関連列名に修正してください
+        const dispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=_craca_businessunit_value eq '${businessUnitId}'`;
         
-        let filter = `_owningbusinessunit_value eq ${myBusinessUnit} and _new_operator_value eq ${myWorkerId}`; 
-        const query = `?$select=${selectCols}&$filter=${filter}&$orderby=new_start_time asc`;
-        
-        const jobsRes = await fetch(`${dataverseUrl}/api/data/v9.2/${dispatchTable}${query}`, { method: "GET", headers });
-        if (!jobsRes.ok) throw new Error(`Jobs Error: ${jobsRes.status}`);
-        
-        const data = await jobsRes.json();
-
-        const results = data.value.map(item => {
-            let timeStr = "--:--";
-            if (item.new_start_time) {
-                timeStr = new Date(item.new_start_time).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' });
-            }
-            return {
-                id: item.new_table2id,
-                time: timeStr,
-                type: item["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-",
-                car: "代車",
-                client: item.new_tokuisaki_mei || "名称なし",
-                location: item.new_genbamei || "",
-                workContent: item.new_sagyou_naiyou || "",
-                notes: item.new_renraku_jikou || "",
-                contact: "",
-                status: item["statuscode@OData.Community.Display.V1.FormattedValue"] || "未確認",
-                statusCode: item.statuscode
-            };
+        const dispatchRes = await fetch(dispatchQuery, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
         });
+        const dispatchData = await dispatchRes.json();
 
+        // 7. 結果返却
         context.res = {
             status: 200,
-            body: { message: "Success", userName: myName, businessUnitName: myBusinessUnitName, count: results.length, results: results }
+            body: {
+                user: userRecord,
+                records: dispatchData.value
+            }
         };
 
     } catch (error) {
         context.log.error(error);
-        context.res = { status: 500, body: { error: "SystemError", details: error.message } };
+        context.res = { status: 500, body: { error: "サーバー内部エラーが発生しました。" } };
     }
 };
