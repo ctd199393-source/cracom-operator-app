@@ -61,7 +61,7 @@ module.exports = async function (context, req) {
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
         // --- 5. 配車データ取得 ---
-        // ★修正: 確実に存在する列のみを指定
+        // ★修正: 確実に存在する列のみを指定 (現場Lookupを削除)
         const selectCols = [
             "new_day", 
             "new_start_time", 
