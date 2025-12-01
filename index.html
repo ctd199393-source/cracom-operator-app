@@ -16,6 +16,7 @@
         }
         .btn-login-start:hover { background-color: #005a9e; transform: translateY(-2px); }
         .card-custom { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .card-label { font-size: 0.85rem; color: #6c757d; width: 80px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -23,7 +24,6 @@
     <div id="view-welcome" class="view-section text-center mt-5">
         <h2 class="fw-bold mb-4">オペレーターアプリ</h2>
         <p class="text-muted mb-4">アカウントをお持ちでない方も、<br>以下のボタンから登録へ進めます。</p>
-        
         <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn-login-start">
             <i class="fas fa-sign-in-alt me-2"></i> ログイン / 新規登録
         </a>
@@ -45,11 +45,11 @@
         </div>
     </div>
 
-    <div id="view-app" class="view-section container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+    <div id="view-app" class="view-section container" style="max-width: 800px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 pt-3">
             <h4 class="fw-bold"><i class="fas fa-truck-pickup me-2"></i>配車指示書</h4>
             <div class="text-end">
-                <small id="user-display-name" class="d-block text-muted"></small>
+                <small id="user-display-name" class="d-block text-muted" style="font-size:0.8rem;"></small>
                 <a href="/.auth/logout" class="text-danger small" style="text-decoration:none;">ログアウト</a>
             </div>
         </div>
@@ -59,16 +59,28 @@
     </div>
 
     <script>
-        // 画面切り替え用関数
         function showSection(id) {
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
             document.getElementById(id).style.display = 'block';
         }
 
-        // メイン処理
+        // 日付整形用のヘルパー関数 (例: 2025-12-01T00:00:00Z -> 2025/12/01)
+        function formatDate(isoString) {
+            if (!isoString) return '-';
+            const d = new Date(isoString);
+            return d.toLocaleDateString('ja-JP'); 
+        }
+
+        // 時間整形用のヘルパー関数 (例: 2025-12-01T08:30:00Z -> 08:30)
+        function formatTime(isoString) {
+            if (!isoString) return '-';
+            const d = new Date(isoString);
+            return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        }
+
         (async () => {
             try {
-                // 1. 認証状態の確認
+                // 1. 認証確認
                 const authRes = await fetch('/.auth/me');
                 const authData = await authRes.json();
                 
@@ -77,35 +89,51 @@
                     return;
                 }
 
-                // ログイン済みならローディングを表示してAPIを叩く
                 showSection('view-loading');
-                document.getElementById('user-display-name').textContent = authData.clientPrincipal.userDetails;
-
-                // 2. Dataverse照合APIの呼び出し
+                
+                // 2. API呼び出し
                 const apiRes = await fetch('/api/show-env');
                 
                 if (!apiRes.ok) {
-                    // 403などが返ってきた場合
                     const errBody = await apiRes.json();
                     document.getElementById('error-message').textContent = 
-                        errBody.error || "マスタへの登録が確認できませんでした。管理者へ連絡してください。";
+                        errBody.error || "データ取得エラーが発生しました。";
                     showSection('view-error');
                     return;
                 }
 
                 const data = await apiRes.json();
                 
-                // 3. データ描画 (簡易実装)
+                // ユーザー名表示 (Dataverseのマスタ名を使用)
+                const userName = data.user ? data.user.name : authData.clientPrincipal.userDetails;
+                document.getElementById('user-display-name').textContent = userName;
+
+                // 3. データ描画
                 const container = document.getElementById('data-container');
+                
                 if (data.records && data.records.length > 0) {
                     let html = '';
                     data.records.forEach(rec => {
-                        // カラム名は実際のDataverseに合わせて調整してください
+                        // ★修正ポイント: 列名をDataverseに合わせて正しくマッピング
+                        // new_genbamei (現場名), new_day (日付), new_start_time (開始時間), new_sagyou_naiyou (作業内容)
+                        
                         html += `
-                        <div class="card card-custom p-3">
-                            <h5 class="card-title text-primary">${rec.craca_name || '案件名なし'}</h5>
-                            <p class="card-text mb-1"><strong>日時:</strong> ${rec.craca_date || '-'}</p>
-                            <p class="card-text"><strong>場所:</strong> ${rec.craca_location || '-'}</p>
+                        <div class="card card-custom p-4">
+                            <h5 class="card-title text-primary fw-bold mb-3">
+                                ${rec.new_genbamei || '現場名未定'}
+                            </h5>
+                            <div class="mb-2">
+                                <span class="card-label"><strong><i class="far fa-calendar-alt"></i> 日付:</strong></span>
+                                <span>${formatDate(rec.new_day)}</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="card-label"><strong><i class="far fa-clock"></i> 時間:</strong></span>
+                                <span>${formatTime(rec.new_start_time)}</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="card-label"><strong><i class="fas fa-tasks"></i> 内容:</strong></span>
+                                <span>${rec.new_sagyou_naiyou || '-'}</span>
+                            </div>
                         </div>`;
                     });
                     container.innerHTML = html;
@@ -117,7 +145,7 @@
 
             } catch (e) {
                 console.error(e);
-                document.getElementById('error-message').textContent = "システムエラーが発生しました。";
+                document.getElementById('error-message').textContent = "アプリケーションエラーが発生しました。";
                 showSection('view-error');
             }
         })();
