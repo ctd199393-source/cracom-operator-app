@@ -2,226 +2,278 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>オペレーター指示書アプリ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>オペレーター指示書</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-        .view-section { display: none; padding-bottom: 80px; } /* 下部余白 */
-        
-        /* ヘッダー */
-        .app-header { background-color: #fff; padding: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .safety-first { color: #28a745; font-weight: bold; font-size: 1.1rem; }
-        .user-info { font-size: 0.85rem; color: #6c757d; }
-
-        /* カードデザイン（打ち合わせ内容準拠） */
-        .job-card { 
-            background: #fff; 
-            border: 1px solid #e9ecef; 
-            border-radius: 8px; 
-            margin-bottom: 15px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: transform 0.1s;
+        :root {
+            --app-blue: #005a9e; /* PowerApps風ブルー */
+            --app-bg: #f3f2f1;
+            --status-confirm: #0078d4; /* 確認済 */
+            --status-done: #d13438;    /* 作業完了 */
+            --status-yet: #605e5c;     /* 未確認 */
         }
-        .job-card:active { transform: scale(0.98); background-color: #f1f3f5; }
+        body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 70px; }
         
-        .time-box { 
-            background-color: #e9ecef; 
-            padding: 10px; 
-            text-align: center; 
-            border-radius: 6px;
-            min-width: 70px;
+        /* ヘッダーエリア */
+        .header-bar {
+            background: white; border-bottom: 3px solid var(--status-done); /* 赤いライン */
+            padding: 10px 15px; position: sticky; top: 0; z-index: 100;
         }
-        .time-text { font-size: 1.2rem; font-weight: bold; color: #333; display: block; }
-        .ampm { font-size: 0.7rem; color: #666; }
+        .company-name { font-size: 0.8rem; color: #666; margin-bottom: 2px; }
+        .user-name-area { display: flex; justify-content: space-between; align-items: baseline; }
+        .user-name { font-size: 1.4rem; font-weight: bold; color: #333; }
+        .header-date { font-size: 1.1rem; font-weight: bold; color: #333; }
+        .safety-msg { text-align: center; color: var(--app-blue); font-weight: bold; margin-top: 5px; font-size: 1.1rem; }
 
-        .job-details { padding-left: 15px; flex-grow: 1; }
-        .client-name { font-size: 0.85rem; color: #666; margin-bottom: 2px; }
-        .site-name { font-size: 1.1rem; font-weight: bold; color: #000; margin-bottom: 4px; line-height: 1.3; }
-        .work-content { font-size: 0.9rem; color: #0078d4; margin-bottom: 0; }
+        /* 本日の予定エリア (青い枠) */
+        .today-section {
+            margin: 10px; background: white; border: 2px solid var(--app-blue);
+            border-radius: 4px; display: flex;
+        }
+        .today-label-col {
+            background-color: var(--app-blue); color: white; width: 35px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px;
+            font-size: 1rem; border-right: 1px solid var(--app-blue);
+        }
+        .today-content { flex-grow: 1; padding: 10px; position: relative; }
+
+        /* 明日以降のリスト */
+        .future-list { margin: 10px; }
+        .future-row {
+            background: white; border-bottom: 1px solid #ccc; display: flex;
+            min-height: 80px;
+        }
+        .date-col {
+            width: 50px; background: #fff; border-right: 1px solid #eee;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.1rem; color: #333;
+        }
+        .date-col .day-week { font-size: 0.8rem; }
+        .date-col.is-blue { color: #0078d4; } /* 土曜など */
+        .date-col.is-red { color: #d13438; }  /* 日曜など */
         
-        .vehicle-badge {
-            background-color: #333; color: #fff; 
-            font-size: 0.75rem; padding: 2px 6px; 
-            border-radius: 4px; margin-left: 5px;
-        }
+        .job-col { flex-grow: 1; padding: 8px; position: relative; }
 
+        /* 共通パーツ */
+        .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
+        .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
+        .work-content { font-size: 0.85rem; color: #666; }
+        
         /* ステータスボタン */
-        .btn-status { width: 100%; border-radius: 0 0 8px 8px; font-weight: bold; padding: 8px; }
-        .btn-confirm { background-color: #fff; color: #0078d4; border-top: 1px solid #e9ecef; }
-        .btn-complete { background-color: #dc3545; color: #fff; }
-
-        /* フッターナビ */
-        .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 1px solid #ddd;
-            display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000;
+        .status-badge {
+            position: absolute; top: 8px; right: 8px;
+            font-size: 0.75rem; padding: 3px 8px; border-radius: 2px;
+            color: white; font-weight: normal; border: 1px solid #ccc;
         }
-        .nav-item { text-align: center; color: #6c757d; font-size: 0.75rem; text-decoration: none; }
-        .nav-item.active { color: #0078d4; }
-        .nav-icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+        .status-yet { color: #0078d4; border-color: #0078d4; background: white; } /* 未確認(枠線) */
+        .status-confirmed { background-color: var(--status-confirm); }
+        .status-done { background-color: var(--status-done); }
+
+        /* フッター */
+        .footer-nav {
+            position: fixed; bottom: 0; width: 100%; height: 60px;
+            background: white; border-top: 1px solid #ccc;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100;
+        }
+        .nav-btn {
+            background: white; border: 1px solid var(--app-blue); color: var(--app-blue);
+            width: 30%; height: 45px; border-radius: 4px; font-weight: bold;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-size: 0.8rem; position: relative;
+        }
+        .nav-btn.active { background: var(--app-blue); color: white; }
+        .badge-count {
+            position: absolute; top: -8px; right: -5px;
+            background: #0078d4; color: white; border-radius: 10px;
+            padding: 2px 6px; font-size: 0.75rem;
+        }
+        .badge-alert { background: #ff8c00; }
+
+        /* ローディング */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9); z-index: 9999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
     </style>
 </head>
 <body>
 
-    <div id="view-welcome" class="view-section text-center mt-5" style="display:block;">
-        <h2 class="fw-bold mb-4">クラコム配車アプリ</h2>
-        <p class="text-muted mb-4">アカウントをお持ちでない方も<br>以下から登録できます。</p>
-        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary btn-lg px-5">
-            <i class="fas fa-sign-in-alt me-2"></i> ログイン / 登録
-        </a>
-    </div>
-
-    <div id="view-loading" class="view-section text-center mt-5">
+    <div id="loading" class="loading-overlay">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">データを読み込んでいます...</p>
+        <div class="mt-2 fw-bold text-primary">Loading...</div>
     </div>
 
-    <div id="view-error" class="view-section text-center mt-5">
-        <div class="alert alert-danger mx-3">
-            <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> エラー</h5>
-            <p id="error-message">データの取得に失敗しました。</p>
-        </div>
-        <a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a>
+    <div id="view-login" style="display:none; height: 100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:white;">
+        <h3 class="fw-bold mb-4" style="color:var(--app-blue)">クラコム配車アプリ</h3>
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold">
+            ログインして開始
+        </a>
     </div>
 
-    <div id="view-app" class="view-section">
-        <div class="app-header d-flex justify-content-between align-items-center">
-            <div>
-                <div class="user-info" id="header-date">11月18日(火)</div>
-                <div class="user-info fw-bold" id="user-display-name">未ログイン</div>
+    <div id="view-app" style="display:none;">
+        
+        <div class="header-bar">
+            <div class="company-name">株式会社 元山クレーン建設</div>
+            <div class="user-name-area">
+                <div class="user-name" id="disp-name">---</div>
+                <div class="header-date" id="disp-date">--月--日(曜)</div>
             </div>
-            <div class="safety-first">本日もご安全に！</div>
+            <div class="safety-msg">本日もご安全に！</div>
         </div>
 
-        <div class="container mt-3" id="data-container">
+        <div class="today-section">
+            <div class="today-label-col">本日の予定</div>
+            <div class="today-content" id="today-container">
+                <div class="text-muted small p-3">予定はありません</div>
             </div>
+        </div>
+
+        <div class="future-list" id="future-container">
+            </div>
+
     </div>
 
-    <div class="bottom-nav" id="footer-nav" style="display:none;">
-        <a href="#" class="nav-item active">
-            <i class="fas fa-calendar-day nav-icon"></i>今日の稼働
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-bell nav-icon"></i>お知らせ <span class="badge rounded-pill bg-danger" id="nav-badge" style="display:none">1</span>
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fas fa-cog nav-icon"></i>その他
-        </a>
+    <div class="footer-nav" id="footer" style="display:none;">
+        <button class="nav-btn active">
+            今日の稼働
+            <span class="badge-count" id="count-today">0</span>
+        </button>
+        <button class="nav-btn">
+            お知らせ
+            <span class="badge-count badge-alert">未読あり</span>
+        </button>
+        <button class="nav-btn">
+            その他
+        </button>
     </div>
 
     <script>
-        // 日付フォーマット (例: 2025-11-18T08:00:00Z -> 08:00)
-        function formatTime(isoString) {
-            if (!isoString) return '--:--';
-            const d = new Date(isoString);
-            return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        // 進行状況マッピング (Dataverseの値 -> 表示名・クラス)
+        const STATUS_MAP = {
+            100000000: { text: "予 定", class: "status-yet" },
+            100000001: { text: "現場確定", class: "status-yet" },
+            100000002: { text: "通知済み", class: "status-yet" },
+            100000003: { text: "確認済", class: "status-confirmed" }, // 枠線あり
+            100000004: { text: "作業完了", class: "status-done" },
+            100000005: { text: "変更有り", class: "status-alert" }
+        };
+
+        function formatDate(d) {
+            return `${d.getMonth() + 1}/${d.getDate()}`;
+        }
+        function getWeekDay(d) {
+            return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+        }
+        function formatTime(iso) {
+            if(!iso) return "";
+            const d = new Date(iso);
+            return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
         }
 
-        // 日付文字列生成 (ヘッダー用)
-        function getHeaderDate() {
-            const d = new Date();
-            const days = ['日', '月', '火', '水', '木', '金', '土'];
-            return `${d.getMonth() + 1}月${d.getDate()}日(${days[d.getDay()]})`;
-        }
-
-        // 画面切り替え
-        function showSection(id) {
-            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            
-            // フッター表示制御
-            const footer = document.getElementById('footer-nav');
-            if (id === 'view-app') footer.style.display = 'flex';
-            else footer.style.display = 'none';
-        }
-
-        // メイン処理
+        // 初期化
         (async () => {
+            const loading = document.getElementById('loading');
             try {
-                // 1. 認証確認
+                // 認証チェック
                 const authRes = await fetch('/.auth/me');
                 const authData = await authRes.json();
                 
                 if (!authData.clientPrincipal) {
-                    showSection('view-welcome');
+                    loading.style.display = 'none';
+                    document.getElementById('view-login').style.display = 'flex'; // flexに戻す
                     return;
                 }
 
-                // ログイン済みならヘッダー設定
-                document.getElementById('header-date').textContent = getHeaderDate();
-                showSection('view-loading');
+                // 日付セット
+                const now = new Date();
+                document.getElementById('disp-date').textContent = `${now.getMonth()+1}月${now.getDate()}日(${getWeekDay(now)})`;
 
-                // 2. Dataverseデータ取得
+                // データ取得
                 const apiRes = await fetch('/api/show-env');
-                if (!apiRes.ok) {
-                    const errBody = await apiRes.json();
-                    document.getElementById('error-message').textContent = errBody.error || "システムエラー";
-                    showSection('view-error');
-                    return;
-                }
-
+                if(!apiRes.ok) throw new Error("データ取得失敗");
                 const data = await apiRes.json();
+
+                // ユーザー名
+                document.getElementById('disp-name').textContent = data.user.name;
+                document.getElementById('count-today').textContent = data.todayCount;
+
+                // データの振り分け（今日 or 未来）
+                const todayStr = now.toISOString().split('T')[0];
+                const todayContainer = document.getElementById('today-container');
+                const futureContainer = document.getElementById('future-container');
                 
-                // ユーザー名表示
-                const userName = data.user ? data.user.name : authData.clientPrincipal.userDetails;
-                document.getElementById('user-display-name').textContent = userName;
+                todayContainer.innerHTML = '';
+                futureContainer.innerHTML = '';
 
-                // 3. データ描画
-                const container = document.getElementById('data-container');
-                let html = '';
+                let hasToday = false;
 
-                if (data.records && data.records.length > 0) {
-                    data.records.forEach(rec => {
-                        // データマッピング（APIの列名に合わせる）
-                        // ※得意先名はまだAPIで取得していないため、一旦現場名を表示します
-                        const timeStr = formatTime(rec.new_start_time);
-                        const siteName = rec.new_genbamei || '現場名未定';
-                        const workContent = rec.new_sagyou_naiyou || '作業内容未定';
-                        
-                        // 車両（トン数）は現在APIにないので仮置き。後でマスタ連携が必要。
-                        const vehicleClass = "25t"; 
+                data.records.forEach(rec => {
+                    const jobDate = new Date(rec.new_day); // 日付型として処理
+                    const jobDateStr = rec.new_day.split('T')[0]; // 文字列比較用
+                    
+                    // ステータス処理
+                    const statusVal = rec.new_shinkoujoukyou;
+                    const statusInfo = STATUS_MAP[statusVal] || { text: "未定", class: "status-yet" };
 
-                        html += `
-                        <div class="job-card" onclick="alert('詳細画面へ遷移します（実装予定）')">
-                            <div class="d-flex p-3">
-                                <div class="time-box">
-                                    <span class="time-text">${timeStr}</span>
-                                    <span class="ampm">開始</span>
+                    // HTML生成
+                    // 完了済み(100000004) かつ 過去の日付なら表示しないロジックが必要ならここに入れる
+                    
+                    // 今日の判定 (日付が今日 OR (日付が昨日かつ完了していない))
+                    // ※簡易ロジック: 日付一致のみで実装。夜勤ロジックは必要に応じて調整。
+                    const isToday = (jobDateStr === todayStr);
+
+                    if (isToday) {
+                        hasToday = true;
+                        todayContainer.innerHTML += `
+                            <div class="mb-2 border-bottom pb-2" onclick="alert('詳細画面へ: ${rec.new_genbamei}')">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="time-badge">${formatTime(rec.new_start_time)} ～</span>
+                                    <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                                 </div>
-                                
-                                <div class="job-details">
-                                    <div class="d-flex justify-content-between">
-                                        <div class="client-name">得意先名 (API未取得)</div>
-                                        <div class="vehicle-badge">${vehicleClass}</div>
-                                    </div>
-                                    <div class="site-name">${siteName}</div>
-                                    <div class="work-content"><i class="fas fa-tools me-1"></i>${workContent}</div>
+                                <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
+                                <div class="work-content">${rec.new_sagyou_naiyou || '-'}</div>
+                                <div class="small text-danger mt-1">※注意事項があればここに表示</div>
+                            </div>
+                        `;
+                    } else {
+                        // 未来の予定
+                        const wDay = getWeekDay(jobDate);
+                        const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+                        
+                        futureContainer.innerHTML += `
+                            <div class="future-row" onclick="alert('詳細画面へ: ${rec.new_genbamei}')">
+                                <div class="date-col ${dateColor}">
+                                    <div>${jobDate.getDate()}</div>
+                                    <div class="day-week">${wDay}</div>
+                                </div>
+                                <div class="job-col">
+                                    <span class="status-badge ${statusInfo.class}" style="position:static; float:right; margin-left:5px;">${statusInfo.text}</span>
+                                    <div class="fw-bold">${rec.new_genbamei || '現場名未定'}</div>
+                                    <div class="small text-muted">${formatTime(rec.new_start_time)} ～</div>
                                 </div>
                             </div>
-                            
-                            <div class="d-flex">
-                                <button class="btn btn-status btn-confirm" onclick="event.stopPropagation(); alert('確認済にしました');">
-                                    確認済
-                                </button>
-                                </div>
-                        </div>`;
-                    });
-                } else {
-                    html = `
-                    <div class="text-center mt-5 text-muted">
-                        <i class="fas fa-coffee fa-3x mb-3"></i>
-                        <p>本日の予定はありません。<br>ゆっくり休んでください。</p>
-                    </div>`;
+                        `;
+                    }
+                });
+
+                if(!hasToday) {
+                    todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
                 }
 
-                container.innerHTML = html;
-                showSection('view-app');
+                // 画面表示切り替え
+                loading.style.display = 'none';
+                document.getElementById('view-app').style.display = 'block';
+                document.getElementById('footer').style.display = 'flex';
 
             } catch (e) {
                 console.error(e);
-                document.getElementById('error-message').textContent = e.message;
-                showSection('view-error');
+                alert("エラーが発生しました: " + e.message);
+                loading.style.display = 'none';
             }
         })();
     </script>
