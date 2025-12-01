@@ -39,7 +39,6 @@ module.exports = async function (context, req) {
         const userRes = await fetch(userQuery, { 
             headers: { 
                 "Authorization": `Bearer ${token}`,
-                // ★追加: これを入れると、IDだけでなく「名前（FormattedValue）」も取れるようになります
                 "Prefer": "odata.include-annotations=\"*\"" 
             } 
         });
@@ -52,14 +51,31 @@ module.exports = async function (context, req) {
 
         const user = userData.value[0];
         const buId = user._owningbusinessunit_value;
-        // ★追加: 部署名を取得 (Dataverseの仕様で @OData...FormattedValue に入っています)
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
-        // 4. 配車データ取得
-        const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0`; 
-        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=new_day,new_start_time,new_genbamei,new_sagyou_naiyou,new_shinkoujoukyou,new_table2id&$orderby=new_day asc`;
+        // 4. 配車データ取得 (詳細項目を追加)
+        // 必要な列をすべてselectに追加します
+        const selectCols = [
+            "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", 
+            "new_shinkoujoukyou", "new_table2id",
+            "new_tokuisaki_meinvarchar", // 得意先名(テキスト)
+            "_new_kyakusaki_value",      // 客先(Lookup)
+            "_new_sharyou_value",        // 車両(Lookup)
+            "new_kashikiripicklist",     // 貸切区分
+            "_new_renraku1_value",       // 連絡先1(Lookup)
+            "new_renraku_jikountext"     // 連絡事項
+            // ※「持参品」の列名が不明なため、一旦除外しています。判明次第追加します。
+        ].join(",");
 
-        const dispatchRes = await fetch(myDispatchQuery, { headers: { "Authorization": `Bearer ${token}` } });
+        const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0`; 
+        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$orderby=new_day asc`;
+
+        const dispatchRes = await fetch(myDispatchQuery, { 
+            headers: { 
+                "Authorization": `Bearer ${token}`,
+                "Prefer": "odata.include-annotations=\"*\"" // 必須：Lookupの名前を取得するため
+            } 
+        });
         const dispatchData = await dispatchRes.json();
 
         // 5. 今日の部署稼働数のカウント
@@ -68,10 +84,7 @@ module.exports = async function (context, req) {
         const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`;
         
         const countRes = await fetch(countQuery, { 
-            headers: { 
-                "Authorization": `Bearer ${token}`,
-                "Prefer": "odata.include-annotations=\"*\"" 
-            } 
+            headers: { "Authorization": `Bearer ${token}` } 
         });
         const countJson = await countRes.json();
         const buCount = countJson["@odata.count"] || 0;
@@ -79,11 +92,7 @@ module.exports = async function (context, req) {
         context.res = {
             status: 200,
             body: {
-                user: { 
-                    name: user.new_sagyouin_id, 
-                    buId: buId,
-                    buName: buName // ★ここに追加しました
-                },
+                user: { name: user.new_sagyouin_id, buId: buId, buName: buName },
                 records: dispatchData.value,
                 todayCount: buCount
             }
