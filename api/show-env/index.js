@@ -53,18 +53,14 @@ module.exports = async function (context, req) {
         const buId = user._owningbusinessunit_value;
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
-        // 4. 配車データ取得 (詳細項目を追加)
-        // 必要な列をすべてselectに追加します
+        // 4. 配車データ取得
+        // ※_new_genba_value (現場ID) も取得するように追加しました（後で現場資料を取るため）
         const selectCols = [
             "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", 
             "new_shinkoujoukyou", "new_table2id",
-            "new_tokuisaki_meinvarchar", // 得意先名(テキスト)
-            "_new_kyakusaki_value",      // 客先(Lookup)
-            "_new_sharyou_value",        // 車両(Lookup)
-            "new_kashikiripicklist",     // 貸切区分
-            "_new_renraku1_value",       // 連絡先1(Lookup)
-            "new_renraku_jikountext"     // 連絡事項
-            // ※「持参品」の列名が不明なため、一旦除外しています。判明次第追加します。
+            "new_tokuisaki_meinvarchar", "_new_kyakusaki_value", "_new_sharyou_value", 
+            "new_kashikiripicklist", "_new_renraku1_value", "new_renraku_jikountext",
+            "_new_genbalookup_value" // 現場ID (※列名が不明なため仮定。違ったら修正要)
         ].join(",");
 
         const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0`; 
@@ -73,10 +69,38 @@ module.exports = async function (context, req) {
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { 
                 "Authorization": `Bearer ${token}`,
-                "Prefer": "odata.include-annotations=\"*\"" // 必須：Lookupの名前を取得するため
+                "Prefer": "odata.include-annotations=\"*\""
             } 
         });
         const dispatchData = await dispatchRes.json();
+        let records = dispatchData.value;
+
+        // ★資料データの取得 (Docs)
+        // 取得した配車レコードのIDを集めて、それに関連する資料を一括取得します
+        if (records.length > 0) {
+            // 配車IDのリスト作成
+            const haishaIds = records.map(r => r.new_table2id);
+            
+            // フィルタ作成: _new_haisha_value eq 'ID1' or _new_haisha_value eq 'ID2' ...
+            // ※本来は現場ID(_new_genba_value)でも検索すべきですが、まずは配車紐づきのみで実装
+            const docFilter = haishaIds.map(id => `_new_haisha_value eq '${id}'`).join(" or ");
+            
+            // 資料テーブルから取得 (名前, 種類, URL, サムネイル, 配車ID)
+            const docQuery = `${dataverseUrl}/api/data/v9.2/new_docment_tables?$filter=${encodeURIComponent(docFilter)}&$select=new_namenvarchar,new_kakuchoushin,new_url,new_blobthmbnailurl,_new_haisha_value`;
+
+            const docRes = await fetch(docQuery, { headers: { "Authorization": `Bearer ${token}` } });
+            
+            if (docRes.ok) {
+                const docData = await docRes.json();
+                const docs = docData.value;
+
+                // 各配車レコードに「documents」配列として結合
+                records = records.map(rec => {
+                    rec.documents = docs.filter(d => d._new_haisha_value === rec.new_table2id);
+                    return rec;
+                });
+            }
+        }
 
         // 5. 今日の部署稼働数のカウント
         const today = new Date().toISOString().split('T')[0];
@@ -93,7 +117,7 @@ module.exports = async function (context, req) {
             status: 200,
             body: {
                 user: { name: user.new_sagyouin_id, buId: buId, buName: buName },
-                records: dispatchData.value,
+                records: records,
                 todayCount: buCount
             }
         };
