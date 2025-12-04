@@ -33,7 +33,7 @@ module.exports = async function (context, req) {
         const tokenResp = await credential.getToken(`${dataverseUrl}/.default`);
         const token = tokenResp.token;
 
-        // --- 4. マスタ検索 ---
+        // --- 4. 作業員マスタ検索 ---
         const userFilter = `new_mail eq '${userEmail}'`;
         const userQuery = `${dataverseUrl}/api/data/v9.2/new_sagyouin_mastas?$filter=${encodeURIComponent(userFilter)}&$select=new_sagyouin_id,_owningbusinessunit_value`;
         
@@ -44,11 +44,14 @@ module.exports = async function (context, req) {
             } 
         });
 
-        if (!userRes.ok) throw new Error(await userRes.text());
+        if (!userRes.ok) {
+            const errTxt = await userRes.text();
+            throw new Error(`マスタ検索エラー: ${errTxt}`);
+        }
 
         const userData = await userRes.json();
         if (!userData.value || userData.value.length === 0) {
-            context.res = { status: 403, body: { error: "マスタ未登録ユーザーです" } };
+            context.res = { status: 403, body: { error: `未登録のユーザーです (${userEmail})` } };
             return;
         }
 
@@ -56,9 +59,8 @@ module.exports = async function (context, req) {
         const buId = user._owningbusinessunit_value;
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
-        // --- 5. 配車データ取得 (Power Apps仕様) ---
-        
-        // 取得する列 (論理名)
+        // --- 5. 配車データ取得 ---
+        // ★修正: new_isdeleted を削除しました
         const selectCols = [
             "new_day", 
             "new_start_time", 
@@ -66,37 +68,30 @@ module.exports = async function (context, req) {
             "new_sagyou_naiyou", 
             "new_shinkoujoukyou", 
             "new_table2id",
-            "new_tokuisaki_mei",    // 得意先名
-            "new_kyakusaki",        // 客先(Lookup)
-            "new_sharyou",          // 車両(Lookup)
-            "new_kashikiri",        // 貸切区分
-            "new_renraku1",         // 連絡先1(Lookup)
-            "new_renraku_jikou",    // 連絡事項
-            "new_isdeleted",        // 削除フラグ
-            "new_type",             // 予定の種類
-            "new_haisha_zumi"       // 配車済みフラグ
+            "new_tokuisaki_mei",
+            "new_kyakusaki",
+            "new_sharyou",
+            "new_kashikiri",
+            "new_renraku1",
+            "new_renraku_jikou",
+            "new_type",
+            "new_haisha_zumi"
         ].join(",");
 
-        // 日付計算: 「昨日」以降のデータを取得 (前日夜勤を表示するため)
+        // 日付計算: 「昨日」以降
         const dt = new Date();
         dt.setDate(dt.getDate() - 1);
         const yesterdayStr = dt.toISOString().split('T')[0];
 
-        // フィルタ条件:
-        // 1. 担当者(自分) 
-        // 2. 有効データ(statecode=0) 
-        // 3. 削除されていない(!new_isdeleted)
-        // 4. 種類が指示書(100000000)
-        // 5. 日付が昨日以降
-        // 6. 配車済みである(new_haisha_zumi=true)
+        // ★修正: フィルタ条件から new_isdeleted eq false を削除
+        // statecode eq 0 (アクティブ) だけで有効データを判定します
         const myDispatchFilter = `
             _new_operator_value eq '${user.new_sagyouin_mastaid}' and 
             statecode eq 0 and 
-            new_isdeleted eq false and 
             new_type eq 100000000 and 
             new_day ge ${yesterdayStr} and
             new_haisha_zumi eq true
-        `.replace(/\s+/g, ' ').trim(); // 余分な空白削除
+        `.replace(/\s+/g, ' ').trim();
 
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$orderby=new_day asc`;
 
@@ -107,7 +102,10 @@ module.exports = async function (context, req) {
             } 
         });
 
-        if (!dispatchRes.ok) throw new Error(`配車データ取得エラー: ${await dispatchRes.text()}`);
+        if (!dispatchRes.ok) {
+            const errTxt = await dispatchRes.text();
+            throw new Error(`配車データ取得エラー: ${errTxt}`);
+        }
 
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
@@ -132,8 +130,9 @@ module.exports = async function (context, req) {
         }
 
         // --- 7. 部署稼働数 ---
+        // ★修正: ここからも new_isdeleted を削除
         const today = new Date().toISOString().split('T')[0];
-        const countFilter = `_owningbusinessunit_value eq '${buId}' and new_day eq ${today} and new_type eq 100000000 and new_haisha_zumi eq true and new_isdeleted eq false`;
+        const countFilter = `_owningbusinessunit_value eq '${buId}' and new_day eq ${today} and new_type eq 100000000 and new_haisha_zumi eq true and statecode eq 0`;
         const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`;
         
         const countRes = await fetch(countQuery, { headers: { "Authorization": `Bearer ${token}` } });
