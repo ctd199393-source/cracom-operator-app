@@ -26,57 +26,41 @@
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
         .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 2px 8px; border-radius: 4px; }
+        
         .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; }
-        .user-name { font-size: 1.3rem; font-weight: bold; color: #333; line-height: 1.1; }
+        /* ★変更: 氏名は通常ウェイト */
+        .user-name { font-size: 1.3rem; font-weight: normal; color: #333; line-height: 1.1; }
+        /* ★変更: スローガンは太字 */
         .safety-msg { font-size: 0.9rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
         .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
 
-        /* 本日の予定 */
+        /* 一覧画面 */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
 
-        /* --- 今後の予定リスト (デザイン変更) --- */
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
-        
         .date-col { 
             width: 60px; background: #fff; border-right: 1px solid #eee; 
-            position: relative; /* 配置の基準 */
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #333;
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333;
         }
-        /* 左上の月表示 */
-        .month-label {
-            position: absolute; top: 4px; left: 4px;
-            font-size: 0.75rem; font-weight: normal; color: #666;
-            line-height: 1;
-        }
-        /* 日付メイン */
-        .day-label {
-            font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px;
-        }
-        /* 曜日 */
+        .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
+        .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
-
-        /* 土日の色 */
         .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; }
         .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
-
         .job-col { flex-grow: 1; padding: 8px; position: relative; }
         .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; }
 
-        /* 共通パーツ */
         .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
         .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
         .work-content { font-size: 0.85rem; color: #666; }
-        
         .status-badge {
             position: absolute; top: 8px; right: 8px;
             font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;
             font-weight: bold; border: 1px solid;
         }
-        /* ステータス色 */
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
         .st-not { color: var(--col-not); background: #ebf9e9; border-color: var(--col-not); }
@@ -84,7 +68,13 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
 
-        /* 詳細画面・その他 */
+        /* 詳細画面 */
+        /* ★追加: デバッグ用ID表示エリア */
+        .debug-id-area { 
+            font-size: 0.7rem; color: #ccc; text-align: right; 
+            margin-bottom: 5px; font-family: monospace; user-select: all; 
+        }
+        
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 4px; padding: 5px; text-align: center; flex: 1; }
         .info-box label { display: block; font-size: 0.7rem; color: #005a9e; font-weight: bold; margin-bottom: 0; }
@@ -97,6 +87,7 @@
         .detail-note { padding: 10px; font-size: 0.9rem; color: #333; white-space: pre-wrap; }
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
         .link-btn { text-decoration: none; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; color: #005a9e; }
+        
         .doc-list-area { margin-top: 10px; }
         .doc-header { font-size: 0.9rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; }
@@ -105,6 +96,7 @@
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.75rem; color: #888; }
+        
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
@@ -158,6 +150,8 @@
         </div>
 
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
+            <div class="debug-id-area" id="dt-debug-id">ID: ---</div>
+
             <div class="detail-info-row">
                 <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
                 <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
@@ -208,12 +202,9 @@
         };
 
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
-        
-        // ヘッダー用日付フォーマット (M月D日(曜))
         function formatDateHeader(d) {
             return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`;
         }
-
         function formatTime(iso) {
             if(!iso) return "";
             const d = new Date(iso);
@@ -256,7 +247,9 @@
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            // ★詳細画面では「その案件の作業日」を表示
+            // ★変更: GUIDの表示
+            document.getElementById('dt-debug-id').textContent = "ID: " + rec.new_table2id;
+
             const jobDate = new Date(rec.new_day);
             document.getElementById('disp-date').textContent = formatDateHeader(jobDate);
 
@@ -315,7 +308,6 @@
         };
 
         window.goBack = function() { 
-            // 戻るときは「今日の日付」に戻す
             const now = new Date();
             document.getElementById('disp-date').textContent = formatDateHeader(now);
             switchScreen('list'); 
@@ -358,7 +350,6 @@
                 futureContainer.innerHTML = '';
                 let hasToday = false;
 
-                // --- ★修正：明日から14日間の日付ループを作る ---
                 for (let i = 1; i <= 14; i++) {
                     const targetDate = new Date(now);
                     targetDate.setDate(now.getDate() + i);
@@ -366,11 +357,9 @@
                     const wDay = getWeekDay(targetDate);
                     const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
 
-                    // この日付のデータがあるか探す
                     const dayRecords = globalData.filter(r => r.new_day.startsWith(dateKey));
 
                     if (dayRecords.length > 0) {
-                        // データがある場合：行を追加
                         dayRecords.forEach(rec => {
                             const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                             const timeStr = formatTime(rec.new_start_time);
@@ -390,7 +379,6 @@
                                 </div>`;
                         });
                     } else {
-                        // データがない場合：「予定なし」行を追加
                         futureContainer.innerHTML += `
                             <div class="future-row">
                                 <div class="date-col ${dateColor}">
@@ -405,12 +393,10 @@
                     }
                 }
 
-                // 「今日の予定」は従来通りデータ有無で判定
                 data.records.forEach(rec => {
                     const jobDateStr = rec.new_day.split('T')[0];
                     const kashikiriVal = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                     const isNight = kashikiriVal.includes("夜間");
-                    // 今日 または 昨日夜間
                     const isTodayTarget = (jobDateStr === todayStr) || (jobDateStr === yestStr && isNight);
 
                     if (isTodayTarget) {
