@@ -3,21 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>オペレーター指示書</title>
+    <title>クラコムPlus</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* (CSSは前回と同じ) */
-        :root { --app-blue: #005a9e; --app-bg: #f3f2f1; --status-confirm: #0078d4; --status-done: #d13438; --status-yet: #605e5c; }
+        :root {
+            --app-blue: #005a9e;
+            --app-bg: #f3f2f1;
+            /* Power Apps カラー定義 (文字色) */
+            --col-fix: #052832;   /* 現場確定: 深緑 */
+            --col-not: #379E1D;   /* 通知済み: 緑 */
+            --col-con: #0F6CBD;   /* 確認済み: 青 */
+            --col-don: #D73A3C;   /* 作業完了: 赤 */
+            --col-chg: #0F9E3C;   /* 変更有り: 緑 */
+            --col-yet: #605e5c;   /* 未定: グレー */
+        }
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
-        .header-bar { background: white; border-bottom: 3px solid var(--status-done); padding: 10px 15px; position: sticky; top: 0; z-index: 100; }
-        .company-name { font-size: 0.9rem; color: #666; margin-bottom: 4px; font-weight: bold; }
-        .user-name-area { display: flex; justify-content: space-between; align-items: flex-start; }
-        .user-name { font-size: 1.4rem; font-weight: bold; color: #333; line-height: 1.2; }
-        .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: underline; cursor: pointer; }
-        .header-date { font-size: 1.1rem; font-weight: bold; color: #333; text-align: right; }
-        .safety-msg { text-align: center; color: var(--app-blue); font-weight: bold; margin-top: 5px; font-size: 1.1rem; }
+        
+        /* --- ヘッダー (コンパクト化) --- */
+        .header-bar {
+            background: white; border-bottom: 3px solid var(--col-don);
+            padding: 8px 15px; position: sticky; top: 0; z-index: 100;
+        }
+        .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
+        .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 2px 8px; border-radius: 4px; }
+        
+        .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; }
+        .user-name { font-size: 1.3rem; font-weight: bold; color: #333; line-height: 1.1; }
+        .safety-msg { font-size: 0.9rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
+        .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
+
+        /* リスト画面スタイル */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
@@ -25,15 +43,27 @@
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
         .date-col { width: 50px; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; color: #333; }
         .date-col .day-week { font-size: 0.8rem; }
-        .date-col.is-blue { color: #0078d4; } .date-col.is-red { color: #d13438; }
+        .date-col.is-blue { color: #0078d4; }
+        .date-col.is-red { color: #d13438; }
         .job-col { flex-grow: 1; padding: 8px; position: relative; }
         .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
         .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
         .work-content { font-size: 0.85rem; color: #666; }
-        .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 3px 8px; border-radius: 2px; color: white; font-weight: normal; border: 1px solid #ccc; }
-        .status-yet { color: #0078d4; border-color: #0078d4; background: white; }
-        .status-confirmed { background-color: var(--status-confirm); }
-        .status-done { background-color: var(--status-done); }
+        
+        /* ステータスバッジ (Power Apps風: 枠線＋薄背景) */
+        .status-badge {
+            position: absolute; top: 8px; right: 8px;
+            font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;
+            font-weight: bold; border: 1px solid;
+        }
+        .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
+        .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); } /* 現場確定 */
+        .st-not { color: var(--col-not); background: #ebf9e9; border-color: var(--col-not); } /* 通知済み */
+        .st-con { color: var(--col-con); background: #e6f2ff; border-color: var(--col-con); } /* 確認済み */
+        .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); } /* 作業完了 */
+        .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); } /* 変更有り */
+
+        /* 詳細画面 */
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 4px; padding: 5px; text-align: center; flex: 1; }
         .info-box label { display: block; font-size: 0.7rem; color: #005a9e; font-weight: bold; margin-bottom: 0; }
@@ -44,8 +74,11 @@
         .detail-label { width: 80px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; }
         .detail-val { flex: 1; padding: 8px; font-size: 0.95rem; color: #333; display: flex; align-items: center; }
         .detail-note { padding: 10px; font-size: 0.9rem; color: #333; white-space: pre-wrap; }
+        
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
         .link-btn { text-decoration: none; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; color: #005a9e; }
+        
+        /* 資料リスト */
         .doc-list-area { margin-top: 10px; }
         .doc-header { font-size: 0.9rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; }
@@ -54,6 +87,8 @@
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.75rem; color: #888; }
+
+        /* フッター */
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
@@ -61,6 +96,7 @@
         .btn-back { background: #0078d4; color: white; border: none; width: 80px; border-radius: 4px; font-weight: bold; }
         .btn-camera { background: white; color: #0078d4; border: 1px solid #0078d4; flex: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
         .btn-finish { background: #ff5722; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; }
+
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,1); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         #view-login { height: 100vh; width: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: white; position: absolute; top: 0; left: 0; z-index: 2000; }
         .login-logo { max-width: 80%; height: auto; margin-bottom: 40px; }
@@ -87,15 +123,15 @@
 
     <div id="view-app-wrapper" style="display:none;">
         <div class="header-bar">
-            <div class="company-name" id="company-name-area">---</div>
-            <div class="user-name-area">
-                <div class="user-name" id="disp-name">---</div>
-                <div class="text-end">
-                    <div class="header-date" id="disp-date">--/--(曜)</div>
-                    <a href="/.auth/logout" class="logout-link">ログアウト</a>
-                </div>
+            <div class="header-row-top">
+                <div class="company-name" id="company-name-area">---</div>
+                <a href="/.auth/logout" class="logout-link">ログアウト</a>
             </div>
-            <div class="safety-msg">本日もご安全に！</div>
+            <div class="header-row-main">
+                <div class="user-name" id="disp-name">---</div>
+                <div class="safety-msg">本日もご安全に！</div>
+                <div class="header-date" id="disp-date">--/--</div>
+            </div>
         </div>
 
         <div id="view-list" class="view-section" style="display:block;">
@@ -112,6 +148,7 @@
                 <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
                 <div class="info-box"><label>車輌</label><span id="dt-vehicle">---</span></div>
             </div>
+
             <div class="detail-card">
                 <div class="detail-row"><div class="detail-label">得意先</div><div class="detail-val" id="dt-client">---</div></div>
                 <div class="detail-row"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
@@ -119,13 +156,18 @@
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
                 <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">無線機 x 1</div></div>
             </div>
+
             <div class="detail-card">
                 <div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div>
                 <div class="detail-note" id="dt-note"></div>
             </div>
+
             <div class="detail-actions">
-                <a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a>
+                <a href="#" class="link-btn" id="link-map" target="_blank">
+                    <i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図
+                </a>
             </div>
+
             <div class="doc-list-area">
                 <div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div>
                 <div id="dt-doc-list"></div>
@@ -146,23 +188,27 @@
     </div>
 
     <script>
-        let globalData = [];
+        let globalData = []; 
+        // ★改修: ステータスカラー定義 (クラス名を更新)
         const STATUS_MAP = {
-            100000000: { text: "予 定", class: "status-yet" },
-            100000001: { text: "現場確定", class: "status-yet" },
-            100000002: { text: "通知済み", class: "status-yet" },
-            100000003: { text: "確認済", class: "status-confirmed" },
-            100000004: { text: "作業完了", class: "status-done" },
-            100000005: { text: "変更有り", class: "status-alert" }
+            100000000: { text: "予 定", class: "st-yet" },
+            100000001: { text: "現場確定", class: "st-fix" },
+            100000002: { text: "通知済み", class: "st-not" },
+            100000003: { text: "確認済", class: "st-con" },
+            100000004: { text: "作業完了", class: "st-don" },
+            100000005: { text: "変更有り", class: "st-chg" }
         };
-        // 貸切の値マッピング (Dataverse値 -> 表示)
-        // ※100... の値は環境によるため、ここではFormattedValueを優先利用します
-        
+
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
         function formatTime(iso) {
             if(!iso) return "";
             const d = new Date(iso);
             return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        // 日付文字列生成 (M月D日(曜))
+        function formatDateHeader(d) {
+            return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`;
         }
 
         function switchScreen(screenName) {
@@ -201,6 +247,10 @@
         window.openDetail = function(id) {
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
+
+            // ★改修: 詳細画面では「その案件の日付」をヘッダーにセット
+            const jobDate = new Date(rec.new_day);
+            document.getElementById('disp-date').textContent = formatDateHeader(jobDate);
 
             document.getElementById('dt-time').textContent = formatTime(rec.new_start_time);
             document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
@@ -258,7 +308,12 @@
             switchScreen('detail');
         };
 
-        window.goBack = function() { switchScreen('list'); };
+        // ★改修: 一覧に戻る時は「今日の日付」に戻す
+        window.goBack = function() { 
+            const now = new Date();
+            document.getElementById('disp-date').textContent = formatDateHeader(now);
+            switchScreen('list'); 
+        };
 
         (async () => {
             try {
@@ -271,7 +326,7 @@
                 }
 
                 const now = new Date();
-                document.getElementById('disp-date').textContent = `${now.getMonth()+1}月${now.getDate()}日(${getWeekDay(now)})`;
+                document.getElementById('disp-date').textContent = formatDateHeader(now);
 
                 const apiRes = await fetch('/api/show-env');
                 if(!apiRes.ok) {
@@ -287,8 +342,6 @@
                 document.getElementById('count-today').textContent = data.todayCount;
 
                 const todayStr = now.toISOString().split('T')[0];
-                
-                // 昨日
                 const yest = new Date(now);
                 yest.setDate(yest.getDate() - 1);
                 const yestStr = yest.toISOString().split('T')[0];
@@ -300,18 +353,13 @@
                 let hasToday = false;
 
                 data.records.forEach(rec => {
-                    const jobDate = new Date(rec.new_day);
                     const jobDateStr = rec.new_day.split('T')[0];
-                    const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "status-yet" };
+                    const jobDate = new Date(rec.new_day);
+                    const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                     const timeStr = formatTime(rec.new_start_time);
                     
-                    // ★本日の予定判定ロジック (Power Apps準拠)
-                    // 1. 日付が今日
-                    // 2. 日付が昨日 かつ 貸切区分が「夜間」(Value=100000003 と仮定)
-                    // ※貸切のコード値は環境依存ですが、ここでは「夜間」という文字が含まれるかで簡易判定
                     const kashikiriVal = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                     const isNight = kashikiriVal.includes("夜間");
-                    
                     const isToday = (jobDateStr === todayStr) || (jobDateStr === yestStr && isNight);
 
                     const html = `
