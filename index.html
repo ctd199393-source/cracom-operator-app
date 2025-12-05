@@ -21,18 +21,23 @@
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
         
-        /* ヘッダー */
+        /* --- ヘッダー (バランス調整) --- */
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
-        .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
-        .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 2px 8px; border-radius: 4px; }
         
-        .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; }
-        /* ★変更: 氏名は通常ウェイト */
-        .user-name { font-size: 1.3rem; font-weight: normal; color: #333; line-height: 1.1; }
-        /* ★変更: スローガンは太字 */
-        .safety-msg { font-size: 0.9rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
+        .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
+        .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
+        /* ★変更: 氏名をここ（上段）に移動したりサイズを変えることも可能ですが、今回は指定通りサイズ変更のみ */
+        
+        .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px; }
+        
+        /* ★変更: 氏名 (サイズダウン・太字) */
+        .user-name { font-size: 0.9rem; font-weight: bold; color: #333; line-height: 1.2; }
+        
+        /* ★変更: 安全スローガン (サイズアップ・メイン化) */
+        .safety-msg { font-size: 1.4rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
+        
         .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
+        .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; margin-left: 10px;}
 
         /* 一覧画面 */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
@@ -69,7 +74,7 @@
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
 
         /* 詳細画面 */
-        /* ★追加: デバッグ用ID表示エリア */
+        /* ★変更: ID表示エリア (prefixなし) */
         .debug-id-area { 
             font-size: 0.7rem; color: #ccc; text-align: right; 
             margin-bottom: 5px; font-family: monospace; user-select: all; 
@@ -150,7 +155,7 @@
         </div>
 
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
-            <div class="debug-id-area" id="dt-debug-id">ID: ---</div>
+            <div class="debug-id-area" id="dt-debug-id">---</div>
 
             <div class="detail-info-row">
                 <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
@@ -247,8 +252,8 @@
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            // ★変更: GUIDの表示
-            document.getElementById('dt-debug-id').textContent = "ID: " + rec.new_table2id;
+            // ★変更: GUID値のみセット
+            document.getElementById('dt-debug-id').textContent = rec.new_table2id;
 
             const jobDate = new Date(rec.new_day);
             document.getElementById('disp-date').textContent = formatDateHeader(jobDate);
