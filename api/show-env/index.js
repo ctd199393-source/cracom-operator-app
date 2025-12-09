@@ -11,8 +11,9 @@ function generateSasToken(connectionString, containerName, blobPath) {
         const accountName = parts.find(p => p.startsWith('AccountName=')).split('=')[1];
         const accountKey = parts.find(p => p.startsWith('AccountKey=')).split('=')[1];
 
-        // Blobパスの正規化 (/container/folder/file -> folder/file)
+        // Blobパスの正規化
         let blobName = blobPath;
+        // "/containerName/path" の形式から containerName を除去して純粋なBlob名にする
         if (blobName.startsWith(`/${containerName}/`)) {
             blobName = blobName.substring(containerName.length + 2);
         } else if (blobName.startsWith("/")) {
@@ -80,31 +81,28 @@ module.exports = async function (context, req) {
         }
         const user = userData.value[0];
         const buId = user._owningbusinessunit_value;
-        const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"]; // 部署名取得にはPreferヘッダーが必要だが、ここでは簡易取得
+        const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
-        // 4. 配車データ取得 (Power Apps仕様)
-        // 必要な列 (論理名)
+        // 4. 配車データ取得
+        // ★修正: new_end_time (終了時間), new_yousha_irai (傭車依頼) を追加
         const selectCols = [
-            "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
+            "new_day", "new_start_time", "new_end_time", // 時間関係
+            "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
             "new_table2id", "new_tokuisaki_mei", "new_kyakusaki", "new_sharyou", "new_kashikiri", 
             "new_renraku1", "new_renraku_jikou", "new_type", "new_haisha_zumi",
-            "_new_id_value", "_new_sagyouba_value" // 案件ID, 現場ID
+            "new_yousha_irai", // 傭車依頼フラグ
+            "_new_id_value", "_new_sagyouba_value"
         ].join(",");
 
         const dt = new Date();
         dt.setDate(dt.getDate() - 1);
         const yesterdayStr = dt.toISOString().split('T')[0];
 
-        // フィルタ: 自分担当 AND 有効 AND 指示書 AND 昨日以降 AND 配車済み
         const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0 and new_type eq 100000000 and new_day ge ${yesterdayStr} and new_haisha_zumi eq true`;
-        
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
-            headers: { 
-                "Authorization": `Bearer ${token}`, 
-                "Prefer": "odata.include-annotations=\"*\"" // FormattedValue取得に必須
-            } 
+            headers: { "Authorization": `Bearer ${token}`, "Prefer": "odata.include-annotations=\"*\"" } 
         });
 
         if (!dispatchRes.ok) throw new Error(`配車取得エラー: ${await dispatchRes.text()}`);
@@ -113,7 +111,6 @@ module.exports = async function (context, req) {
 
         // 5. 資料データ取得 & SAS発行
         if (records.length > 0 && storageConnString) {
-            // 関連ID収集 (配車ID + 案件ID + 現場ID)
             let filterParts = [];
             records.forEach(r => {
                 filterParts.push(`_new_haisha_value eq '${r.new_table2id}'`);
@@ -141,12 +138,28 @@ module.exports = async function (context, req) {
 
                         rec.documents = myDocs.map(d => {
                             if (!d.new_blob_pass || !d.new_container) return null;
+                            
+                            // 本体のSAS URL
                             const sasUrl = generateSasToken(storageConnString, d.new_container, d.new_blob_pass);
+                            
+                            // ★修正: サムネイル用SAS URL生成ロジック
+                            let thumbSasUrl = null;
+                            const ext = (d.new_kakuchoushi || "").toLowerCase();
+                            const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'].some(e => ext.includes(e));
+
+                            if (d.new_blobthmbnailurl) {
+                                // サムネイル列にパスがあればそれを使う
+                                thumbSasUrl = generateSasToken(storageConnString, d.new_container, d.new_blobthmbnailurl);
+                            } else if (isImage) {
+                                // 画像ファイルなら、本体URLをサムネイルとして代用
+                                thumbSasUrl = sasUrl;
+                            }
+
                             return {
                                 new_name: d.new_name,
                                 new_kakuchoushi: d.new_kakuchoushi,
-                                new_url: sasUrl,
-                                new_blobthmbnailurl: d.new_blobthmbnailurl 
+                                new_url: sasUrl, 
+                                new_blobthmbnailurl: thumbSasUrl // SAS付きのサムネイルURL (なければnull)
                             };
                         }).filter(d => d !== null && d.new_url !== null);
                         return rec;
@@ -165,7 +178,7 @@ module.exports = async function (context, req) {
         context.res = {
             status: 200,
             body: {
-                user: { name: user.new_sagyouin_id, buId: buId, buName: buName }, // buNameは部署名
+                user: { name: user.new_sagyouin_id, buId: buId, buName: buName },
                 records: records,
                 todayCount: buCount
             }
