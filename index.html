@@ -8,78 +8,56 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --app-blue: #005a9e;
-            --app-bg: #f3f2f1;
-            /* Power Apps カラー定義 */
-            --col-fix: #052832;   /* 現場確定 */
-            --col-not: #379E1D;   /* 通知済み */
-            --col-con: #0F6CBD;   /* 確認済み */
-            --col-don: #D73A3C;   /* 作業完了 */
-            --col-chg: #0F9E3C;   /* 変更有り */
-            --col-yet: #605e5c;   /* 未定 */
+            --app-blue: #005a9e; --app-bg: #f3f2f1;
+            /* Power Apps カラー */
+            --col-fix: #052832; --col-not: #379E1D; --col-con: #0F6CBD;
+            --col-don: #D73A3C; --col-chg: #0F9E3C; --col-yet: #605e5c;
         }
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
         
-        /* --- ヘッダー (バランス調整) --- */
+        /* ヘッダー */
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
-        
-        .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
+        .header-row-top { display: flex; justify-content: space-between; align-items: center; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
-        /* ★変更: 氏名をここ（上段）に移動したりサイズを変えることも可能ですが、今回は指定通りサイズ変更のみ */
+        .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; }
         
-        .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px; }
-        
-        /* ★変更: 氏名 (サイズダウン・太字) */
-        .user-name { font-size: 0.9rem; font-weight: bold; color: #333; line-height: 1.2; }
-        
-        /* ★変更: 安全スローガン (サイズアップ・メイン化) */
-        .safety-msg { font-size: 1.4rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
-        
+        .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; }
+        .user-name { font-size: 0.9rem; font-weight: bold; color: #333; }
+        .safety-msg { font-size: 1.2rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; }
         .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
-        .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; margin-left: 10px;}
 
-        /* 一覧画面 */
+        /* リスト */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
 
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
-        .date-col { 
-            width: 60px; background: #fff; border-right: 1px solid #eee; 
-            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333;
-        }
+        .date-col { width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; }
         .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
         .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
         .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; }
         .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
         .job-col { flex-grow: 1; padding: 8px; position: relative; }
-        .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; }
+        .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; padding-left: 10px; }
 
-        .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
-        .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
-        .work-content { font-size: 0.85rem; color: #666; }
-        .status-badge {
-            position: absolute; top: 8px; right: 8px;
-            font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;
-            font-weight: bold; border: 1px solid;
-        }
+        /* ステータスバッジ */
+        .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid; }
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
         .st-not { color: var(--col-not); background: #ebf9e9; border-color: var(--col-not); }
         .st-con { color: var(--col-con); background: #e6f2ff; border-color: var(--col-con); }
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
-
-        /* 詳細画面 */
-        /* ★変更: ID表示エリア (prefixなし) */
-        .debug-id-area { 
-            font-size: 0.7rem; color: #ccc; text-align: right; 
-            margin-bottom: 5px; font-family: monospace; user-select: all; 
-        }
         
+        .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
+        .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
+        .work-content { font-size: 0.85rem; color: #666; }
+
+        /* 詳細 */
+        .debug-id-area { font-size: 0.7rem; color: #ccc; text-align: right; margin-bottom: 5px; font-family: monospace; }
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 4px; padding: 5px; text-align: center; flex: 1; }
         .info-box label { display: block; font-size: 0.7rem; color: #005a9e; font-weight: bold; margin-bottom: 0; }
@@ -102,6 +80,7 @@
         .doc-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.75rem; color: #888; }
         
+        /* 共通 */
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
@@ -117,17 +96,14 @@
     </style>
 </head>
 <body>
-
     <div id="loading" class="loading-overlay">
         <div class="spinner-border text-primary" role="status"></div>
         <div class="mt-3 fw-bold text-primary">アプリを起動中...</div>
     </div>
-
     <div id="view-login">
         <img src="logo.png" alt="Logo" class="login-logo">
         <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a>
     </div>
-
     <div id="view-error" class="view-section text-center mt-5">
         <div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div>
         <a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a>
@@ -156,7 +132,6 @@
 
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
             <div class="debug-id-area" id="dt-debug-id">---</div>
-
             <div class="detail-info-row">
                 <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
                 <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
@@ -188,7 +163,6 @@
         <button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button>
         <button class="nav-btn">その他</button>
     </div>
-
     <div class="footer-detail" id="footer-detail">
         <button class="btn-back" onclick="goBack()">戻る</button>
         <button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button>
@@ -207,9 +181,7 @@
         };
 
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
-        function formatDateHeader(d) {
-            return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`;
-        }
+        function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
         function formatTime(iso) {
             if(!iso) return "";
             const d = new Date(iso);
@@ -252,18 +224,18 @@
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            // ★変更: GUID値のみセット
             document.getElementById('dt-debug-id').textContent = rec.new_table2id;
-
             const jobDate = new Date(rec.new_day);
             document.getElementById('disp-date').textContent = formatDateHeader(jobDate);
 
             document.getElementById('dt-time').textContent = formatTime(rec.new_start_time);
             document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
             document.getElementById('dt-vehicle').textContent = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "-";
+            
             const client = rec.new_tokuisaki_mei || "-";
             const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
             document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
+            
             document.getElementById('dt-site').textContent = rec.new_genbamei || "-";
             document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
             document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
@@ -279,7 +251,6 @@
 
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
-            
             if (rec.documents && rec.documents.length > 0) {
                 let docHtml = '';
                 rec.documents.forEach(doc => {
@@ -301,14 +272,12 @@
                                 <div class="doc-meta">${ext.toUpperCase()} ファイル</div>
                             </div>
                             <i class="fas fa-chevron-right text-muted"></i>
-                        </a>
-                    `;
+                        </a>`;
                 });
                 docContainer.innerHTML = docHtml;
             } else {
                 docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>';
             }
-
             switchScreen('detail');
         };
 
@@ -337,7 +306,6 @@
                     throw new Error(err.error || "API Error");
                 }
                 const data = await apiRes.json();
-                
                 globalData = data.records;
 
                 document.getElementById('disp-name').textContent = data.user.name;
@@ -355,6 +323,7 @@
                 futureContainer.innerHTML = '';
                 let hasToday = false;
 
+                // 明日から14日分ループ
                 for (let i = 1; i <= 14; i++) {
                     const targetDate = new Date(now);
                     targetDate.setDate(now.getDate() + i);
@@ -398,6 +367,7 @@
                     }
                 }
 
+                // 今日の予定 (本日 or 昨日夜間)
                 data.records.forEach(rec => {
                     const jobDateStr = rec.new_day.split('T')[0];
                     const kashikiriVal = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
