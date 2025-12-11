@@ -11,6 +11,7 @@
         :root { --app-blue: #005a9e; --app-bg: #f3f2f1; --col-fix: #052832; --col-not: #379E1D; --col-con: #0F6CBD; --col-don: #D73A3C; --col-chg: #0F9E3C; --col-yet: #605e5c; }
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
+        
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
@@ -20,7 +21,7 @@
         .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
         .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; margin-left: 10px;}
 
-        /* リスト・詳細共通 */
+        /* リスト */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
@@ -44,20 +45,14 @@
         .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
         .work-content { font-size: 0.85rem; color: #666; }
 
-        /* 詳細画面 */
-        /* ★変更: IDエリアにFlexを適用して左端と右端に配置 */
-        .debug-row { 
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 5px; 
-        }
+        /* 詳細 */
+        .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; }
-        .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; } /* デフォルト非表示 */
-        
+        .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 4px; padding: 5px; text-align: center; flex: 1; }
         .info-box label { display: block; font-size: 0.7rem; color: #005a9e; font-weight: bold; margin-bottom: 0; }
-        .info-box span { font-size: 1.1rem; font-weight: bold; color: #333; } /* 時間が長いと溢れるので少し小さく */
-        
+        .info-box span { font-size: 1.1rem; font-weight: bold; color: #333; }
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
         .detail-row:last-child { border-bottom: none; }
@@ -66,26 +61,18 @@
         .detail-note { padding: 10px; font-size: 0.9rem; color: #333; white-space: pre-wrap; }
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
         .link-btn { text-decoration: none; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; color: #005a9e; }
-        
-        /* ★変更: 資料リスト (プレビュー対応) */
         .doc-list-area { margin-top: 10px; }
         .doc-header { font-size: 0.9rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
-        
-        /* サムネイル画像スタイル */
-        .doc-preview-box { 
-            width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; 
-            display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee;
-        }
+        .doc-preview-box { width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; }
         .doc-thumb-img { width: 100%; height: 100%; object-fit: cover; }
         .doc-icon { font-size: 2rem; color: #d13438; }
-
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.75rem; color: #888; margin-top: 2px;}
 
-        /* フッター・その他 */
+        /* フッター */
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
@@ -101,46 +88,23 @@
     </style>
 </head>
 <body>
-    <div id="loading" class="loading-overlay">
-        <div class="spinner-border text-primary" role="status"></div>
-        <div class="mt-3 fw-bold text-primary">アプリを起動中...</div>
-    </div>
-    <div id="view-login">
-        <img src="logo.png" alt="Logo" class="login-logo">
-        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a>
-    </div>
-    <div id="view-error" class="view-section text-center mt-5">
-        <div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div>
-        <a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a>
-    </div>
+    <div id="loading" class="loading-overlay"><div class="spinner-border text-primary" role="status"></div><div class="mt-3 fw-bold text-primary">アプリを起動中...</div></div>
+    <div id="view-login"><img src="logo.png" alt="Logo" class="login-logo"><a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a></div>
+    <div id="view-error" class="view-section text-center mt-5"><div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div><a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a></div>
 
     <div id="view-app-wrapper" style="display:none;">
         <div class="header-bar">
-            <div class="header-row-top">
-                <div class="company-name" id="company-name-area">---</div>
-                <a href="/.auth/logout" class="logout-link">ログアウト</a>
-            </div>
-            <div class="header-row-main">
-                <div class="user-name" id="disp-name">---</div>
-                <div class="safety-msg">本日もご安全に！</div>
-                <div class="header-date" id="disp-date">--/--</div>
-            </div>
+            <div class="header-row-top"><div class="company-name" id="company-name-area">---</div><a href="/.auth/logout" class="logout-link">ログアウト</a></div>
+            <div class="header-row-main"><div class="user-name" id="disp-name">---</div><div class="safety-msg">本日もご安全に！</div><div class="header-date" id="disp-date">--/--</div></div>
         </div>
 
         <div id="view-list" class="view-section" style="display:block;">
-            <div class="today-section">
-                <div class="today-label-col">本日の予定</div>
-                <div class="today-content" id="today-container"></div>
-            </div>
+            <div class="today-section"><div class="today-label-col">本日の予定</div><div class="today-content" id="today-container"></div></div>
             <div class="future-list" id="future-container"></div>
         </div>
 
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
-            <div class="debug-row">
-                <span class="yousha-mark" id="dt-yousha-mark">傭車</span>
-                <span class="debug-id" id="dt-debug-id">---</span>
-            </div>
-
+            <div class="debug-row"><span class="yousha-mark" id="dt-yousha-mark">傭車</span><span class="debug-id" id="dt-debug-id">---</span></div>
             <div class="detail-info-row">
                 <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
                 <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
@@ -153,33 +117,55 @@
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
                 <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">無線機 x 1</div></div>
             </div>
-            <div class="detail-card">
-                <div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div>
-                <div class="detail-note" id="dt-note"></div>
-            </div>
-            <div class="detail-actions">
-                <a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a>
-            </div>
-            <div class="doc-list-area">
-                <div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div>
-                <div id="dt-doc-list"></div>
-            </div>
+            <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
+            <div class="detail-actions"><a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a></div>
+            <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div><div id="dt-doc-list"></div></div>
         </div>
     </div>
 
     <div class="footer-nav" id="footer-list">
-        <button class="nav-btn active">今日の稼働<span class="badge-count" id="count-today">0</span></button>
-        <button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button>
-        <button class="nav-btn">その他</button>
+        <button class="nav-btn active">今日の稼働<span class="badge-count" id="count-today">0</span></button><button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button><button class="nav-btn">その他</button>
     </div>
     <div class="footer-detail" id="footer-detail">
-        <button class="btn-back" onclick="goBack()">戻る</button>
-        <button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button>
-        <button class="btn-finish" onclick="alert('完了通知機能は未実装です')">作業完了通知</button>
+        <button class="btn-back" onclick="goBack()">戻る</button><button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button>
+        <button class="btn-finish" onclick="confirmCompletion()">作業完了通知</button>
     </div>
+
+    <div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-danger">作業完了の報告</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <p class="mb-3" style="font-size:1.1rem;">作業完了を通知しますか？</p>
+                    <p class="text-muted small mb-4">
+                        ※位置情報が送信されます。<br>
+                        許可を求められた場合は「許可」を選択してください。
+                    </p>
+                    <div class="d-grid gap-2 d-flex justify-content-center">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
+                        <button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top text-center">
+                        <a href="#" onclick="showLocationHelp(); return false;" class="small text-decoration-none text-secondary">
+                            <i class="fas fa-cog me-1"></i>位置情報が許可できない場合
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         let globalData = [];
+        let currentHaishaId = null; // 選択中の配車ID
+        let completeModal = null; // モーダルインスタンス
+
         const STATUS_MAP = {
             100000000: { text: "予 定", class: "st-yet" },
             100000001: { text: "現場確定", class: "st-fix" },
@@ -197,31 +183,93 @@
             return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
         }
 
+        // --- ★追加: 作業完了ロジック ---
+        function confirmCompletion() {
+            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            completeModal.show();
+        }
+
+        function executeComplete() {
+            if (!currentHaishaId) return;
+            // ボタンをローディング状態に
+            const btn = document.querySelector('#completeModal .btn-danger');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
+            btn.disabled = true;
+
+            // 位置情報取得 (タイムアウト5秒)
+            navigator.geolocation.getCurrentPosition(
+                (pos) => sendApi(pos.coords.latitude, pos.coords.longitude, btn, originalText),
+                (err) => {
+                    console.log("位置情報取得失敗または拒否:", err);
+                    // 拒否されても空で送信
+                    sendApi(null, null, btn, originalText);
+                },
+                { timeout: 5000, enableHighAccuracy: true }
+            );
+        }
+
+        async function sendApi(lat, long, btn, originalText) {
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long })
+                });
+
+                if (!res.ok) throw new Error("送信エラー");
+
+                alert("作業完了を通知しました。");
+                completeModal.hide();
+                // 画面リロードしてステータス更新反映
+                location.reload(); 
+
+            } catch (e) {
+                alert("送信に失敗しました: " + e.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // 設定画面への誘導 (OS判定)
+        function showLocationHelp() {
+            const ua = navigator.userAgent.toLowerCase();
+            let msg = "ブラウザの設定メニューから「位置情報」を許可してください。";
+            
+            if (ua.indexOf("iphone") > -1 || ua.indexOf("ipad") > -1) {
+                msg = "【iPhone/iPadの場合】\nホーム画面の「設定」>「プライバシー」>「位置情報サービス」> ブラウザ(Safari/Chrome) を選択し、「このAppの使用中のみ許可」にしてください。";
+            } else if (ua.indexOf("android") > -1) {
+                msg = "【Androidの場合】\nブラウザのアドレスバー横の鍵アイコン、または「設定」>「位置情報」から権限を許可してください。";
+            }
+            
+            alert(msg);
+        }
+
+        // --- 既存ロジック ---
         function switchScreen(screenName) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('view-login').style.display = 'none';
             document.getElementById('view-error').style.display = 'none';
             const wrapper = document.getElementById('view-app-wrapper');
-            const footerList = document.getElementById('footer-list');
-            const footerDetail = document.getElementById('footer-detail');
             if (screenName === 'login') {
                 wrapper.style.display = 'none';
                 document.getElementById('view-login').style.display = 'flex';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'none';
+                document.getElementById('footer-list').style.display = 'none';
+                document.getElementById('footer-detail').style.display = 'none';
                 return;
             }
             wrapper.style.display = 'block';
             if (screenName === 'list') {
                 document.getElementById('view-list').style.display = 'block';
                 document.getElementById('view-detail').style.display = 'none';
-                footerList.style.display = 'flex';
-                footerDetail.style.display = 'none';
+                document.getElementById('footer-list').style.display = 'flex';
+                document.getElementById('footer-detail').style.display = 'none';
             } else if (screenName === 'detail') {
                 document.getElementById('view-list').style.display = 'none';
                 document.getElementById('view-detail').style.display = 'block';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'flex';
+                document.getElementById('footer-list').style.display = 'none';
+                document.getElementById('footer-detail').style.display = 'flex';
                 window.scrollTo(0, 0);
             }
         }
@@ -230,19 +278,17 @@
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
+            currentHaishaId = id; // IDを保持
+
             document.getElementById('dt-debug-id').textContent = rec.new_table2id;
-            // ★変更: 傭車フラグ判定
             const youshaMark = document.getElementById('dt-yousha-mark');
             youshaMark.style.display = rec.new_yousha_irai ? 'inline' : 'none';
 
             const jobDate = new Date(rec.new_day);
             document.getElementById('disp-date').textContent = formatDateHeader(jobDate);
 
-            // ★変更: 開始～終了時間表示
             let timeDisp = formatTime(rec.new_start_time);
-            if(rec.new_end_time) {
-                timeDisp += " ～ " + formatTime(rec.new_end_time);
-            }
+            if(rec.new_end_time) { timeDisp += " ～ " + formatTime(rec.new_end_time); }
             document.getElementById('dt-time').textContent = timeDisp;
 
             document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
@@ -263,33 +309,22 @@
 
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
-            
             if (rec.documents && rec.documents.length > 0) {
                 let docHtml = '';
                 rec.documents.forEach(doc => {
                     const url = doc.new_url || "#";
                     const ext = (doc.new_kakuchoushi || "").toLowerCase();
-                    const thumbUrl = doc.new_blobthmbnailurl; // SAS付きサムネイルURL
-
-                    // アイコン判定
+                    const thumbUrl = doc.new_blobthmbnailurl;
                     let iconClass = "fa-file";
                     if(ext.includes("pdf")) iconClass = "fa-file-pdf";
                     else if(ext.includes("xls")) iconClass = "fa-file-excel";
                     else if(ext.includes("doc")) iconClass = "fa-file-word";
-
-                    // ★変更: プレビュー表示ロジック
-                    let previewContent = "";
-                    if (thumbUrl) {
-                        previewContent = `<img src="${thumbUrl}" class="doc-thumb-img">`;
-                    } else {
-                        previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
-                    }
+                    
+                    let previewContent = thumbUrl ? `<img src="${thumbUrl}" class="doc-thumb-img">` : `<i class="fas ${iconClass} doc-icon"></i>`;
 
                     docHtml += `
                         <a href="${url}" target="_blank" class="doc-item">
-                            <div class="doc-preview-box">
-                                ${previewContent}
-                            </div>
+                            <div class="doc-preview-box">${previewContent}</div>
                             <div class="doc-info">
                                 <div class="doc-title">${doc.new_name || '無題の資料'}</div>
                                 <div class="doc-meta">${ext.toUpperCase()} ファイル</div>
@@ -356,11 +391,7 @@
                             const timeStr = formatTime(rec.new_start_time);
                             futureContainer.innerHTML += `
                                 <div class="future-row" onclick="openDetail('${rec.new_table2id}')">
-                                    <div class="date-col ${dateColor}">
-                                        <span class="month-label">${targetDate.getMonth()+1}/</span>
-                                        <div class="day-label">${targetDate.getDate()}</div>
-                                        <div class="weekday-label">(${wDay})</div>
-                                    </div>
+                                    <div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div>
                                     <div class="job-col">
                                         <span class="status-badge ${statusInfo.class}" style="position:static; float:right; margin-left:5px;">${statusInfo.text}</span>
                                         <div class="fw-bold">${rec.new_genbamei || '現場名未定'}</div>
@@ -369,17 +400,7 @@
                                 </div>`;
                         });
                     } else {
-                        futureContainer.innerHTML += `
-                            <div class="future-row">
-                                <div class="date-col ${dateColor}">
-                                    <span class="month-label">${targetDate.getMonth()+1}/</span>
-                                    <div class="day-label">${targetDate.getDate()}</div>
-                                    <div class="weekday-label">(${wDay})</div>
-                                </div>
-                                <div class="job-col d-flex align-items-center">
-                                    <div class="no-job-text">予定なし</div>
-                                </div>
-                            </div>`;
+                        futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col d-flex align-items-center"><div class="no-job-text">予定なし</div></div></div>`;
                     }
                 }
 
