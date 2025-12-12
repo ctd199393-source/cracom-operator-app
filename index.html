@@ -7,79 +7,128 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* (前回までのCSSは維持) */
-        :root { --app-blue: #005a9e; --app-bg: #f3f2f1; --col-fix: #052832; --col-not: #379E1D; --col-con: #0F6CBD; --col-don: #D73A3C; --col-chg: #0F9E3C; --col-yet: #605e5c; }
+        :root {
+            --app-blue: #005a9e;
+            --app-bg: #f3f2f1;
+            /* Power Apps カラー定義 */
+            --col-fix: #052832;   /* 現場確定 */
+            --col-not: #379E1D;   /* 通知済み */
+            --col-con: #0F6CBD;   /* 確認済み */
+            --col-don: #D73A3C;   /* 作業完了 */
+            --col-chg: #0F9E3C;   /* 変更有り */
+            --col-yet: #605e5c;   /* 未定 */
+        }
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
         
-        .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
+        /* --- ヘッダー --- */
+        .header-bar {
+            background: white; border-bottom: 3px solid var(--col-don);
+            padding: 8px 15px; position: sticky; top: 0; z-index: 100;
+        }
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
+        
         .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px; }
+        /* 氏名: 社名と同じくらいのサイズ・太字 */
         .user-name { font-size: 0.9rem; font-weight: bold; color: #333; line-height: 1.2; }
-        .safety-msg { font-size: 1.4rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
+        /* スローガン: 大きく太字 */
+        .safety-msg { font-size: 1.3rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
         .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
+        
         .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; margin-left: 10px;}
 
-        /* リスト */
+        /* --- 一覧画面 --- */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
+
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
-        .date-col { width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; }
+        
+        /* 日付デザイン */
+        .date-col { 
+            width: 60px; background: #fff; border-right: 1px solid #eee; 
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333;
+        }
         .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
         .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
-        .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; } .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
+        
+        .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; }
+        .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
+
         .job-col { flex-grow: 1; padding: 8px; position: relative; }
         .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; padding-left: 10px; }
-        .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid; }
+
+        /* ステータスバッジ */
+        .status-badge {
+            position: absolute; top: 8px; right: 8px;
+            font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;
+            font-weight: bold; border: 1px solid;
+        }
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
         .st-not { color: var(--col-not); background: #ebf9e9; border-color: var(--col-not); }
         .st-con { color: var(--col-con); background: #e6f2ff; border-color: var(--col-con); }
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
+        
         .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
         .site-name { font-weight: bold; font-size: 1rem; display: block; margin-bottom: 2px; }
         .work-content { font-size: 0.85rem; color: #666; }
 
-        /* 詳細 */
-        .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; }
-        .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
+        /* --- 詳細画面 --- */
+        /* ID行 (左:傭車マーク 右:GUID) */
+        .debug-row { 
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px; 
+        }
+        .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
+        .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; } /* デフォルト非表示 */
+        
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 10px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 4px; padding: 5px; text-align: center; flex: 1; }
         .info-box label { display: block; font-size: 0.7rem; color: #005a9e; font-weight: bold; margin-bottom: 0; }
         .info-box span { font-size: 1.1rem; font-weight: bold; color: #333; }
+        
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
         .detail-row:last-child { border-bottom: none; }
         .detail-label { width: 80px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; }
         .detail-val { flex: 1; padding: 8px; font-size: 0.95rem; color: #333; display: flex; align-items: center; }
         .detail-note { padding: 10px; font-size: 0.9rem; color: #333; white-space: pre-wrap; }
+        
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
         .link-btn { text-decoration: none; font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; color: #005a9e; }
+        
+        /* 資料リスト */
         .doc-list-area { margin-top: 10px; }
         .doc-header { font-size: 0.9rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
-        .doc-preview-box { width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; }
+        
+        .doc-preview-box { 
+            width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; 
+            display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee;
+        }
         .doc-thumb-img { width: 100%; height: 100%; object-fit: cover; }
         .doc-icon { font-size: 2rem; color: #d13438; }
+
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.75rem; color: #888; margin-top: 2px;}
 
-        /* フッター */
+        /* --- フッター --- */
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
+        
         .footer-detail { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #ccc; display: none; padding: 10px; gap: 10px; z-index: 100; }
         .btn-back { background: #0078d4; color: white; border: none; width: 80px; border-radius: 4px; font-weight: bold; }
         .btn-camera { background: white; color: #0078d4; border: 1px solid #0078d4; flex: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
         .btn-finish { background: #ff5722; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; }
+
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,1); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         #view-login { height: 100vh; width: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: white; position: absolute; top: 0; left: 0; z-index: 2000; }
         .login-logo { max-width: 80%; height: auto; margin-bottom: 40px; }
@@ -88,28 +137,55 @@
     </style>
 </head>
 <body>
-    <div id="loading" class="loading-overlay"><div class="spinner-border text-primary" role="status"></div><div class="mt-3 fw-bold text-primary">アプリを起動中...</div></div>
-    <div id="view-login"><img src="logo.png" alt="Logo" class="login-logo"><a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a></div>
-    <div id="view-error" class="view-section text-center mt-5"><div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div><a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a></div>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-3 fw-bold text-primary">アプリを起動中...</div>
+    </div>
+
+    <div id="view-login">
+        <img src="logo.png" alt="Logo" class="login-logo">
+        <a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a>
+    </div>
+
+    <div id="view-error" class="view-section text-center mt-5">
+        <div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div>
+        <a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a>
+    </div>
 
     <div id="view-app-wrapper" style="display:none;">
         <div class="header-bar">
-            <div class="header-row-top"><div class="company-name" id="company-name-area">---</div><a href="/.auth/logout" class="logout-link">ログアウト</a></div>
-            <div class="header-row-main"><div class="user-name" id="disp-name">---</div><div class="safety-msg">本日もご安全に！</div><div class="header-date" id="disp-date">--/--</div></div>
+            <div class="header-row-top">
+                <div class="company-name" id="company-name-area">---</div>
+                <a href="/.auth/logout" class="logout-link">ログアウト</a>
+            </div>
+            <div class="header-row-main">
+                <div class="user-name" id="disp-name">---</div>
+                <div class="safety-msg">本日もご安全に！</div>
+                <div class="header-date" id="disp-date">--/--</div>
+            </div>
         </div>
 
         <div id="view-list" class="view-section" style="display:block;">
-            <div class="today-section"><div class="today-label-col">本日の予定</div><div class="today-content" id="today-container"></div></div>
+            <div class="today-section">
+                <div class="today-label-col">本日の予定</div>
+                <div class="today-content" id="today-container"></div>
+            </div>
             <div class="future-list" id="future-container"></div>
         </div>
 
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
-            <div class="debug-row"><span class="yousha-mark" id="dt-yousha-mark">傭車</span><span class="debug-id" id="dt-debug-id">---</span></div>
+            <div class="debug-row">
+                <span class="yousha-mark" id="dt-yousha-mark">傭車</span>
+                <span class="debug-id" id="dt-debug-id">---</span>
+            </div>
+
             <div class="detail-info-row">
                 <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
                 <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
                 <div class="info-box"><label>車輌</label><span id="dt-vehicle">---</span></div>
             </div>
+
             <div class="detail-card">
                 <div class="detail-row"><div class="detail-label">得意先</div><div class="detail-val" id="dt-client">---</div></div>
                 <div class="detail-row"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
@@ -117,17 +193,34 @@
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
                 <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">無線機 x 1</div></div>
             </div>
-            <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
-            <div class="detail-actions"><a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a></div>
-            <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div><div id="dt-doc-list"></div></div>
+
+            <div class="detail-card">
+                <div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div>
+                <div class="detail-note" id="dt-note"></div>
+            </div>
+
+            <div class="detail-actions">
+                <a href="#" class="link-btn" id="link-map" target="_blank">
+                    <i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図
+                </a>
+            </div>
+
+            <div class="doc-list-area">
+                <div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div>
+                <div id="dt-doc-list"></div>
+            </div>
         </div>
     </div>
 
     <div class="footer-nav" id="footer-list">
-        <button class="nav-btn active">今日の稼働<span class="badge-count" id="count-today">0</span></button><button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button><button class="nav-btn">その他</button>
+        <button class="nav-btn active">今日の稼働<span class="badge-count" id="count-today">0</span></button>
+        <button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button>
+        <button class="nav-btn">その他</button>
     </div>
+
     <div class="footer-detail" id="footer-detail">
-        <button class="btn-back" onclick="goBack()">戻る</button><button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button>
+        <button class="btn-back" onclick="goBack()">戻る</button>
+        <button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button>
         <button class="btn-finish" onclick="confirmCompletion()">作業完了通知</button>
     </div>
 
@@ -148,7 +241,6 @@
                         <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                         <button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button>
                     </div>
-                    
                     <div class="mt-4 pt-3 border-top text-center">
                         <a href="#" onclick="showLocationHelp(); return false;" class="small text-decoration-none text-secondary">
                             <i class="fas fa-cog me-1"></i>位置情報が許可できない場合
@@ -163,8 +255,8 @@
 
     <script>
         let globalData = [];
-        let currentHaishaId = null; // 選択中の配車ID
-        let completeModal = null; // モーダルインスタンス
+        let currentHaishaId = null; 
+        let completeModal = null; 
 
         const STATUS_MAP = {
             100000000: { text: "予 定", class: "st-yet" },
@@ -183,7 +275,7 @@
             return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
         }
 
-        // --- ★追加: 作業完了ロジック ---
+        // --- 作業完了処理 ---
         function confirmCompletion() {
             if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
             completeModal.show();
@@ -191,18 +283,16 @@
 
         function executeComplete() {
             if (!currentHaishaId) return;
-            // ボタンをローディング状態に
             const btn = document.querySelector('#completeModal .btn-danger');
             const originalText = btn.textContent;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
             btn.disabled = true;
 
-            // 位置情報取得 (タイムアウト5秒)
+            // 位置情報取得
             navigator.geolocation.getCurrentPosition(
                 (pos) => sendApi(pos.coords.latitude, pos.coords.longitude, btn, originalText),
                 (err) => {
-                    console.log("位置情報取得失敗または拒否:", err);
-                    // 拒否されても空で送信
+                    console.log("位置情報なし:", err);
                     sendApi(null, null, btn, originalText);
                 },
                 { timeout: 5000, enableHighAccuracy: true }
@@ -217,85 +307,102 @@
                     body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long })
                 });
 
-                if (!res.ok) throw new Error("送信エラー");
+                // ★ エラーハンドリング強化 ★
+                if (!res.ok) {
+                    const errBody = await res.json();
+                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
+                }
 
                 alert("作業完了を通知しました。");
-                completeModal.hide();
-                // 画面リロードしてステータス更新反映
+                if(completeModal) completeModal.hide();
                 location.reload(); 
 
             } catch (e) {
-                alert("送信に失敗しました: " + e.message);
+                alert("送信に失敗しました:\n" + e.message);
             } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
+                if(btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
             }
         }
 
-        // 設定画面への誘導 (OS判定)
         function showLocationHelp() {
             const ua = navigator.userAgent.toLowerCase();
             let msg = "ブラウザの設定メニューから「位置情報」を許可してください。";
-            
             if (ua.indexOf("iphone") > -1 || ua.indexOf("ipad") > -1) {
-                msg = "【iPhone/iPadの場合】\nホーム画面の「設定」>「プライバシー」>「位置情報サービス」> ブラウザ(Safari/Chrome) を選択し、「このAppの使用中のみ許可」にしてください。";
+                msg = "【iPhone/iPad】\n設定 > プライバシー > 位置情報サービス > Safari(またはChrome) で「使用中のみ許可」にしてください。";
             } else if (ua.indexOf("android") > -1) {
-                msg = "【Androidの場合】\nブラウザのアドレスバー横の鍵アイコン、または「設定」>「位置情報」から権限を許可してください。";
+                msg = "【Android】\nブラウザのアドレスバー横の鍵アイコン、または 設定 > 位置情報 から許可してください。";
             }
-            
             alert(msg);
         }
 
-        // --- 既存ロジック ---
+        // --- 画面遷移 ---
         function switchScreen(screenName) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('view-login').style.display = 'none';
             document.getElementById('view-error').style.display = 'none';
+            
             const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+
             if (screenName === 'login') {
                 wrapper.style.display = 'none';
                 document.getElementById('view-login').style.display = 'flex';
-                document.getElementById('footer-list').style.display = 'none';
-                document.getElementById('footer-detail').style.display = 'none';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
                 return;
             }
+
             wrapper.style.display = 'block';
+            
             if (screenName === 'list') {
                 document.getElementById('view-list').style.display = 'block';
                 document.getElementById('view-detail').style.display = 'none';
-                document.getElementById('footer-list').style.display = 'flex';
-                document.getElementById('footer-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
             } else if (screenName === 'detail') {
                 document.getElementById('view-list').style.display = 'none';
                 document.getElementById('view-detail').style.display = 'block';
-                document.getElementById('footer-list').style.display = 'none';
-                document.getElementById('footer-detail').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
                 window.scrollTo(0, 0);
             }
         }
 
+        // --- 詳細画面表示 ---
         window.openDetail = function(id) {
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            currentHaishaId = id; // IDを保持
+            currentHaishaId = id;
 
+            // ID表示 (GUIDのみ)
             document.getElementById('dt-debug-id').textContent = rec.new_table2id;
+            
+            // 傭車マーク
             const youshaMark = document.getElementById('dt-yousha-mark');
             youshaMark.style.display = rec.new_yousha_irai ? 'inline' : 'none';
 
+            // 日付
             const jobDate = new Date(rec.new_day);
             document.getElementById('disp-date').textContent = formatDateHeader(jobDate);
 
+            // 時間 (開始～終了)
             let timeDisp = formatTime(rec.new_start_time);
             if(rec.new_end_time) { timeDisp += " ～ " + formatTime(rec.new_end_time); }
             document.getElementById('dt-time').textContent = timeDisp;
 
+            // 各種項目
             document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
             document.getElementById('dt-vehicle').textContent = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "-";
+            
             const client = rec.new_tokuisaki_mei || "-";
             const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
             document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
+            
             document.getElementById('dt-site').textContent = rec.new_genbamei || "-";
             document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
             document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
@@ -307,20 +414,25 @@
                 mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.new_genbamei)}`;
             } else { mapBtn.href = "#"; }
 
+            // 資料リスト描画
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
+            
             if (rec.documents && rec.documents.length > 0) {
                 let docHtml = '';
                 rec.documents.forEach(doc => {
                     const url = doc.new_url || "#";
                     const ext = (doc.new_kakuchoushi || "").toLowerCase();
                     const thumbUrl = doc.new_blobthmbnailurl;
+
                     let iconClass = "fa-file";
                     if(ext.includes("pdf")) iconClass = "fa-file-pdf";
                     else if(ext.includes("xls")) iconClass = "fa-file-excel";
                     else if(ext.includes("doc")) iconClass = "fa-file-word";
                     
-                    let previewContent = thumbUrl ? `<img src="${thumbUrl}" class="doc-thumb-img">` : `<i class="fas ${iconClass} doc-icon"></i>`;
+                    let previewContent = thumbUrl 
+                        ? `<img src="${thumbUrl}" class="doc-thumb-img">` 
+                        : `<i class="fas ${iconClass} doc-icon"></i>`;
 
                     docHtml += `
                         <a href="${url}" target="_blank" class="doc-item">
@@ -336,6 +448,7 @@
             } else {
                 docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>';
             }
+
             switchScreen('detail');
         };
 
@@ -345,27 +458,36 @@
             switchScreen('list'); 
         };
 
+        // --- メイン初期化 ---
         (async () => {
             try {
+                // 1. 認証チェック
                 const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
                 const authData = await authRes.json();
-                if (!authData.clientPrincipal) { switchScreen('login'); return; }
+                
+                if (!authData.clientPrincipal) {
+                    switchScreen('login');
+                    return;
+                }
 
                 const now = new Date();
                 document.getElementById('disp-date').textContent = formatDateHeader(now);
 
+                // 2. データ取得
                 const apiRes = await fetch('/api/show-env');
                 if(!apiRes.ok) {
                     const err = await apiRes.json();
                     throw new Error(err.error || "API Error");
                 }
                 const data = await apiRes.json();
+                
                 globalData = data.records;
 
                 document.getElementById('disp-name').textContent = data.user.name;
                 document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
                 document.getElementById('count-today').textContent = data.todayCount;
 
+                // 3. データ描画
                 const todayStr = now.toISOString().split('T')[0];
                 const yest = new Date(now);
                 yest.setDate(yest.getDate() - 1);
@@ -377,21 +499,28 @@
                 futureContainer.innerHTML = '';
                 let hasToday = false;
 
+                // 未来の予定ループ (14日分)
                 for (let i = 1; i <= 14; i++) {
                     const targetDate = new Date(now);
                     targetDate.setDate(now.getDate() + i);
                     const dateKey = targetDate.toISOString().split('T')[0];
                     const wDay = getWeekDay(targetDate);
                     const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+
                     const dayRecords = globalData.filter(r => r.new_day.startsWith(dateKey));
 
                     if (dayRecords.length > 0) {
                         dayRecords.forEach(rec => {
                             const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                             const timeStr = formatTime(rec.new_start_time);
+                            
                             futureContainer.innerHTML += `
                                 <div class="future-row" onclick="openDetail('${rec.new_table2id}')">
-                                    <div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div>
+                                    <div class="date-col ${dateColor}">
+                                        <span class="month-label">${targetDate.getMonth()+1}/</span>
+                                        <div class="day-label">${targetDate.getDate()}</div>
+                                        <div class="weekday-label">(${wDay})</div>
+                                    </div>
                                     <div class="job-col">
                                         <span class="status-badge ${statusInfo.class}" style="position:static; float:right; margin-left:5px;">${statusInfo.text}</span>
                                         <div class="fw-bold">${rec.new_genbamei || '現場名未定'}</div>
@@ -400,10 +529,21 @@
                                 </div>`;
                         });
                     } else {
-                        futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col d-flex align-items-center"><div class="no-job-text">予定なし</div></div></div>`;
+                        futureContainer.innerHTML += `
+                            <div class="future-row">
+                                <div class="date-col ${dateColor}">
+                                    <span class="month-label">${targetDate.getMonth()+1}/</span>
+                                    <div class="day-label">${targetDate.getDate()}</div>
+                                    <div class="weekday-label">(${wDay})</div>
+                                </div>
+                                <div class="job-col d-flex align-items-center">
+                                    <div class="no-job-text">予定なし</div>
+                                </div>
+                            </div>`;
                     }
                 }
 
+                // 今日の予定 (本日 or 昨日夜間)
                 data.records.forEach(rec => {
                     const jobDateStr = rec.new_day.split('T')[0];
                     const kashikiriVal = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
@@ -414,6 +554,7 @@
                         hasToday = true;
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                         const timeStr = formatTime(rec.new_start_time);
+
                         todayContainer.innerHTML += `
                             <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -422,13 +563,16 @@
                                 </div>
                                 <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
                                 <div class="work-content">${rec.new_sagyou_naiyou || '-'}</div>
-                            </div>
-                        `;
+                            </div>`;
                     }
                 });
 
-                if(!hasToday) { todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>'; }
+                if(!hasToday) {
+                    todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+                }
+
                 switchScreen('list');
+
             } catch (e) {
                 console.error(e);
                 document.getElementById('error-message').textContent = e.message;
