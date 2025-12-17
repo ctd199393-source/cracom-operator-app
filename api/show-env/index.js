@@ -2,7 +2,7 @@ const { ClientSecretCredential } = require("@azure/identity");
 const { StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } = require("@azure/storage-blob");
 const fetch = require("node-fetch");
 
-// SASトークン生成ヘルパー
+// Helper: SASトークン生成
 function generateSasToken(connectionString, containerName, blobPath) {
     try {
         if (!connectionString || !containerName || !blobPath) return null;
@@ -11,9 +11,8 @@ function generateSasToken(connectionString, containerName, blobPath) {
         const accountName = parts.find(p => p.startsWith('AccountName=')).split('=')[1];
         const accountKey = parts.find(p => p.startsWith('AccountKey=')).split('=')[1];
 
-        // Blobパスの正規化
+        // Blobパス正規化
         let blobName = blobPath;
-        // "/containerName/path" の形式から containerName を除去して純粋なBlob名にする
         if (blobName.startsWith(`/${containerName}/`)) {
             blobName = blobName.substring(containerName.length + 2);
         } else if (blobName.startsWith("/")) {
@@ -39,6 +38,7 @@ function generateSasToken(connectionString, containerName, blobPath) {
 
 module.exports = async function (context, req) {
     try {
+        // 1. 環境設定
         const tenantId = process.env.TENANT_ID;
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
@@ -46,10 +46,10 @@ module.exports = async function (context, req) {
         const storageConnString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
         if (!tenantId || !clientId || !clientSecret || !dataverseUrl) {
-            throw new Error("環境設定不足: Dataverse接続情報がありません");
+            throw new Error("環境変数が不足しています (Dataverse)");
         }
 
-        // 1. ユーザー特定
+        // 2. ユーザー特定
         const header = req.headers["x-ms-client-principal"];
         let userEmail = "unknown";
         if (header) {
@@ -62,54 +62,63 @@ module.exports = async function (context, req) {
             if (last !== -1) userEmail = temp.substring(0, last) + "@" + temp.substring(last + 1);
         }
 
-        // 2. Dataverse接続
+        // 3. Dataverse接続
         const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
         const tokenResp = await credential.getToken(`${dataverseUrl}/.default`);
         const token = tokenResp.token;
 
-        // 3. マスタ検索
+        // 4. 作業員マスタ検索
         const userFilter = `new_mail eq '${userEmail}'`;
         const userQuery = `${dataverseUrl}/api/data/v9.2/new_sagyouin_mastas?$filter=${encodeURIComponent(userFilter)}&$select=new_sagyouin_id,_owningbusinessunit_value`;
         
-        const userRes = await fetch(userQuery, { headers: { "Authorization": `Bearer ${token}` } });
+        const userRes = await fetch(userQuery, { 
+            headers: { "Authorization": `Bearer ${token}`, "Prefer": "odata.include-annotations=\"*\"" } 
+        });
         if (!userRes.ok) throw new Error(await userRes.text());
         const userData = await userRes.json();
         
         if (!userData.value || userData.value.length === 0) {
-            context.res = { status: 403, body: { error: "マスタ未登録" } };
+            context.res = { status: 403, body: { error: "マスタ未登録ユーザー" } };
             return;
         }
+
         const user = userData.value[0];
         const buId = user._owningbusinessunit_value;
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
-        // 4. 配車データ取得
-        // ★修正: new_end_time (終了時間), new_yousha_irai (傭車依頼) を追加
+        // 5. 配車データ取得
+        // ★修正: new_isdeleted は削除済み
         const selectCols = [
-            "new_day", "new_start_time", "new_end_time", // 時間関係
-            "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
+            "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
             "new_table2id", "new_tokuisaki_mei", "new_kyakusaki", "new_sharyou", "new_kashikiri", 
             "new_renraku1", "new_renraku_jikou", "new_type", "new_haisha_zumi",
-            "new_yousha_irai", // 傭車依頼フラグ
-            "_new_id_value", "_new_sagyouba_value"
+            "new_end_time", "new_yousha_irai", 
+            "_new_id_value", "_new_sagyouba_value" 
         ].join(",");
 
         const dt = new Date();
         dt.setDate(dt.getDate() - 1);
         const yesterdayStr = dt.toISOString().split('T')[0];
 
-        const myDispatchFilter = `_new_operator_value eq '${user.new_sagyouin_mastaid}' and statecode eq 0 and new_type eq 100000000 and new_day ge ${yesterdayStr} and new_haisha_zumi eq true`;
+        // ★修正: フィルタからも new_isdeleted を削除 (statecode eq 0 で十分)
+        const myDispatchFilter = `
+            _new_operator_value eq '${user.new_sagyouin_mastaid}' and 
+            statecode eq 0 and 
+            new_type eq 100000000 and 
+            new_day ge ${yesterdayStr} and
+            new_haisha_zumi eq true
+        `.replace(/\s+/g, ' ').trim();
+
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { "Authorization": `Bearer ${token}`, "Prefer": "odata.include-annotations=\"*\"" } 
         });
-
         if (!dispatchRes.ok) throw new Error(`配車取得エラー: ${await dispatchRes.text()}`);
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
 
-        // 5. 資料データ取得 & SAS発行
+        // 6. 資料データ取得 & SAS発行
         if (records.length > 0 && storageConnString) {
             let filterParts = [];
             records.forEach(r => {
@@ -117,17 +126,18 @@ module.exports = async function (context, req) {
                 if (r._new_id_value) filterParts.push(`_new_anken_value eq '${r._new_id_value}'`);
                 if (r._new_sagyouba_value) filterParts.push(`_new_genba_value eq '${r._new_sagyouba_value}'`);
             });
-            
+
             const uniqueFilters = [...new Set(filterParts)];
-            
+
             if (uniqueFilters.length > 0) {
                 const docFilter = uniqueFilters.join(" or ");
                 const docQuery = `${dataverseUrl}/api/data/v9.2/new_docment_tables?$filter=${encodeURIComponent(docFilter)}&$select=new_name,new_kakuchoushi,new_blob_pass,new_container,new_blobthmbnailurl,_new_haisha_value,_new_anken_value,_new_genba_value`;
 
                 const docRes = await fetch(docQuery, { headers: { "Authorization": `Bearer ${token}` } });
+                
                 if (docRes.ok) {
-                    const docJson = await docRes.json();
-                    const allDocs = docJson.value;
+                    const docData = await docRes.json();
+                    const allDocs = docData.value;
 
                     records = records.map(rec => {
                         const myDocs = allDocs.filter(d => 
@@ -138,38 +148,35 @@ module.exports = async function (context, req) {
 
                         rec.documents = myDocs.map(d => {
                             if (!d.new_blob_pass || !d.new_container) return null;
-                            
-                            // 本体のSAS URL
+
                             const sasUrl = generateSasToken(storageConnString, d.new_container, d.new_blob_pass);
-                            
-                            // ★修正: サムネイル用SAS URL生成ロジック
                             let thumbSasUrl = null;
                             const ext = (d.new_kakuchoushi || "").toLowerCase();
                             const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'].some(e => ext.includes(e));
 
                             if (d.new_blobthmbnailurl) {
-                                // サムネイル列にパスがあればそれを使う
                                 thumbSasUrl = generateSasToken(storageConnString, d.new_container, d.new_blobthmbnailurl);
                             } else if (isImage) {
-                                // 画像ファイルなら、本体URLをサムネイルとして代用
                                 thumbSasUrl = sasUrl;
                             }
 
                             return {
                                 new_name: d.new_name,
                                 new_kakuchoushi: d.new_kakuchoushi,
-                                new_url: sasUrl, 
-                                new_blobthmbnailurl: thumbSasUrl // SAS付きのサムネイルURL (なければnull)
+                                new_url: sasUrl,
+                                new_blobthmbnailurl: thumbSasUrl 
                             };
                         }).filter(d => d !== null && d.new_url !== null);
+
                         return rec;
                     });
                 }
             }
         }
 
-        // 6. 部署稼働数
+        // 7. 部署稼働数
         const today = new Date().toISOString().split('T')[0];
+        // ★修正: ここからも new_isdeleted を削除
         const countFilter = `_owningbusinessunit_value eq '${buId}' and new_day eq ${today} and new_type eq 100000000 and new_haisha_zumi eq true and statecode eq 0`;
         const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`;
         const countRes = await fetch(countQuery, { headers: { "Authorization": `Bearer ${token}` } });
