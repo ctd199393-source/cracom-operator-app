@@ -4,52 +4,58 @@ module.exports = async function (context, req) {
     context.log("Status Update Triggered");
 
     try {
-        // 1. 環境変数の取得 (Power AutomateのURL)
         const flowUrl = process.env.FLOW_URL_COMPLETE;
-        if (!flowUrl) throw new Error("環境変数 FLOW_URL_COMPLETE が設定されていません。");
+        if (!flowUrl) throw new Error("Server Error: FLOW_URL_COMPLETE is not set.");
 
-        // 2. リクエストデータの受け取り
-        // (ID, 緯度, 経度 を受け取る。位置情報がない場合は null が来る前提)
-        const { haishaId, lat, long } = req.body;
+        // mode: 'complete' (完了) or 'undo' (取消)
+        const { haishaId, lat, long, mode } = req.body;
+        
+        if (!haishaId) throw new Error("ID not provided.");
 
-        if (!haishaId) throw new Error("配車IDが指定されていません。");
+        let targetStatus;
+        let targetLat = lat;
+        let targetLong = long;
 
-        // 3. ユーザー情報の取得 (監査用ログ出力)
-        const header = req.headers["x-ms-client-principal"];
-        const userDetails = header ? JSON.parse(Buffer.from(header, "base64").toString("ascii")).userDetails : "DevUser";
+        // モードによる値の切り替え
+        if (mode === 'undo') {
+            // --- 取消モード ---
+            // ステータスを「現場確定(100000001)」に戻す
+            targetStatus = 100000001;
+            // 位置情報はクリアする (null)
+            targetLat = null;
+            targetLong = null;
+        } else {
+            // --- 完了モード (デフォルト) ---
+            // ステータスを「作業完了(100000004)」にする
+            targetStatus = 100000004;
+            // 位置情報は送られてきた値 (なければ0またはnull)
+            if (targetLat === undefined) targetLat = null;
+            if (targetLong === undefined) targetLong = null;
+        }
 
-        context.log(`User: ${userDetails} updated Haisha: ${haishaId} (Lat: ${lat}, Long: ${long})`);
-
-        // 4. Power Automate へ転送 (Fire and Forget)
-        // ※Dataverseの更新はPower Automate側で行うため、ここでは投げるだけ
+        // Power Automate へ送信
         const flowRes = await fetch(flowUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 haishaId: haishaId,
-                lat: lat || 0, // 数値型エラー回避のため、nullなら0を送る等の調整
-                long: long || 0,
-                // 100000004 = 作業完了 (Power Appsの定義に合わせる)
-                status: 100000004 
+                lat: targetLat,
+                long: targetLong,
+                status: targetStatus
             })
         });
 
         if (!flowRes.ok) {
-            const errText = await flowRes.text();
-            throw new Error(`Flow Error: ${errText}`);
+            throw new Error(`Flow Error: ${await flowRes.text()}`);
         }
 
-        context.res = {
-            status: 200,
-            body: { message: "作業完了を通知しました" }
-        };
+        // メッセージの出し分け
+        const msg = (mode === 'undo') ? "作業完了を取り消しました" : "作業完了を通知しました";
+
+        context.res = { status: 200, body: { message: msg } };
 
     } catch (error) {
         context.log.error(error);
-        // エラーでもフロントエンドを止めないよう、メッセージを返す（ステータスは500にするが）
-        context.res = {
-            status: 500,
-            body: { error: error.message }
-        };
+        context.res = { status: 500, body: { error: error.message } };
     }
 };
