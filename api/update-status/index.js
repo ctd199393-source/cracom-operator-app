@@ -7,7 +7,7 @@ module.exports = async function (context, req) {
         const flowUrl = process.env.FLOW_URL_COMPLETE;
         if (!flowUrl) throw new Error("Server Error: FLOW_URL_COMPLETE is not set.");
 
-        // mode: 'complete', 'undo', 'confirm' (★追加)
+        // mode: 'complete', 'undo', 'confirm'
         const { haishaId, lat, long, mode } = req.body;
         
         if (!haishaId) throw new Error("ID not provided.");
@@ -17,12 +17,9 @@ module.exports = async function (context, req) {
         let targetLong = long;
         let targetTime;
 
-        // ★修正: undo または confirm の場合は「確認済み」に戻す
         if (mode === 'undo' || mode === 'confirm') {
             // --- 取消/確認モード ---
             targetStatus = 100000003; // 確認済み
-            
-            // 位置情報と完了時間をクリアする
             targetLat = null;
             targetLong = null;
             targetTime = null; 
@@ -33,7 +30,11 @@ module.exports = async function (context, req) {
             if (targetLat === undefined) targetLat = null;
             if (targetLong === undefined) targetLong = null;
             
-            targetTime = new Date().toISOString();
+            // ★修正: 日本時間 (JST) に変換してセット
+            const now = new Date();
+            now.setHours(now.getHours() + 9); // 9時間進める
+            // 'Z' を削除して「現地時間」として扱うようにする
+            targetTime = now.toISOString().replace('Z', '');
         }
 
         // Power Automate へ送信
@@ -53,7 +54,6 @@ module.exports = async function (context, req) {
             throw new Error(`Flow Error: ${await flowRes.text()}`);
         }
 
-        // メッセージの出し分け
         let msg = "作業完了を通知しました";
         if (mode === 'undo') msg = "作業完了を取り消しました";
         if (mode === 'confirm') msg = "確認済みに更新しました";
