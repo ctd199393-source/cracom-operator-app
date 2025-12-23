@@ -15,22 +15,29 @@ module.exports = async function (context, req) {
         let targetStatus;
         let targetLat = lat;
         let targetLong = long;
+        let targetTime; // ★追加: 完了時間用変数
 
         // モードによる値の切り替え
         if (mode === 'undo') {
             // --- 取消モード ---
-            // ステータスを「現場確定(100000001)」に戻す
-            targetStatus = 100000001;
-            // 位置情報はクリアする (null)
+            // ★変更: ステータスを「確認済み(100000003)」に戻す
+            targetStatus = 100000003;
+            
+            // 位置情報と完了時間をクリアする (null)
             targetLat = null;
             targetLong = null;
+            targetTime = null; 
         } else {
-            // --- 完了モード (デフォルト) ---
+            // --- 完了モード ---
             // ステータスを「作業完了(100000004)」にする
             targetStatus = 100000004;
-            // 位置情報は送られてきた値 (なければ0またはnull)
+            
+            // 位置情報 (なければnull)
             if (targetLat === undefined) targetLat = null;
             if (targetLong === undefined) targetLong = null;
+            
+            // ★追加: 現在時刻をセット (ISO形式)
+            targetTime = new Date().toISOString();
         }
 
         // Power Automate へ送信
@@ -41,7 +48,8 @@ module.exports = async function (context, req) {
                 haishaId: haishaId,
                 lat: targetLat,
                 long: targetLong,
-                status: targetStatus
+                status: targetStatus,
+                completionTime: targetTime // ★追加
             })
         });
 
@@ -49,9 +57,7 @@ module.exports = async function (context, req) {
             throw new Error(`Flow Error: ${await flowRes.text()}`);
         }
 
-        // メッセージの出し分け
         const msg = (mode === 'undo') ? "作業完了を取り消しました" : "作業完了を通知しました";
-
         context.res = { status: 200, body: { message: msg } };
 
     } catch (error) {
