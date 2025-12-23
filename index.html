@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>クラコムPlus</title>
+    
+    <title>クラコムオペレーター</title>
+    
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -101,6 +106,7 @@
     </div>
 
     <div id="view-login"><img src="logo.png" alt="Logo" class="login-logo"><a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a></div>
+    
     <div id="view-error" class="view-section text-center mt-5"><div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div><a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a></div>
 
     <div id="view-app-wrapper" style="display:none;">
@@ -193,21 +199,16 @@
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
         function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
         
-        // ★修正: タイムゾーン非依存データに対応（時差変換を無効化）
         function formatTime(iso) {
             if(!iso) return "";
             const d = new Date(iso);
-            // .getHours() だと日本時間(+9h)に変換されてしまうため、
-            // .getUTCHours() を使って、データそのものの数値を表示させる
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // 自動確認機能付き詳細オープン
         window.openDetail = async function(id) {
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            // 通知済み(100000002)なら確認済み(100000003)に更新
             if (rec.new_shinkoujoukyou === 100000002) {
                 document.getElementById('loading').style.display = 'flex';
                 const loadMsg = document.getElementById('loading-text');
