@@ -192,10 +192,14 @@
 
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
         function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
+        
+        // ★修正: タイムゾーン非依存データに対応（時差変換を無効化）
         function formatTime(iso) {
             if(!iso) return "";
             const d = new Date(iso);
-            return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+            // .getHours() だと日本時間(+9h)に変換されてしまうため、
+            // .getUTCHours() を使って、データそのものの数値を表示させる
+            return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
         // 自動確認機能付き詳細オープン
@@ -325,7 +329,6 @@
                 }
             }
             
-            // ★修正: data変数を使わず globalData を直接ループ
             globalData.forEach(rec => {
                 const jobDateStr = rec.new_day.split('T')[0];
                 const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
@@ -400,7 +403,6 @@
             alert("ブラウザの設定から位置情報を許可してください。");
         }
 
-        // ★重要: 画面切り替えロジックを修正
         function switchScreen(screenName) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('view-login').style.display = 'none';
@@ -418,7 +420,6 @@
             }
             wrapper.style.display = 'block';
 
-            // ★修正: 分岐をシンプルで確実に
             if (screenName === 'list') {
                 document.getElementById('view-list').style.display = 'block';
                 document.getElementById('view-detail').style.display = 'none';
