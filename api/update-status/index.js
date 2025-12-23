@@ -7,7 +7,7 @@ module.exports = async function (context, req) {
         const flowUrl = process.env.FLOW_URL_COMPLETE;
         if (!flowUrl) throw new Error("Server Error: FLOW_URL_COMPLETE is not set.");
 
-        // mode: 'complete' (完了) or 'undo' (取消)
+        // mode: 'complete', 'undo', 'confirm' (★追加)
         const { haishaId, lat, long, mode } = req.body;
         
         if (!haishaId) throw new Error("ID not provided.");
@@ -15,28 +15,24 @@ module.exports = async function (context, req) {
         let targetStatus;
         let targetLat = lat;
         let targetLong = long;
-        let targetTime; // ★追加: 完了時間用変数
+        let targetTime;
 
-        // モードによる値の切り替え
-        if (mode === 'undo') {
-            // --- 取消モード ---
-            // ★変更: ステータスを「確認済み(100000003)」に戻す
-            targetStatus = 100000003;
+        // ★修正: undo または confirm の場合は「確認済み」に戻す
+        if (mode === 'undo' || mode === 'confirm') {
+            // --- 取消/確認モード ---
+            targetStatus = 100000003; // 確認済み
             
-            // 位置情報と完了時間をクリアする (null)
+            // 位置情報と完了時間をクリアする
             targetLat = null;
             targetLong = null;
             targetTime = null; 
         } else {
             // --- 完了モード ---
-            // ステータスを「作業完了(100000004)」にする
-            targetStatus = 100000004;
+            targetStatus = 100000004; // 作業完了
             
-            // 位置情報 (なければnull)
             if (targetLat === undefined) targetLat = null;
             if (targetLong === undefined) targetLong = null;
             
-            // ★追加: 現在時刻をセット (ISO形式)
             targetTime = new Date().toISOString();
         }
 
@@ -49,7 +45,7 @@ module.exports = async function (context, req) {
                 lat: targetLat,
                 long: targetLong,
                 status: targetStatus,
-                completionTime: targetTime // ★追加
+                completionTime: targetTime
             })
         });
 
@@ -57,7 +53,11 @@ module.exports = async function (context, req) {
             throw new Error(`Flow Error: ${await flowRes.text()}`);
         }
 
-        const msg = (mode === 'undo') ? "作業完了を取り消しました" : "作業完了を通知しました";
+        // メッセージの出し分け
+        let msg = "作業完了を通知しました";
+        if (mode === 'undo') msg = "作業完了を取り消しました";
+        if (mode === 'confirm') msg = "確認済みに更新しました";
+
         context.res = { status: 200, body: { message: msg } };
 
     } catch (error) {
