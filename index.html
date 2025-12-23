@@ -9,7 +9,6 @@
     <style>
         :root {
             --app-blue: #005a9e; --app-bg: #f3f2f1;
-            /* Power Apps カラー */
             --col-fix: #052832; --col-not: #379E1D; --col-con: #0F6CBD; --col-don: #D73A3C; --col-chg: #0F9E3C; --col-yet: #605e5c;
         }
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
@@ -39,7 +38,6 @@
         .job-col { flex-grow: 1; padding: 8px; position: relative; }
         .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; padding-left: 10px; }
         
-        /* ステータスバッジ (デフォルトは絶対配置だが、今日の予定ではstaticで上書きする) */
         .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid; }
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
@@ -86,8 +84,6 @@
         .footer-detail { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #ccc; display: none; padding: 10px; gap: 10px; z-index: 100; }
         .btn-back { background: #0078d4; color: white; border: none; width: 80px; border-radius: 4px; font-weight: bold; }
         .btn-camera { background: white; color: #0078d4; border: 1px solid #0078d4; flex: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
-        
-        /* ボタン2種 (IDで切り替え) */
         .btn-finish { background: #ff5722; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; }
         .btn-undo   { background: #607d8b; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; display: none; }
 
@@ -146,10 +142,7 @@
     <div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold text-danger">作業完了の報告</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+                <div class="modal-header bg-light"><h5 class="modal-title fw-bold text-danger">作業完了の報告</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body text-center p-4">
                     <p class="mb-3" style="font-size:1.1rem;">作業完了を通知しますか？</p>
                     <p class="text-muted small mb-4">位置情報が送信されます。<br>許可を求められた場合は「許可」を選択してください。</p>
@@ -157,21 +150,15 @@
                         <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                         <button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button>
                     </div>
-                    <div class="mt-4 pt-3 border-top text-center">
-                        <a href="#" onclick="showLocationHelp(); return false;" class="small text-decoration-none text-secondary"><i class="fas fa-cog me-1"></i>位置情報が許可できない場合</a>
-                    </div>
+                    <div class="mt-4 pt-3 border-top text-center"><a href="#" onclick="showLocationHelp(); return false;" class="small text-decoration-none text-secondary"><i class="fas fa-cog me-1"></i>位置情報が許可できない場合</a></div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="undoModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold text-secondary">完了の取り消し</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+                <div class="modal-header bg-light"><h5 class="modal-title fw-bold text-secondary">完了の取り消し</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body text-center p-4">
                     <p class="mb-4" style="font-size:1.1rem;">作業完了を取り消して、<br>ステータスを元に戻しますか？</p>
                     <div class="d-grid gap-2 d-flex justify-content-center">
@@ -207,121 +194,53 @@
             return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
         }
 
-        // --- 作業完了処理 ---
-        function confirmCompletion() {
-            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
-            completeModal.show();
-        }
-        function executeComplete() {
-            if (!currentHaishaId) return;
-            const btn = document.querySelector('#completeModal .btn-danger');
-            const originalText = btn.textContent;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
-            btn.disabled = true;
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
-                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
-                { timeout: 5000, enableHighAccuracy: true }
-            );
-        }
-
-        // --- 取消処理 ---
-        function confirmUndo() {
-            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
-            undoModal.show();
-        }
-        function executeUndo() {
-            if (!currentHaishaId) return;
-            const btn = document.querySelector('#undoModal .btn-secondary'); // はいボタン
-            const originalText = btn.textContent;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
-            btn.disabled = true;
-
-            // 取消時は位置情報不要なのでnullで送信
-            sendApi('undo', null, null, btn, originalText, undoModal);
-        }
-
-        // 共通API送信 (mode追加)
-        async function sendApi(mode, lat, long, btn, originalText, modal) {
-            try {
-                const res = await fetch('/api/update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
-                });
-
-                if (!res.ok) {
-                    const errBody = await res.json();
-                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
-                }
-
-                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
-                if(modal) modal.hide();
-                location.reload(); 
-
-            } catch (e) {
-                alert("送信に失敗しました:\n" + e.message);
-            } finally {
-                if(btn) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            }
-        }
-
-        function showLocationHelp() {
-            const ua = navigator.userAgent.toLowerCase();
-            let msg = "ブラウザの設定メニューから「位置情報」を許可してください。";
-            if (ua.indexOf("iphone") > -1) msg = "【iPhone】設定 > プライバシー > 位置情報 > Safariで「使用中のみ許可」";
-            else if (ua.indexOf("android") > -1) msg = "【Android】設定 > 位置情報 または ブラウザの権限設定を確認";
-            alert(msg);
-        }
-
-        // --- 画面遷移 ---
-        function switchScreen(screenName) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-error').style.display = 'none';
-            const wrapper = document.getElementById('view-app-wrapper');
-            const footerList = document.getElementById('footer-list');
-            const footerDetail = document.getElementById('footer-detail');
-            
-            if (screenName === 'login') {
-                wrapper.style.display = 'none';
-                document.getElementById('view-login').style.display = 'flex';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'none';
-                return;
-            }
-            wrapper.style.display = 'block';
-            if (screenName === 'list') {
-                document.getElementById('view-list').style.display = 'block';
-                document.getElementById('view-detail').style.display = 'none';
-                footerList.style.display = 'flex';
-                footerDetail.style.display = 'none';
-            } else if (screenName === 'detail') {
-                document.getElementById('view-list').style.display = 'none';
-                document.getElementById('view-detail').style.display = 'block';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'flex';
-                window.scrollTo(0, 0);
-            }
-        }
-
-        // --- 詳細表示 ---
-        window.openDetail = function(id) {
+        // --- ★重要: 詳細画面を開く（自動確認機能付き） ---
+        window.openDetail = async function(id) {
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            currentHaishaId = id;
+            // ★通知済み(100000002)なら、開く前に「確認済み(100000003)」に更新
+            if (rec.new_shinkoujoukyou === 100000002) {
+                // ローディング表示
+                document.getElementById('loading').style.display = 'flex';
+                const loadMsg = document.querySelector('#loading .text-primary');
+                const orgMsg = loadMsg.textContent;
+                loadMsg.textContent = "確認処理中...";
 
-            // ボタン出し分けロジック
+                try {
+                    // APIコール
+                    const res = await fetch('/api/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ haishaId: id, mode: 'confirm' })
+                    });
+
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || "Update Error");
+                    }
+                    
+                    // 成功したらローカルデータも更新
+                    rec.new_shinkoujoukyou = 100000003;
+                    // リストの表示も更新しておく（戻ったときのため）
+                    renderList();
+
+                } catch(e) {
+                    console.error(e);
+                    alert("ステータス更新に失敗しました: " + e.message);
+                    // エラーでも詳細画面は開く（ユーザーが見られないと困るため）
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                    loadMsg.textContent = orgMsg;
+                }
+            }
+
+            // ここから詳細表示（既存ロジック）
+            currentHaishaId = id;
             const btnFinish = document.getElementById('btn-do-finish');
             const btnUndo = document.getElementById('btn-do-undo');
             const statusVal = rec.new_shinkoujoukyou;
             
-            // 100000004 = 作業完了
             if (statusVal === 100000004) {
                 btnFinish.style.display = 'none';
                 btnUndo.style.display = 'block';
@@ -330,7 +249,6 @@
                 btnUndo.style.display = 'none';
             }
 
-            // 表示更新
             document.getElementById('dt-debug-id').textContent = rec.new_table2id;
             document.getElementById('dt-yousha-mark').style.display = rec.new_yousha_irai ? 'inline' : 'none';
             
@@ -382,72 +300,163 @@
             switchScreen('list'); 
         };
 
+        // --- リスト描画処理を関数化 ---
+        function renderList() {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const yest = new Date(now); yest.setDate(yest.getDate()-1);
+            const yestStr = yest.toISOString().split('T')[0];
+
+            const todayContainer = document.getElementById('today-container');
+            const futureContainer = document.getElementById('future-container');
+            todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
+            let hasToday = false;
+
+            for (let i = 1; i <= 14; i++) {
+                const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
+                const dateKey = targetDate.toISOString().split('T')[0];
+                const wDay = getWeekDay(targetDate);
+                const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+                const dayRecords = globalData.filter(r => r.new_day.startsWith(dateKey));
+                if (dayRecords.length > 0) {
+                    dayRecords.forEach(rec => {
+                        const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
+                        futureContainer.innerHTML += `<div class="future-row" onclick="openDetail('${rec.new_table2id}')"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col"><span class="status-badge ${statusInfo.class}" style="position:static; float:right; margin-left:5px;">${statusInfo.text}</span><div class="fw-bold">${rec.new_genbamei || '現場名未定'}</div><div class="small text-muted">${formatTime(rec.new_start_time)} ～</div></div></div>`;
+                    });
+                } else {
+                    futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col d-flex align-items-center"><div class="no-job-text">予定なし</div></div></div>`;
+                }
+            }
+            
+            data = { records: globalData }; // scope check
+            globalData.forEach(rec => {
+                const jobDateStr = rec.new_day.split('T')[0];
+                const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
+                if (jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) {
+                    hasToday = true;
+                    const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
+                    todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')"><div class="d-flex justify-content-between align-items-center mb-1"><span class="time-badge">${formatTime(rec.new_start_time)} ～</span><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div><span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="work-content">${rec.new_sagyou_naiyou || '-'}</div></div>`;
+                }
+            });
+            if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+        }
+
+        // --- アクション関連 ---
+        function confirmCompletion() {
+            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            completeModal.show();
+        }
+        function executeComplete() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#completeModal .btn-danger');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
+                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
+                { timeout: 5000, enableHighAccuracy: true }
+            );
+        }
+
+        function confirmUndo() {
+            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
+            undoModal.show();
+        }
+        function executeUndo() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#undoModal .btn-secondary');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
+            btn.disabled = true;
+            sendApi('undo', null, null, btn, originalText, undoModal);
+        }
+
+        async function sendApi(mode, lat, long, btn, originalText, modal) {
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
+                });
+
+                if (!res.ok) {
+                    const errBody = await res.json();
+                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
+                }
+
+                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
+                if(modal) modal.hide();
+                location.reload(); 
+
+            } catch (e) {
+                alert("送信に失敗しました:\n" + e.message);
+            } finally {
+                if(btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // --- 初期化 ---
         (async () => {
             try {
                 const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
                 const authData = await authRes.json();
                 if (!authData.clientPrincipal) { switchScreen('login'); return; }
+                
                 const now = new Date();
                 document.getElementById('disp-date').textContent = formatDateHeader(now);
+                
                 const apiRes = await fetch('/api/show-env');
                 if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
+                
                 const data = await apiRes.json();
                 globalData = data.records;
+                
                 document.getElementById('disp-name').textContent = data.user.name;
                 document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
                 document.getElementById('count-today').textContent = data.todayCount;
                 
-                const todayStr = now.toISOString().split('T')[0];
-                const yest = new Date(now); yest.setDate(yest.getDate()-1);
-                const yestStr = yest.toISOString().split('T')[0];
-
-                const todayContainer = document.getElementById('today-container');
-                const futureContainer = document.getElementById('future-container');
-                todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
-                let hasToday = false;
-
-                for (let i = 1; i <= 14; i++) {
-                    const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
-                    const dateKey = targetDate.toISOString().split('T')[0];
-                    const wDay = getWeekDay(targetDate);
-                    const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
-                    const dayRecords = globalData.filter(r => r.new_day.startsWith(dateKey));
-                    if (dayRecords.length > 0) {
-                        dayRecords.forEach(rec => {
-                            const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                            futureContainer.innerHTML += `<div class="future-row" onclick="openDetail('${rec.new_table2id}')"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col"><span class="status-badge ${statusInfo.class}" style="position:static; float:right; margin-left:5px;">${statusInfo.text}</span><div class="fw-bold">${rec.new_genbamei || '現場名未定'}</div><div class="small text-muted">${formatTime(rec.new_start_time)} ～</div></div></div>`;
-                        });
-                    } else {
-                        futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col d-flex align-items-center"><div class="no-job-text">予定なし</div></div></div>`;
-                    }
-                }
+                // 初回描画
+                renderList();
                 
-                // 今日の予定 (本日 or 昨日夜間)
-                data.records.forEach(rec => {
-                    const jobDateStr = rec.new_day.split('T')[0];
-                    const kashikiriVal = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                    const isNight = kashikiriVal.includes("夜間");
-                    const isTodayTarget = (jobDateStr === todayStr) || (jobDateStr === yestStr && isNight);
-
-                    if (isTodayTarget) {
-                        hasToday = true;
-                        const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                        const timeStr = formatTime(rec.new_start_time);
-                        
-                        // ★修正: status-badge に style="position: static;" を追加して絶対配置を無効化
-                        todayContainer.innerHTML += `
-                            <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="time-badge">${timeStr} ～</span>
-                                    <span class="status-badge ${statusInfo.class}" style="position: static;">${statusInfo.text}</span>
-                                </div>
-                                <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
-                                <div class="work-content">${rec.new_sagyou_naiyou || '-'}</div>
-                            </div>`;
-                    }
-                });
-                
-                if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
                 switchScreen('list');
             } catch (e) {
                 console.error(e);
