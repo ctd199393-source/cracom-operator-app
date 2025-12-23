@@ -38,6 +38,8 @@
         .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; } .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
         .job-col { flex-grow: 1; padding: 8px; position: relative; }
         .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; padding-left: 10px; }
+        
+        /* ステータスバッジ (デフォルトは絶対配置だが、今日の予定ではstaticで上書きする) */
         .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid; }
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
@@ -85,7 +87,7 @@
         .btn-back { background: #0078d4; color: white; border: none; width: 80px; border-radius: 4px; font-weight: bold; }
         .btn-camera { background: white; color: #0078d4; border: 1px solid #0078d4; flex: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
         
-        /* ★ボタン2種 (IDで切り替え) */
+        /* ボタン2種 (IDで切り替え) */
         .btn-finish { background: #ff5722; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; }
         .btn-undo   { background: #607d8b; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; display: none; }
 
@@ -186,7 +188,7 @@
         let globalData = [];
         let currentHaishaId = null;
         let completeModal = null;
-        let undoModal = null; // ★追加
+        let undoModal = null;
 
         const STATUS_MAP = {
             100000000: { text: "予 定", class: "st-yet" },
@@ -224,7 +226,7 @@
             );
         }
 
-        // --- ★追加: 取消処理 ---
+        // --- 取消処理 ---
         function confirmUndo() {
             if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
             undoModal.show();
@@ -240,7 +242,7 @@
             sendApi('undo', null, null, btn, originalText, undoModal);
         }
 
-        // ★共通API送信 (mode追加)
+        // 共通API送信 (mode追加)
         async function sendApi(mode, lat, long, btn, originalText, modal) {
             try {
                 const res = await fetch('/api/update-status', {
@@ -314,7 +316,7 @@
 
             currentHaishaId = id;
 
-            // ★ボタン出し分けロジック
+            // ボタン出し分けロジック
             const btnFinish = document.getElementById('btn-do-finish');
             const btnUndo = document.getElementById('btn-do-undo');
             const statusVal = rec.new_shinkoujoukyou;
@@ -419,15 +421,32 @@
                         futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col d-flex align-items-center"><div class="no-job-text">予定なし</div></div></div>`;
                     }
                 }
+                
+                // 今日の予定 (本日 or 昨日夜間)
                 data.records.forEach(rec => {
                     const jobDateStr = rec.new_day.split('T')[0];
-                    const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
-                    if (jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) {
+                    const kashikiriVal = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                    const isNight = kashikiriVal.includes("夜間");
+                    const isTodayTarget = (jobDateStr === todayStr) || (jobDateStr === yestStr && isNight);
+
+                    if (isTodayTarget) {
                         hasToday = true;
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                        todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')"><div class="d-flex justify-content-between align-items-center mb-1"><span class="time-badge">${formatTime(rec.new_start_time)} ～</span><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span></div><span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="work-content">${rec.new_sagyou_naiyou || '-'}</div></div>`;
+                        const timeStr = formatTime(rec.new_start_time);
+                        
+                        // ★修正: status-badge に style="position: static;" を追加して絶対配置を無効化
+                        todayContainer.innerHTML += `
+                            <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="time-badge">${timeStr} ～</span>
+                                    <span class="status-badge ${statusInfo.class}" style="position: static;">${statusInfo.text}</span>
+                                </div>
+                                <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
+                                <div class="work-content">${rec.new_sagyou_naiyou || '-'}</div>
+                            </div>`;
                     }
                 });
+                
                 if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
                 switchScreen('list');
             } catch (e) {
