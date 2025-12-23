@@ -198,16 +198,14 @@
             return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
         }
 
-        // --- ★重要: 詳細画面を開く（自動確認機能付き） ---
+        // 自動確認機能付き詳細オープン
         window.openDetail = async function(id) {
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            // 通知済み(100000002)なら、開く前に「確認済み(100000003)」に更新
+            // 通知済み(100000002)なら確認済み(100000003)に更新
             if (rec.new_shinkoujoukyou === 100000002) {
                 document.getElementById('loading').style.display = 'flex';
-                
-                // ★修正: getElementByIdで文字の方を特定して変更する
                 const loadMsg = document.getElementById('loading-text');
                 const orgMsg = loadMsg.textContent;
                 loadMsg.textContent = "確認処理中..."; 
@@ -232,11 +230,10 @@
                     alert("ステータス更新に失敗しました: " + e.message);
                 } finally {
                     document.getElementById('loading').style.display = 'none';
-                    loadMsg.textContent = orgMsg; // 元に戻す
+                    loadMsg.textContent = orgMsg;
                 }
             }
 
-            // --- 以下、既存の詳細表示ロジック ---
             currentHaishaId = id;
             const btnFinish = document.getElementById('btn-do-finish');
             const btnUndo = document.getElementById('btn-do-undo');
@@ -328,6 +325,7 @@
                 }
             }
             
+            // ★修正: data変数を使わず globalData を直接ループ
             globalData.forEach(rec => {
                 const jobDateStr = rec.new_day.split('T')[0];
                 const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
@@ -402,6 +400,7 @@
             alert("ブラウザの設定から位置情報を許可してください。");
         }
 
+        // ★重要: 画面切り替えロジックを修正
         function switchScreen(screenName) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('view-login').style.display = 'none';
@@ -418,19 +417,19 @@
                 return;
             }
             wrapper.style.display = 'block';
+
+            // ★修正: 分岐をシンプルで確実に
             if (screenName === 'list') {
                 document.getElementById('view-list').style.display = 'block';
-                document.getElementById('view-detail').style.display = 'block'; // 一瞬ちらつくのを防ぐため、両方blockにしてから切り替えても良いが、基本はロジック通り
-                if(screenName === 'list') {
-                     document.getElementById('view-detail').style.display = 'none';
-                     footerList.style.display = 'flex';
-                     footerDetail.style.display = 'none';
-                } else {
-                     document.getElementById('view-list').style.display = 'none';
-                     footerList.style.display = 'none';
-                     footerDetail.style.display = 'flex';
-                     window.scrollTo(0, 0);
-                }
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
             }
         }
 
