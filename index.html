@@ -40,7 +40,6 @@
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
         
-        /* ★変更: justify-content を flex-start にし、padding-top を追加 */
         .date-col { 
             width: 60px; 
             background: #fff; 
@@ -50,7 +49,7 @@
             flex-direction: column; 
             align-items: center; 
             justify-content: flex-start; /* 上揃え */
-            padding-top: 25px; /* 上部の余白 */
+            padding-top: 25px; 
             color: #333; 
             flex-shrink: 0; 
         }
@@ -404,7 +403,13 @@
 
             for (let i = 1; i <= 14; i++) {
                 const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
-                const dateKey = targetDate.toISOString().split('T')[0];
+                
+                // ★修正: 日付ズレ対策 (ローカル日付文字列を生成して比較)
+                const y = targetDate.getFullYear();
+                const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+                const d = targetDate.getDate().toString().padStart(2, '0');
+                const dateKey = `${y}-${m}-${d}`;
+
                 const wDay = getWeekDay(targetDate);
                 const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
                 
@@ -417,11 +422,16 @@
                     let jobsHtml = '';
                     dayRecords.forEach(rec => {
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
+                        
+                        // ★追加: 終了時間の表示
+                        let timeStr = formatTime(rec.new_start_time);
+                        if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+
                         jobsHtml += `
                             <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                 <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                                 <div class="fw-bold mb-1">${rec.new_genbamei || '現場名未定'}</div>
-                                <div class="small text-muted"><span class="time-badge" style="font-size:1.0rem;">${formatTime(rec.new_start_time)} ～</span></div>
+                                <div class="small text-muted"><span class="time-badge" style="font-size:1.0rem;">${timeStr}</span></div>
                             </div>`;
                     });
 
@@ -457,7 +467,12 @@
                 if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
                     hasToday = true;
                     const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                    todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')"><div class="d-flex justify-content-between align-items-center mb-1"><span class="time-badge">${formatTime(rec.new_start_time)} ～</span><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div><span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="work-content">${rec.new_sagyou_naiyou || '-'}</div></div>`;
+                    
+                    // 本日の予定にも終了時間を追加
+                    let timeStr = formatTime(rec.new_start_time);
+                    if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+
+                    todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')"><div class="d-flex justify-content-between align-items-center mb-1"><span class="time-badge">${timeStr}</span><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div><span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="work-content">${rec.new_sagyou_naiyou || '-'}</div></div>`;
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
