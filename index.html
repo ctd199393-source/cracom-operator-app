@@ -14,7 +14,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
-        // PDFワーカーの設定
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     </script>
 
@@ -26,7 +25,6 @@
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
         
-        /* ヘッダー */
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
@@ -36,7 +34,6 @@
         .header-date { font-size: 1.0rem; font-weight: bold; color: #333; }
         .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; margin-left: 10px;}
 
-        /* リスト画面 */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
@@ -61,80 +58,63 @@
         .time-badge { font-weight: bold; font-size: 1.2rem; margin-right: 10px; }
         .site-name { font-weight: bold; font-size: 1.4rem; display: block; margin-bottom: 4px; line-height: 1.3; } 
         .work-content { font-size: 1.15rem; color: #444; }
-
         .job-col .fw-bold { font-size: 1.25rem !important; }
         .job-col .small { font-size: 1.1rem !important; color: #555 !important; }
 
-        /* 詳細画面 */
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
         
-        /* 上部3ボックスのデザイン */
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
-        .info-box { 
-            background: white; 
-            border: 1px solid #005a9e; 
-            border-radius: 6px; 
-            display: flex; 
-            overflow: hidden; 
-            flex: 1; 
-            height: 50px; 
-        }
-        .info-box label { 
-            background: white; 
-            color: #005a9e; 
-            font-weight: bold;
-            font-size: 0.9rem; 
-            width: 32px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-right: none; 
-            margin: 0;
-            writing-mode: vertical-rl;
-            text-orientation: upright; 
-            letter-spacing: 1px;
-            flex-shrink: 0;
-            line-height: 1;
-        }
-        .info-box span { 
-            flex-grow: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.3rem; 
-            font-weight: normal; 
-            color: #333; 
-            line-height: 1;
-            padding: 2px;
-            white-space: nowrap; 
-        }
+        .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
+        .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
+        .info-box span { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: normal; color: #333; line-height: 1; padding: 2px; white-space: nowrap; }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
         .detail-row:last-child { border-bottom: none; }
-        
         .detail-label { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; }
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
-        
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
         .link-btn { text-decoration: none; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; color: #005a9e; }
+        
         .doc-list-area { margin-top: 10px; }
         .doc-header { font-size: 1.0rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
-        .doc-preview-box { width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; position: relative; }
-        .doc-thumb-img { width: 100%; height: 100%; object-fit: cover; }
-        /* ★追加: PDFキャンバス用CSS */
-        canvas.doc-thumb-img { width: 100%; height: 100%; object-fit: contain; }
-        .doc-icon { font-size: 2rem; color: #d13438; }
+        
+        /* ★変更: プレビュー枠サイズ 1.5倍 (80px -> 120px) */
+        .doc-preview-box { 
+            width: 120px; 
+            height: 90px; 
+            margin-right: 15px; 
+            background: #f8f9fa; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            border: 1px solid #eee; 
+            position: relative; 
+            flex-shrink: 0; /* 縮小させない */
+        }
+        
+        /* ★変更: 縦横対応 (contain) */
+        .doc-thumb-img, canvas.doc-thumb-img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; /* 枠内に収める */
+        }
+        
+        .doc-icon { font-size: 2.5rem; color: #d13438; } /* アイコンも少し大きく */
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
+        
+        /* 読み込み中スピナー */
+        .preview-spinner { font-size: 1.5rem; color: #ccc; }
 
-        /* フッター */
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
@@ -253,39 +233,42 @@
 
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
         function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
-        
         function formatTime(iso) {
             if(!iso) return "";
             const d = new Date(iso);
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // PDFレンダリング関数
-        async function renderPdfThumbnail(url, canvasId) {
+        // PDFレンダリング関数 (スピナー制御付き)
+        async function renderPdfThumbnail(url, canvasId, spinnerId) {
             try {
                 const loadingTask = pdfjsLib.getDocument(url);
                 const pdf = await loadingTask.promise;
                 const page = await pdf.getPage(1);
                 
                 const canvas = document.getElementById(canvasId);
+                const spinner = document.getElementById(spinnerId);
+                
                 if (!canvas) return;
                 
                 const context = canvas.getContext('2d');
-                // サムネイル用に少し縮小して描画 (scale 0.5程度)
-                const viewport = page.getViewport({ scale: 0.5 });
+                // サムネイル解像度調整 (scale)
+                const viewport = page.getViewport({ scale: 0.6 });
                 
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
                 
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
+                const renderContext = { canvasContext: context, viewport: viewport };
                 await page.render(renderContext).promise;
+                
+                // 描画完了後、スピナーを消してキャンバスを表示
+                if(spinner) spinner.style.display = 'none';
+                canvas.style.display = 'block';
+
             } catch (error) {
                 console.error("PDF Render Error:", error);
-                // エラー時はキャンバスを隠してアイコンなどを出すなどの処理も可能だが
-                // 今回はそのまま空白（または枠のみ）になる
+                const spinner = document.getElementById(spinnerId);
+                if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; // エラー表示
             }
         }
 
@@ -316,10 +299,8 @@
                         const err = await res.json();
                         throw new Error(err.error || "Update Error");
                     }
-                    
                     rec.new_shinkoujoukyou = 100000003;
                     renderList();
-
                 } catch(e) {
                     console.error(e);
                     alert("ステータス更新に失敗しました: " + e.message);
@@ -367,11 +348,9 @@
             if (rec.new_genbamei) mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.new_genbamei)}`;
             else mapBtn.href = "#";
 
-            // ★変更: ドキュメントリスト生成 (PDFサムネイル対応)
+            // ドキュメントリスト生成
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
-            
-            // PDFレンダリング待機キュー
             const pdfRenderQueue = [];
 
             if (rec.documents && rec.documents.length > 0) {
@@ -383,16 +362,24 @@
                     
                     let previewContent = '';
                     
-                    if (ext.includes("pdf")) {
-                        // PDFの場合はキャンバスを作成
+                    // ★修正: 画像ファイルの判定と表示ロジック強化
+                    if (ext.match(/(jpg|jpeg|png|gif)/i)) {
+                        // サムネイルがあればそれを使う、なければ元の画像URLを使う
+                        const imgSrc = thumbUrl || url; 
+                        previewContent = `<img src="${imgSrc}" class="doc-thumb-img">`;
+                    } 
+                    // PDFの場合
+                    else if (ext.includes("pdf")) {
                         const canvasId = `pdf-canvas-${index}`;
-                        previewContent = `<canvas id="${canvasId}" class="doc-thumb-img"></canvas>`;
-                        pdfRenderQueue.push({ url: url, id: canvasId });
-                    } else if (thumbUrl) {
-                        // 画像などは既存のサムネイル
-                        previewContent = `<img src="${thumbUrl}" class="doc-thumb-img">`;
-                    } else {
-                        // その他はアイコン
+                        const spinnerId = `pdf-spinner-${index}`;
+                        // 初期状態はスピナーを表示、キャンバスは非表示
+                        previewContent = `
+                            <div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+                            <canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`;
+                        pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId });
+                    } 
+                    // その他ファイル
+                    else {
                         let iconClass = "fa-file";
                         if(ext.includes("xls")) iconClass = "fa-file-excel";
                         previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
@@ -402,9 +389,9 @@
                 });
                 docContainer.innerHTML = docHtml;
 
-                // PDFレンダリング実行
+                // PDFレンダリングを非同期で実行 (UIブロック防止)
                 pdfRenderQueue.forEach(item => {
-                    renderPdfThumbnail(item.url, item.id);
+                    renderPdfThumbnail(item.url, item.canvasId, item.spinnerId);
                 });
 
             } else { 
