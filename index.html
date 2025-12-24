@@ -39,14 +39,27 @@
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
-        .date-col { width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; }
+        .date-col { width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; flex-shrink: 0; }
         .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
         .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
         .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; } .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
-        .job-col { flex-grow: 1; padding: 8px; position: relative; }
-        .no-job-text { color: #aaa; font-size: 0.9rem; padding-top: 15px; padding-left: 10px; }
         
+        /* ★変更: job-col のパディングを削除（中のアイテムで制御するため） */
+        .job-col { flex-grow: 1; padding: 0; position: relative; }
+        .no-job-text { color: #aaa; font-size: 0.9rem; padding: 15px; }
+        
+        /* ★追加: グループ化された各明細のデザイン */
+        .future-job-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+            background: white;
+            transition: background 0.1s;
+        }
+        .future-job-item:last-child { border-bottom: none; }
+        .future-job-item:active { background: #f5f5f5; }
+
         .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid; }
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
@@ -58,8 +71,10 @@
         .time-badge { font-weight: bold; font-size: 1.2rem; margin-right: 10px; }
         .site-name { font-weight: bold; font-size: 1.4rem; display: block; margin-bottom: 4px; line-height: 1.3; } 
         .work-content { font-size: 1.15rem; color: #444; }
-        .job-col .fw-bold { font-size: 1.25rem !important; }
-        .job-col .small { font-size: 1.1rem !important; color: #555 !important; }
+        
+        /* future-job-item 内の調整 */
+        .future-job-item .fw-bold { font-size: 1.25rem !important; }
+        .future-job-item .small { font-size: 1.1rem !important; color: #555 !important; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
@@ -83,36 +98,12 @@
         .doc-header { font-size: 1.0rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
-        
-        /* ★変更: プレビュー枠サイズ 1.5倍 (80px -> 120px) */
-        .doc-preview-box { 
-            width: 120px; 
-            height: 90px; 
-            margin-right: 15px; 
-            background: #f8f9fa; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-radius: 4px; 
-            overflow: hidden; 
-            border: 1px solid #eee; 
-            position: relative; 
-            flex-shrink: 0; /* 縮小させない */
-        }
-        
-        /* ★変更: 縦横対応 (contain) */
-        .doc-thumb-img, canvas.doc-thumb-img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: contain; /* 枠内に収める */
-        }
-        
-        .doc-icon { font-size: 2.5rem; color: #d13438; } /* アイコンも少し大きく */
+        .doc-preview-box { width: 120px; height: 90px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; position: relative; flex-shrink: 0; }
+        .doc-thumb-img, canvas.doc-thumb-img { width: 100%; height: 100%; object-fit: contain; }
+        .doc-icon { font-size: 2.5rem; color: #d13438; } 
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
-        
-        /* 読み込み中スピナー */
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
 
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
@@ -230,6 +221,9 @@
             100000004: { text: "作業完了", class: "st-don" },
             100000005: { text: "変更有り", class: "st-chg" }
         };
+        
+        // ★追加: 表示対象のステータスリスト
+        const VALID_STATUSES = [100000002, 100000003, 100000004, 100000005];
 
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
         function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
@@ -239,7 +233,6 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // PDFレンダリング関数 (スピナー制御付き)
         async function renderPdfThumbnail(url, canvasId, spinnerId) {
             try {
                 const loadingTask = pdfjsLib.getDocument(url);
@@ -252,23 +245,17 @@
                 if (!canvas) return;
                 
                 const context = canvas.getContext('2d');
-                // サムネイル解像度調整 (scale)
                 const viewport = page.getViewport({ scale: 0.6 });
-                
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                
                 const renderContext = { canvasContext: context, viewport: viewport };
                 await page.render(renderContext).promise;
-                
-                // 描画完了後、スピナーを消してキャンバスを表示
                 if(spinner) spinner.style.display = 'none';
                 canvas.style.display = 'block';
-
             } catch (error) {
                 console.error("PDF Render Error:", error);
                 const spinner = document.getElementById(spinnerId);
-                if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; // エラー表示
+                if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; 
             }
         }
 
@@ -348,7 +335,6 @@
             if (rec.new_genbamei) mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.new_genbamei)}`;
             else mapBtn.href = "#";
 
-            // ドキュメントリスト生成
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
             const pdfRenderQueue = [];
@@ -361,25 +347,17 @@
                     const thumbUrl = doc.new_blobthmbnailurl;
                     
                     let previewContent = '';
-                    
-                    // ★修正: 画像ファイルの判定と表示ロジック強化
                     if (ext.match(/(jpg|jpeg|png|gif)/i)) {
-                        // サムネイルがあればそれを使う、なければ元の画像URLを使う
                         const imgSrc = thumbUrl || url; 
                         previewContent = `<img src="${imgSrc}" class="doc-thumb-img">`;
-                    } 
-                    // PDFの場合
-                    else if (ext.includes("pdf")) {
+                    } else if (ext.includes("pdf")) {
                         const canvasId = `pdf-canvas-${index}`;
                         const spinnerId = `pdf-spinner-${index}`;
-                        // 初期状態はスピナーを表示、キャンバスは非表示
                         previewContent = `
                             <div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div>
                             <canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`;
                         pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId });
-                    } 
-                    // その他ファイル
-                    else {
+                    } else {
                         let iconClass = "fa-file";
                         if(ext.includes("xls")) iconClass = "fa-file-excel";
                         previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
@@ -388,12 +366,7 @@
                     docHtml += `<a href="${url}" target="_blank" class="doc-item"><div class="doc-preview-box">${previewContent}</div><div class="doc-info"><div class="doc-title">${doc.new_name || '無題の資料'}</div><div class="doc-meta">${ext.toUpperCase()} ファイル</div></div><i class="fas fa-chevron-right text-muted"></i></a>`;
                 });
                 docContainer.innerHTML = docHtml;
-
-                // PDFレンダリングを非同期で実行 (UIブロック防止)
-                pdfRenderQueue.forEach(item => {
-                    renderPdfThumbnail(item.url, item.canvasId, item.spinnerId);
-                });
-
+                pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId); });
             } else { 
                 docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; 
             }
@@ -418,26 +391,66 @@
             todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
             let hasToday = false;
 
+            // ★変更: 予定リストの生成ループ (グループ化 & フィルタ)
             for (let i = 1; i <= 14; i++) {
                 const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
                 const dateKey = targetDate.toISOString().split('T')[0];
                 const wDay = getWeekDay(targetDate);
                 const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
-                const dayRecords = globalData.filter(r => r.new_day.startsWith(dateKey));
+                
+                // 対象日付かつ、指定ステータス(通知済み以降)のものだけ抽出
+                const dayRecords = globalData.filter(r => 
+                    r.new_day.startsWith(dateKey) && 
+                    VALID_STATUSES.includes(r.new_shinkoujoukyou)
+                );
+
                 if (dayRecords.length > 0) {
+                    // ジョブリストのHTMLを生成
+                    let jobsHtml = '';
                     dayRecords.forEach(rec => {
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                        futureContainer.innerHTML += `<div class="future-row" onclick="openDetail('${rec.new_table2id}')"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col"><span class="status-badge ${statusInfo.class}" style="position:static; float:right; margin-left:5px;">${statusInfo.text}</span><div class="fw-bold">${rec.new_genbamei || '現場名未定'}</div><div class="small text-muted">${formatTime(rec.new_start_time)} ～</div></div></div>`;
+                        jobsHtml += `
+                            <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                <div class="fw-bold mb-1">${rec.new_genbamei || '現場名未定'}</div>
+                                <div class="small text-muted"><span class="time-badge" style="font-size:1.0rem;">${formatTime(rec.new_start_time)} ～</span></div>
+                            </div>`;
                     });
+
+                    // 1つの日付枠にジョブリストを埋め込む
+                    futureContainer.innerHTML += `
+                        <div class="future-row">
+                            <div class="date-col ${dateColor}">
+                                <span class="month-label">${targetDate.getMonth()+1}/</span>
+                                <div class="day-label">${targetDate.getDate()}</div>
+                                <div class="weekday-label">(${wDay})</div>
+                            </div>
+                            <div class="job-col">
+                                ${jobsHtml}
+                            </div>
+                        </div>`;
                 } else {
-                    futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col d-flex align-items-center"><div class="no-job-text">予定なし</div></div></div>`;
+                    // 予定がない日 (フィルタされた結果も含む)
+                    futureContainer.innerHTML += `
+                        <div class="future-row">
+                            <div class="date-col ${dateColor}">
+                                <span class="month-label">${targetDate.getMonth()+1}/</span>
+                                <div class="day-label">${targetDate.getDate()}</div>
+                                <div class="weekday-label">(${wDay})</div>
+                            </div>
+                            <div class="job-col d-flex align-items-center">
+                                <div class="no-job-text">予定なし</div>
+                            </div>
+                        </div>`;
                 }
             }
             
+            // 本日の予定 (フィルタ適用)
             globalData.forEach(rec => {
                 const jobDateStr = rec.new_day.split('T')[0];
                 const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
-                if (jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) {
+                // 本日の条件 かつ 指定ステータスのみ
+                if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
                     hasToday = true;
                     const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                     todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')"><div class="d-flex justify-content-between align-items-center mb-1"><span class="time-badge">${formatTime(rec.new_start_time)} ～</span><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div><span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="work-content">${rec.new_sagyou_naiyou || '-'}</div></div>`;
