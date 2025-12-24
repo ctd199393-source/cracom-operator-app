@@ -63,7 +63,7 @@
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
         
-        /* ★修正: 上部3ボックスのデザイン（縦線なし・太字解除・高さ調整） */
+        /* 上部3ボックスのデザイン */
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         .info-box { 
             background: white; 
@@ -72,18 +72,18 @@
             display: flex; 
             overflow: hidden; 
             flex: 1; 
-            height: 50px; /* ★高さ調整: 65px -> 50px */
+            height: 50px; 
         }
         .info-box label { 
             background: white; 
             color: #005a9e; 
-            font-weight: normal; /* ★太字解除 */
+            font-weight: bold; /* ★変更: 太字に戻す */
             font-size: 0.9rem; 
             width: 32px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            border-right: none; /* ★縦線削除 */
+            border-right: none; 
             margin: 0;
             writing-mode: vertical-rl;
             text-orientation: upright; 
@@ -96,8 +96,8 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 1.3rem; /* 少しバランス調整 */
-            font-weight: bold; 
+            font-size: 1.3rem; 
+            font-weight: normal; /* ★変更: 太字解除 */
             color: #333; 
             line-height: 1;
             padding: 2px;
