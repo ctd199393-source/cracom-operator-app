@@ -63,30 +63,30 @@
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
         
-        /* ★変更: 上部3ボックスのデザイン（画像に合わせて修正） */
+        /* ★修正: 上部3ボックスのデザイン（縦線なし・太字解除・高さ調整） */
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         .info-box { 
             background: white; 
             border: 1px solid #005a9e; 
             border-radius: 6px; 
-            display: flex; /* 横並び配置 */
+            display: flex; 
             overflow: hidden; 
             flex: 1; 
-            height: 65px; /* 高さ固定 */
+            height: 50px; /* ★高さ調整: 65px -> 50px */
         }
         .info-box label { 
             background: white; 
             color: #005a9e; 
-            font-weight: bold; 
+            font-weight: normal; /* ★太字解除 */
             font-size: 0.9rem; 
-            width: 32px; /* ラベル幅 */
+            width: 32px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            border-right: 1px solid #005a9e; /* 仕切り線 */
+            border-right: none; /* ★縦線削除 */
             margin: 0;
-            writing-mode: vertical-rl; /* 縦書き */
-            text-orientation: upright; /* 文字正立 */
+            writing-mode: vertical-rl;
+            text-orientation: upright; 
             letter-spacing: 1px;
             flex-shrink: 0;
             line-height: 1;
@@ -96,12 +96,12 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 1.5rem; /* 値を特大に */
+            font-size: 1.3rem; /* 少しバランス調整 */
             font-weight: bold; 
             color: #333; 
             line-height: 1;
             padding: 2px;
-            white-space: nowrap; /* 折り返し禁止 */
+            white-space: nowrap; 
         }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
