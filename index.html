@@ -39,17 +39,30 @@
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
-        .date-col { width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #333; flex-shrink: 0; }
+        
+        /* ★変更: justify-content を flex-start にし、padding-top を追加 */
+        .date-col { 
+            width: 60px; 
+            background: #fff; 
+            border-right: 1px solid #eee; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start; /* 上揃え */
+            padding-top: 25px; /* 上部の余白 */
+            color: #333; 
+            flex-shrink: 0; 
+        }
+        
         .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
         .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
         .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; } .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
         
-        /* ★変更: job-col のパディングを削除（中のアイテムで制御するため） */
         .job-col { flex-grow: 1; padding: 0; position: relative; }
         .no-job-text { color: #aaa; font-size: 0.9rem; padding: 15px; }
         
-        /* ★追加: グループ化された各明細のデザイン */
         .future-job-item {
             padding: 10px;
             border-bottom: 1px solid #eee;
@@ -72,7 +85,6 @@
         .site-name { font-weight: bold; font-size: 1.4rem; display: block; margin-bottom: 4px; line-height: 1.3; } 
         .work-content { font-size: 1.15rem; color: #444; }
         
-        /* future-job-item 内の調整 */
         .future-job-item .fw-bold { font-size: 1.25rem !important; }
         .future-job-item .small { font-size: 1.1rem !important; color: #555 !important; }
 
@@ -222,7 +234,6 @@
             100000005: { text: "変更有り", class: "st-chg" }
         };
         
-        // ★追加: 表示対象のステータスリスト
         const VALID_STATUSES = [100000002, 100000003, 100000004, 100000005];
 
         function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
@@ -391,21 +402,18 @@
             todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
             let hasToday = false;
 
-            // ★変更: 予定リストの生成ループ (グループ化 & フィルタ)
             for (let i = 1; i <= 14; i++) {
                 const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
                 const dateKey = targetDate.toISOString().split('T')[0];
                 const wDay = getWeekDay(targetDate);
                 const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
                 
-                // 対象日付かつ、指定ステータス(通知済み以降)のものだけ抽出
                 const dayRecords = globalData.filter(r => 
                     r.new_day.startsWith(dateKey) && 
                     VALID_STATUSES.includes(r.new_shinkoujoukyou)
                 );
 
                 if (dayRecords.length > 0) {
-                    // ジョブリストのHTMLを生成
                     let jobsHtml = '';
                     dayRecords.forEach(rec => {
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
@@ -417,7 +425,6 @@
                             </div>`;
                     });
 
-                    // 1つの日付枠にジョブリストを埋め込む
                     futureContainer.innerHTML += `
                         <div class="future-row">
                             <div class="date-col ${dateColor}">
@@ -430,7 +437,6 @@
                             </div>
                         </div>`;
                 } else {
-                    // 予定がない日 (フィルタされた結果も含む)
                     futureContainer.innerHTML += `
                         <div class="future-row">
                             <div class="date-col ${dateColor}">
@@ -445,11 +451,9 @@
                 }
             }
             
-            // 本日の予定 (フィルタ適用)
             globalData.forEach(rec => {
                 const jobDateStr = rec.new_day.split('T')[0];
                 const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
-                // 本日の条件 かつ 指定ステータスのみ
                 if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
                     hasToday = true;
                     const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
