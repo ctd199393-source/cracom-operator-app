@@ -11,6 +11,13 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // PDFワーカーの設定
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
     <style>
         :root {
             --app-blue: #005a9e; --app-bg: #f3f2f1;
@@ -77,7 +84,7 @@
         .info-box label { 
             background: white; 
             color: #005a9e; 
-            font-weight: bold; /* ★変更: 太字に戻す */
+            font-weight: bold;
             font-size: 0.9rem; 
             width: 32px; 
             display: flex; 
@@ -97,7 +104,7 @@
             align-items: center; 
             justify-content: center; 
             font-size: 1.3rem; 
-            font-weight: normal; /* ★変更: 太字解除 */
+            font-weight: normal; 
             color: #333; 
             line-height: 1;
             padding: 2px;
@@ -118,8 +125,10 @@
         .doc-header { font-size: 1.0rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
-        .doc-preview-box { width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; }
+        .doc-preview-box { width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; position: relative; }
         .doc-thumb-img { width: 100%; height: 100%; object-fit: cover; }
+        /* ★追加: PDFキャンバス用CSS */
+        canvas.doc-thumb-img { width: 100%; height: 100%; object-fit: contain; }
         .doc-icon { font-size: 2rem; color: #d13438; }
         .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -251,6 +260,35 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
+        // PDFレンダリング関数
+        async function renderPdfThumbnail(url, canvasId) {
+            try {
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                
+                const context = canvas.getContext('2d');
+                // サムネイル用に少し縮小して描画 (scale 0.5程度)
+                const viewport = page.getViewport({ scale: 0.5 });
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
+            } catch (error) {
+                console.error("PDF Render Error:", error);
+                // エラー時はキャンバスを隠してアイコンなどを出すなどの処理も可能だが
+                // 今回はそのまま空白（または枠のみ）になる
+            }
+        }
+
         window.openDetail = async function(id) {
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
@@ -329,22 +367,49 @@
             if (rec.new_genbamei) mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.new_genbamei)}`;
             else mapBtn.href = "#";
 
+            // ★変更: ドキュメントリスト生成 (PDFサムネイル対応)
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
+            
+            // PDFレンダリング待機キュー
+            const pdfRenderQueue = [];
+
             if (rec.documents && rec.documents.length > 0) {
                 let docHtml = '';
-                rec.documents.forEach(doc => {
+                rec.documents.forEach((doc, index) => {
                     const url = doc.new_url || "#";
                     const ext = (doc.new_kakuchoushi || "").toLowerCase();
                     const thumbUrl = doc.new_blobthmbnailurl;
-                    let iconClass = "fa-file";
-                    if(ext.includes("pdf")) iconClass = "fa-file-pdf";
-                    else if(ext.includes("xls")) iconClass = "fa-file-excel";
-                    let previewContent = thumbUrl ? `<img src="${thumbUrl}" class="doc-thumb-img">` : `<i class="fas ${iconClass} doc-icon"></i>`;
+                    
+                    let previewContent = '';
+                    
+                    if (ext.includes("pdf")) {
+                        // PDFの場合はキャンバスを作成
+                        const canvasId = `pdf-canvas-${index}`;
+                        previewContent = `<canvas id="${canvasId}" class="doc-thumb-img"></canvas>`;
+                        pdfRenderQueue.push({ url: url, id: canvasId });
+                    } else if (thumbUrl) {
+                        // 画像などは既存のサムネイル
+                        previewContent = `<img src="${thumbUrl}" class="doc-thumb-img">`;
+                    } else {
+                        // その他はアイコン
+                        let iconClass = "fa-file";
+                        if(ext.includes("xls")) iconClass = "fa-file-excel";
+                        previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
+                    }
+
                     docHtml += `<a href="${url}" target="_blank" class="doc-item"><div class="doc-preview-box">${previewContent}</div><div class="doc-info"><div class="doc-title">${doc.new_name || '無題の資料'}</div><div class="doc-meta">${ext.toUpperCase()} ファイル</div></div><i class="fas fa-chevron-right text-muted"></i></a>`;
                 });
                 docContainer.innerHTML = docHtml;
-            } else { docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; }
+
+                // PDFレンダリング実行
+                pdfRenderQueue.forEach(item => {
+                    renderPdfThumbnail(item.url, item.id);
+                });
+
+            } else { 
+                docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; 
+            }
 
             switchScreen('detail');
         };
