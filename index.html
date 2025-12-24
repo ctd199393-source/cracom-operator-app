@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>クラコムオペレーター</title>
+    <title>クラコム オペ</title>
     
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
@@ -51,48 +51,79 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        /* ★変更: 本日の予定 - 文字サイズアップ */
-        .time-badge { font-weight: bold; font-size: 1.1rem; margin-right: 10px; }
-        .site-name { font-weight: bold; font-size: 1.25rem; display: block; margin-bottom: 4px; line-height: 1.3; } /* 1.0rem -> 1.25rem */
-        .work-content { font-size: 1.05rem; color: #444; } /* 0.85rem -> 1.05rem */
+        .time-badge { font-weight: bold; font-size: 1.2rem; margin-right: 10px; }
+        .site-name { font-weight: bold; font-size: 1.4rem; display: block; margin-bottom: 4px; line-height: 1.3; } 
+        .work-content { font-size: 1.15rem; color: #444; }
 
-        /* ★変更: 以降の予定 - 文字サイズアップ */
-        .job-col .fw-bold { font-size: 1.15rem !important; }
-        .job-col .small { font-size: 1.05rem !important; color: #555 !important; }
+        .job-col .fw-bold { font-size: 1.25rem !important; }
+        .job-col .small { font-size: 1.1rem !important; color: #555 !important; }
 
         /* 詳細画面 */
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
         
-        .detail-info-row { display: flex; gap: 5px; margin-bottom: 10px; }
-        .info-box { background: white; border: 1px solid #005a9e; border-radius: 4px; padding: 5px; text-align: center; flex: 1; }
-        .info-box label { display: block; font-size: 0.7rem; color: #005a9e; font-weight: bold; margin-bottom: 0; }
-        /* ★変更: 詳細上部ボックスの文字サイズアップ */
-        .info-box span { font-size: 1.3rem; font-weight: bold; color: #333; } /* 1.1rem -> 1.3rem */
-        
+        /* ★変更: 上部3ボックスのデザイン（画像に合わせて修正） */
+        .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
+        .info-box { 
+            background: white; 
+            border: 1px solid #005a9e; 
+            border-radius: 6px; 
+            display: flex; /* 横並び配置 */
+            overflow: hidden; 
+            flex: 1; 
+            height: 65px; /* 高さ固定 */
+        }
+        .info-box label { 
+            background: white; 
+            color: #005a9e; 
+            font-weight: bold; 
+            font-size: 0.9rem; 
+            width: 32px; /* ラベル幅 */
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-right: 1px solid #005a9e; /* 仕切り線 */
+            margin: 0;
+            writing-mode: vertical-rl; /* 縦書き */
+            text-orientation: upright; /* 文字正立 */
+            letter-spacing: 1px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .info-box span { 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.5rem; /* 値を特大に */
+            font-weight: bold; 
+            color: #333; 
+            line-height: 1;
+            padding: 2px;
+            white-space: nowrap; /* 折り返し禁止 */
+        }
+
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
         .detail-row:last-child { border-bottom: none; }
-        .detail-label { width: 85px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; }
-        /* ★変更: 詳細項目の値サイズアップ */
-        .detail-val { flex: 1; padding: 10px; font-size: 1.15rem; color: #222; display: flex; align-items: center; line-height: 1.4; } /* 0.95rem -> 1.15rem */
         
-        /* ★変更: 連絡事項の文字サイズアップ */
-        .detail-note { padding: 12px; font-size: 1.1rem; color: #222; white-space: pre-wrap; line-height: 1.5; } /* 0.9rem -> 1.1rem */
+        .detail-label { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; }
+        .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
+        .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
         
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
-        .link-btn { text-decoration: none; font-weight: bold; font-size: 1.0rem; display: flex; align-items: center; color: #005a9e; }
+        .link-btn { text-decoration: none; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; color: #005a9e; }
         .doc-list-area { margin-top: 10px; }
-        .doc-header { font-size: 0.9rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
+        .doc-header { font-size: 1.0rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
         .doc-preview-box { width: 80px; height: 60px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; }
         .doc-thumb-img { width: 100%; height: 100%; object-fit: cover; }
         .doc-icon { font-size: 2rem; color: #d13438; }
         .doc-info { flex: 1; overflow: hidden; }
-        .doc-title { font-weight: bold; font-size: 1.0rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .doc-meta { font-size: 0.75rem; color: #888; margin-top: 2px;}
+        .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
 
         /* フッター */
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
@@ -134,11 +165,13 @@
 
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
             <div class="debug-row"><span class="yousha-mark" id="dt-yousha-mark">傭車</span><span class="debug-id" id="dt-debug-id">---</span></div>
+            
             <div class="detail-info-row">
                 <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
                 <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
-                <div class="info-box"><label>車輌</label><span id="dt-vehicle">---</span></div>
+                <div class="info-box"><label>車両</label><span id="dt-vehicle">---</span></div>
             </div>
+            
             <div class="detail-card">
                 <div class="detail-row"><div class="detail-label">得意先</div><div class="detail-val" id="dt-client">---</div></div>
                 <div class="detail-row"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
@@ -146,6 +179,7 @@
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
                 <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">無線機 x 1</div></div>
             </div>
+            
             <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
             <div class="detail-actions"><a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a></div>
             <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div><div id="dt-doc-list"></div></div>
