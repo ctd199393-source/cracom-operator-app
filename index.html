@@ -68,6 +68,7 @@
             position: relative;
             background: white;
             transition: background 0.1s;
+            min-height: 85px; /* マスク時も高さを確保 */
         }
         .future-job-item:last-child { border-bottom: none; }
         .future-job-item:active { background: #f5f5f5; }
@@ -80,10 +81,10 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        /* NEWアイコン (一覧用デフォルト位置) */
+        /* NEWアイコン (位置調整: top: 45px) */
         .new-icon {
             position: absolute;
-            top: 40px; /* ★修正: 32px -> 40px (重なり回避のため下げる) */
+            top: 45px; 
             right: 8px;
             width: 38px;
             height: auto;
@@ -102,6 +103,14 @@
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
         .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
         
+        /* 通知済み時のマスクメッセージ */
+        .masked-msg {
+            color: #d13438; /* 赤色 */
+            font-weight: bold;
+            font-size: 1.0rem;
+            margin-top: 35px; /* バッジの下あたりに配置 */
+        }
+
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: none; }
@@ -258,20 +267,15 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // ★修正: 6時間以内判定 (21600000ms)
+        // 6時間以内判定
         function checkNewStatus(iso) {
             if (!iso) return { isNew: false };
-            
             let safeIso = iso;
             if (!iso.endsWith('Z')) safeIso += 'Z';
-
             const now = new Date();
             const target = new Date(safeIso);
             const diff = now - target;
-            
-            // 未来の日付(-1時間)も考慮しつつ、過去6時間以内
             const isNew = (diff >= -3600000 && diff < 21600000); 
-
             return { isNew: isNew };
         }
 
@@ -280,12 +284,9 @@
                 const loadingTask = pdfjsLib.getDocument(url);
                 const pdf = await loadingTask.promise;
                 const page = await pdf.getPage(1);
-                
                 const canvas = document.getElementById(canvasId);
                 const spinner = document.getElementById(spinnerId);
-                
                 if (!canvas) return;
-                
                 const context = canvas.getContext('2d');
                 const viewport = page.getViewport({ scale: 0.6 });
                 canvas.height = viewport.height;
@@ -452,13 +453,7 @@
                     let jobsHtml = '';
                     dayRecords.forEach(rec => {
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                        let timeStr = formatTime(rec.new_start_time);
-                        if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                         
-                        const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                        const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
-                        const tokuisaki = rec.new_tokuisaki_mei || "";
-
                         const modDate = rec.modifiedon || rec.ModifiedOn;
                         const check = checkNewStatus(modDate);
                         
@@ -471,17 +466,34 @@
                             }
                         }
 
-                        jobsHtml += `
-                            <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
-                                <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
-                                ${newIconHtml}
-                                <div class="mb-1">
-                                    <span class="time-badge">${timeStr}</span>
-                                    <span class="meta-info">${kashikiri} ${sharyou}</span>
-                                </div>
-                                <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
-                                <div class="client-name">${tokuisaki}</div>
-                            </div>`;
+                        // ★修正: 通知済み (100000002) なら内容をマスク
+                        if (rec.new_shinkoujoukyou === 100000002) {
+                            jobsHtml += `
+                                <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                    <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                    ${newIconHtml}
+                                    <div class="masked-msg">未確定の予定のため確認してください。</div>
+                                </div>`;
+                        } else {
+                            // 通常表示
+                            let timeStr = formatTime(rec.new_start_time);
+                            if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+                            const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                            const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
+                            const tokuisaki = rec.new_tokuisaki_mei || "";
+
+                            jobsHtml += `
+                                <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                    <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                    ${newIconHtml}
+                                    <div class="mb-1">
+                                        <span class="time-badge">${timeStr}</span>
+                                        <span class="meta-info">${kashikiri} ${sharyou}</span>
+                                    </div>
+                                    <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
+                                    <div class="client-name">${tokuisaki}</div>
+                                </div>`;
+                        }
                     });
 
                     futureContainer.innerHTML += `
@@ -516,41 +528,53 @@
                 if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
                     hasToday = true;
                     const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                    let timeStr = formatTime(rec.new_start_time);
-                    if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
-                    
-                    const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                    const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
-                    const tokuisaki = rec.new_tokuisaki_mei || "";
-                    const workContent = rec.new_sagyou_naiyou || "";
-
                     const modDate = rec.modifiedon || rec.ModifiedOn;
                     const check = checkNewStatus(modDate);
                     
                     let newIconHtml = '';
                     if (check.isNew) {
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            // ★修正: 本日の予定は top:45px
-                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px;">'; 
+                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px;">'; // top:45px
                         } else if (rec.new_shinkoujoukyou === 100000003) {
                             newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:45px;">';
                         }
                     }
 
-                    todayContainer.innerHTML += `
-                        <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <div>
-                                    <span class="time-badge">${timeStr}</span>
-                                    <span class="meta-info">${kashikiri} ${sharyou}</span>
+                    // ★修正: 通知済み (100000002) なら内容をマスク (本日の予定も同様)
+                    if (rec.new_shinkoujoukyou === 100000002) {
+                        todayContainer.innerHTML += `
+                            <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div></div>
+                                    <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
                                 </div>
-                                <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
-                            </div>
-                            ${newIconHtml}
-                            <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
-                            <div class="client-name">${tokuisaki}</div>
-                            <div class="work-content">${workContent}</div>
-                        </div>`;
+                                ${newIconHtml}
+                                <div class="masked-msg">未確定の予定のため確認してください。</div>
+                            </div>`;
+                    } else {
+                        // 通常表示
+                        let timeStr = formatTime(rec.new_start_time);
+                        if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+                        const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                        const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
+                        const tokuisaki = rec.new_tokuisaki_mei || "";
+                        const workContent = rec.new_sagyou_naiyou || "";
+
+                        todayContainer.innerHTML += `
+                            <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <div>
+                                        <span class="time-badge">${timeStr}</span>
+                                        <span class="meta-info">${kashikiri} ${sharyou}</span>
+                                    </div>
+                                    <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
+                                </div>
+                                ${newIconHtml}
+                                <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
+                                <div class="client-name">${tokuisaki}</div>
+                                <div class="work-content">${workContent}</div>
+                            </div>`;
+                    }
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
