@@ -81,11 +81,11 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        /* ★変更: NEWアイコン位置調整 (right: 15px, top: 45px) */
+        /* NEWアイコン (一覧用: right 15px) */
         .new-icon {
             position: absolute;
             top: 45px; 
-            right: 15px; /* 右端から少し離す */
+            right: 15px;
             width: 38px;
             height: auto;
             animation: float-anim 2s ease-in-out infinite;
@@ -460,9 +460,9 @@
                         let newIconHtml = '';
                         if (check.isNew) {
                             if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                                newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px;">'; 
+                                newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW">'; 
                             } else if (rec.new_shinkoujoukyou === 100000003) {
-                                newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:45px;">'; 
+                                newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW">'; 
                             }
                         }
 
@@ -534,9 +534,10 @@
                     let newIconHtml = '';
                     if (check.isNew) {
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px;">'; 
+                            // ★修正: 本日の予定は top:45px, right:8px
+                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px; right:8px;">'; 
                         } else if (rec.new_shinkoujoukyou === 100000003) {
-                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:45px;">';
+                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:45px; right:8px;">';
                         }
                     }
 
