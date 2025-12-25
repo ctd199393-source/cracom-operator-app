@@ -105,9 +105,9 @@
         }
         .masked-text { font-size: 1.2rem; font-weight: normal; }
         
-        /* ★修正: 色定義の変更・追加 */
-        .msg-red { color: #d13438; } /* 赤色 (変更有り用) */
-        .msg-blue { color: #0078d4; } /* 青色 (通知済み用) */
+        /* ★修正: 配色変更 (変更有り=赤, 通知済み=青) */
+        .msg-red { color: #d13438; } 
+        .msg-blue { color: #0078d4; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
         .detail-date { font-size: 1.2rem; font-weight: bold; color: #333; }
@@ -282,6 +282,7 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
+        // 6時間以内判定
         function checkNewStatus(iso) {
             if (!iso) return { isNew: false };
             let safeIso = iso;
@@ -480,17 +481,16 @@
                             }
                         }
 
-                        // ★修正: 色分け対応 (msg-blue / msg-red)
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                             let msgText = "";
                             let colorClass = "";
                             
                             if (rec.new_shinkoujoukyou === 100000002) {
                                 msgText = "通知済みの予定を確認";
-                                colorClass = "msg-blue"; // 青
+                                colorClass = "msg-blue"; // ★修正: 通知済み -> 青
                             } else {
                                 msgText = "変更有りの予定を確認";
-                                colorClass = "msg-red"; // 赤
+                                colorClass = "msg-red"; // ★修正: 変更有り -> 赤
                             }
 
                             jobsHtml += `
@@ -566,17 +566,16 @@
                         }
                     }
 
-                    // ★修正: 本日の予定も色分け対応
                     if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                         let msgText = "";
                         let colorClass = "";
                         
                         if (rec.new_shinkoujoukyou === 100000002) {
                             msgText = "通知済みの予定を確認";
-                            colorClass = "msg-blue"; // 青
+                            colorClass = "msg-blue"; // ★修正: 通知済み -> 青
                         } else {
                             msgText = "変更有りの予定を確認";
-                            colorClass = "msg-red"; // 赤
+                            colorClass = "msg-red"; // ★修正: 変更有り -> 赤
                         }
 
                         todayContainer.innerHTML += `
@@ -616,6 +615,105 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
+        }
+
+        function confirmCompletion() {
+            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            completeModal.show();
+        }
+        function executeComplete() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#completeModal .btn-danger');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
+                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
+                { timeout: 5000, enableHighAccuracy: true }
+            );
+        }
+
+        function confirmUndo() {
+            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
+            undoModal.show();
+        }
+        function executeUndo() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#undoModal .btn-secondary');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
+            btn.disabled = true;
+            sendApi('undo', null, null, btn, originalText, undoModal);
+        }
+
+        async function sendApi(mode, lat, long, btn, originalText, modal) {
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
+                });
+
+                if (res.status === 401) {
+                    alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
+                    window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
+                    return;
+                }
+
+                if (!res.ok) {
+                    const errBody = await res.json();
+                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
+                }
+
+                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
+                if(modal) modal.hide();
+                location.reload(); 
+
+            } catch (e) {
+                alert("送信に失敗しました:\n" + e.message);
+            } finally {
+                if(btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
         }
 
         (async () => {
