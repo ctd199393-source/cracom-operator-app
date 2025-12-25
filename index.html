@@ -80,7 +80,6 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        /* NEWアイコンのスタイル */
         .new-icon {
             position: absolute;
             top: 32px; 
@@ -101,6 +100,9 @@
         .site-name { font-weight: bold; font-size: 1.3rem; display: block; margin-bottom: 2px; line-height: 1.3; margin-top: 4px; } 
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
         .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
+        
+        /* デバッグ用スタイル */
+        .debug-time { font-size: 0.7rem; color: #aaa; position: absolute; top: 30px; right: 60px; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
@@ -258,13 +260,27 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // 6時間以内判定
-        function isWithin6Hours(iso) {
-            if (!iso) return false;
+        // ★修正: 判定強化版 (UTC強制補正 + 48時間 + デバッグ用文字列返却)
+        // 戻り値: { isNew: true/false, debugStr: "12/25 10:00" }
+        function checkNewStatus(iso) {
+            if (!iso) return { isNew: false, debugStr: "なし" };
+            
+            // タイムゾーン補正 (Zがない場合はUTCとして扱うよう強制)
+            let safeIso = iso;
+            if (!iso.endsWith('Z')) safeIso += 'Z';
+
             const now = new Date();
-            const target = new Date(iso);
+            const target = new Date(safeIso);
             const diff = now - target;
-            return diff >= 0 && diff < 21600000;
+            
+            // デバッグ表示用文字列 (月/日 時:分)
+            const debugStr = `${target.getMonth()+1}/${target.getDate()} ${target.getHours()}:${target.getMinutes().toString().padStart(2,'0')}`;
+
+            // ★テスト用に48時間 (48 * 60 * 60 * 1000)
+            // データが未来(マイナス)の場合も許容しないと、PC時計ズレ等で出ないことがあるため >= -3600000 (1時間未来まで許容)
+            const isNew = (diff >= -3600000 && diff < 172800000); 
+
+            return { isNew: isNew, debugStr: debugStr };
         }
 
         async function renderPdfThumbnail(url, canvasId, spinnerId) {
@@ -451,20 +467,25 @@
                         const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
                         const tokuisaki = rec.new_tokuisaki_mei || "";
 
-                        // ★修正: ファイル名 new-icon... に変更
+                        // ★修正: NEW判定とデバッグ表示
+                        const check = checkNewStatus(rec.modifiedon);
                         let newIconHtml = '';
-                        if (isWithin6Hours(rec.modifiedon)) {
+                        if (check.isNew) {
                             if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                                newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW">'; // 赤
+                                newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW">'; 
                             } else if (rec.new_shinkoujoukyou === 100000003) {
-                                newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW">'; // 青
+                                newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW">'; 
                             }
                         }
+                        
+                        // ★デバッグ: 日時表示
+                        const debugHtml = `<div class="debug-time">更新: ${check.debugStr}</div>`;
 
                         jobsHtml += `
                             <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                 <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                                 ${newIconHtml}
+                                ${debugHtml}
                                 <div class="mb-1">
                                     <span class="time-badge">${timeStr}</span>
                                     <span class="meta-info">${kashikiri} ${sharyou}</span>
@@ -514,15 +535,16 @@
                     const tokuisaki = rec.new_tokuisaki_mei || "";
                     const workContent = rec.new_sagyou_naiyou || "";
 
-                    // ★修正: ファイル名 new-icon... に変更
+                    const check = checkNewStatus(rec.modifiedon);
                     let newIconHtml = '';
-                    if (isWithin6Hours(rec.modifiedon)) {
+                    if (check.isNew) {
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                             newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:35px;">'; 
                         } else if (rec.new_shinkoujoukyou === 100000003) {
                             newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:35px;">';
                         }
                     }
+                    const debugHtml = `<div class="debug-time" style="top:35px;">更新: ${check.debugStr}</div>`;
 
                     todayContainer.innerHTML += `
                         <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
@@ -534,6 +556,7 @@
                                 <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
                             </div>
                             ${newIconHtml}
+                            ${debugHtml}
                             <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
                             <div class="client-name">${tokuisaki}</div>
                             <div class="work-content">${workContent}</div>
