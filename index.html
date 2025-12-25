@@ -80,13 +80,28 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
+        /* ★追加: NEWアイコンのスタイルとアニメーション */
+        .new-icon {
+            position: absolute;
+            top: 32px; /* ステータスバッジの下 */
+            right: 8px;
+            width: 38px;
+            height: auto;
+            animation: float-anim 2s ease-in-out infinite;
+            z-index: 10;
+        }
+        @keyframes float-anim {
+            0%, 100% { transform: translateY(0); opacity: 0.9; }
+            50% { transform: translateY(-4px); opacity: 1; }
+        }
+
         .time-badge { font-weight: bold; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 0.9rem; color: #555; margin-left: 5px; }
         
         .site-name { font-weight: bold; font-size: 1.3rem; display: block; margin-bottom: 2px; line-height: 1.3; margin-top: 4px; } 
-        /* ★追加: 得意先名スタイル */
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
-        .work-content { font-size: 1.0rem; color: #444; border-top: 1px dashed #eee; padding-top: 4px; margin-top: 4px; }
+        /* ★修正: 破線(border-top)を削除 */
+        .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
@@ -242,6 +257,16 @@
             if(!iso) return "";
             const d = new Date(iso);
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
+        }
+
+        // ★追加: 6時間以内か判定する関数
+        function isWithin6Hours(iso) {
+            if (!iso) return false;
+            const now = new Date();
+            const target = new Date(iso);
+            const diff = now - target;
+            // 6時間 = 6 * 60 * 60 * 1000 ミリ秒
+            return diff >= 0 && diff < 21600000;
         }
 
         async function renderPdfThumbnail(url, canvasId, spinnerId) {
@@ -424,14 +449,24 @@
                         let timeStr = formatTime(rec.new_start_time);
                         if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                         
-                        // 貸切・車両・得意先の取得
                         const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                         const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
                         const tokuisaki = rec.new_tokuisaki_mei || "";
 
+                        // ★追加: NEWアイコンの判定とHTML生成
+                        let newIconHtml = '';
+                        if (isWithin6Hours(rec.modifiedon)) {
+                            if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
+                                newIconHtml = '<img src="image_11.png" class="new-icon" alt="NEW">'; // 赤
+                            } else if (rec.new_shinkoujoukyou === 100000003) {
+                                newIconHtml = '<img src="image_8.png" class="new-icon" alt="NEW">'; // 青
+                            }
+                        }
+
                         jobsHtml += `
                             <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                 <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                ${newIconHtml}
                                 <div class="mb-1">
                                     <span class="time-badge">${timeStr}</span>
                                     <span class="meta-info">${kashikiri} ${sharyou}</span>
@@ -481,8 +516,18 @@
                     const tokuisaki = rec.new_tokuisaki_mei || "";
                     const workContent = rec.new_sagyou_naiyou || "";
 
+                    // ★追加: 本日の予定にもNEWアイコン判定
+                    let newIconHtml = '';
+                    if (isWithin6Hours(rec.modifiedon)) {
+                        if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
+                            newIconHtml = '<img src="image_11.png" class="new-icon" alt="NEW" style="top:35px;">'; // 位置微調整
+                        } else if (rec.new_shinkoujoukyou === 100000003) {
+                            newIconHtml = '<img src="image_8.png" class="new-icon" alt="NEW" style="top:35px;">';
+                        }
+                    }
+
                     todayContainer.innerHTML += `
-                        <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')">
+                        <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
                             <div class="d-flex justify-content-between align-items-start mb-1">
                                 <div>
                                     <span class="time-badge">${timeStr}</span>
@@ -490,6 +535,7 @@
                                 </div>
                                 <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
                             </div>
+                            ${newIconHtml}
                             <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
                             <div class="client-name">${tokuisaki}</div>
                             <div class="work-content">${workContent}</div>
