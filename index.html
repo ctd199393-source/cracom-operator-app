@@ -80,10 +80,10 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        /* ★追加: NEWアイコンのスタイルとアニメーション */
+        /* NEWアイコンのスタイル */
         .new-icon {
             position: absolute;
-            top: 32px; /* ステータスバッジの下 */
+            top: 32px; 
             right: 8px;
             width: 38px;
             height: auto;
@@ -100,7 +100,6 @@
         
         .site-name { font-weight: bold; font-size: 1.3rem; display: block; margin-bottom: 2px; line-height: 1.3; margin-top: 4px; } 
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
-        /* ★修正: 破線(border-top)を削除 */
         .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
@@ -259,13 +258,12 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // ★追加: 6時間以内か判定する関数
+        // 6時間以内判定
         function isWithin6Hours(iso) {
             if (!iso) return false;
             const now = new Date();
             const target = new Date(iso);
             const diff = now - target;
-            // 6時間 = 6 * 60 * 60 * 1000 ミリ秒
             return diff >= 0 && diff < 21600000;
         }
 
@@ -453,13 +451,13 @@
                         const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
                         const tokuisaki = rec.new_tokuisaki_mei || "";
 
-                        // ★追加: NEWアイコンの判定とHTML生成
+                        // ★修正: ファイル名 new-icon... に変更
                         let newIconHtml = '';
                         if (isWithin6Hours(rec.modifiedon)) {
                             if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                                newIconHtml = '<img src="image_11.png" class="new-icon" alt="NEW">'; // 赤
+                                newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW">'; // 赤
                             } else if (rec.new_shinkoujoukyou === 100000003) {
-                                newIconHtml = '<img src="image_8.png" class="new-icon" alt="NEW">'; // 青
+                                newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW">'; // 青
                             }
                         }
 
@@ -516,13 +514,13 @@
                     const tokuisaki = rec.new_tokuisaki_mei || "";
                     const workContent = rec.new_sagyou_naiyou || "";
 
-                    // ★追加: 本日の予定にもNEWアイコン判定
+                    // ★修正: ファイル名 new-icon... に変更
                     let newIconHtml = '';
                     if (isWithin6Hours(rec.modifiedon)) {
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            newIconHtml = '<img src="image_11.png" class="new-icon" alt="NEW" style="top:35px;">'; // 位置微調整
+                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:35px;">'; 
                         } else if (rec.new_shinkoujoukyou === 100000003) {
-                            newIconHtml = '<img src="image_8.png" class="new-icon" alt="NEW" style="top:35px;">';
+                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:35px;">';
                         }
                     }
 
