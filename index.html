@@ -25,24 +25,16 @@
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
         
-        /* ヘッダー */
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
         .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px; }
-        
-        /* ★修正: 担当者名サイズアップ 0.9 -> 1.1rem */
         .user-name { font-size: 1.1rem; font-weight: bold; color: #333; line-height: 1.2; }
-        
-        /* ★修正: 安全メッセージサイズアップ 1.3 -> 1.4rem, 中央配置 */
         .safety-msg { font-size: 1.4rem; color: var(--app-blue); font-weight: bold; flex-grow: 1; text-align: center; padding-bottom: 2px; }
         
         .logout-link { font-size: 0.8rem; color: #dc3545; text-decoration: none; border: 1px solid #dc3545; padding: 1px 6px; border-radius: 4px; margin-left: 10px;}
-
-        /* ★追加: ボディ用日付表示 (左上) */
         .body-date-label { font-size: 1.2rem; font-weight: bold; color: #333; margin: 10px 15px 0 15px; }
 
-        /* リスト画面 */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
@@ -54,7 +46,6 @@
             display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
             padding-top: 25px; color: #333; flex-shrink: 0; 
         }
-        
         .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
         .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
@@ -78,7 +69,7 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        /* NEWアイコン */
+        /* NEWアイコン (一覧用: right 15px, top 45px) */
         .new-icon {
             position: absolute; top: 45px; right: 15px; width: 38px; height: auto;
             animation: float-anim 2s ease-in-out infinite; z-index: 10;
@@ -90,14 +81,11 @@
 
         .time-badge { font-weight: bold; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 0.9rem; color: #555; margin-left: 5px; }
-        
         .site-name { font-weight: bold; font-size: 1.3rem; display: block; margin-bottom: 2px; line-height: 1.3; margin-top: 4px; } 
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
         .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
-        
         .masked-msg { color: #d13438; font-weight: bold; font-size: 1.0rem; margin-top: 35px; }
 
-        /* ★修正: 詳細画面の上部行 (日付左、ID右) */
         .debug-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
         .detail-date { font-size: 1.2rem; font-weight: bold; color: #333; }
         .debug-id-area { text-align: right; }
@@ -263,7 +251,6 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // 6時間以内判定
         function checkNewStatus(iso) {
             if (!iso) return { isNew: false };
             let safeIso = iso;
@@ -353,7 +340,6 @@
             document.getElementById('dt-yousha-mark').style.display = rec.new_yousha_irai ? 'inline' : 'none';
             
             const jobDate = new Date(rec.new_day);
-            // ★変更: 詳細画面の日付設定
             document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
 
             let timeDisp = formatTime(rec.new_start_time);
@@ -416,7 +402,6 @@
 
         window.goBack = function() { 
             const now = new Date();
-            // 一覧に戻るときは一覧用日付を再設定
             document.getElementById('list-date-label').textContent = formatDateHeader(now);
             switchScreen('list'); 
         };
@@ -478,7 +463,6 @@
                             const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
-                            // ★変更: 得意先(client-name)を先、現場名(site-name)を後
                             jobsHtml += `
                                 <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
@@ -531,9 +515,9 @@
                     let newIconHtml = '';
                     if (check.isNew) {
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:35px; right:8px;">'; 
+                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px; right:8px;">'; 
                         } else if (rec.new_shinkoujoukyou === 100000003) {
-                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:35px; right:8px;">';
+                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:45px; right:8px;">';
                         }
                     }
 
@@ -555,7 +539,6 @@
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
 
-                        // ★変更: 得意先(client-name)を先、現場名(site-name)を後
                         todayContainer.innerHTML += `
                             <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
@@ -576,6 +559,105 @@
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
         }
 
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
+        }
+
+        function confirmCompletion() {
+            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            completeModal.show();
+        }
+        function executeComplete() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#completeModal .btn-danger');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
+                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
+                { timeout: 5000, enableHighAccuracy: true }
+            );
+        }
+
+        function confirmUndo() {
+            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
+            undoModal.show();
+        }
+        function executeUndo() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#undoModal .btn-secondary');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
+            btn.disabled = true;
+            sendApi('undo', null, null, btn, originalText, undoModal);
+        }
+
+        async function sendApi(mode, lat, long, btn, originalText, modal) {
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
+                });
+
+                if (res.status === 401) {
+                    alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
+                    window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
+                    return;
+                }
+
+                if (!res.ok) {
+                    const errBody = await res.json();
+                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
+                }
+
+                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
+                if(modal) modal.hide();
+                location.reload(); 
+
+            } catch (e) {
+                alert("送信に失敗しました:\n" + e.message);
+            } finally {
+                if(btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
+        }
+
         (async () => {
             try {
                 const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
@@ -583,7 +665,6 @@
                 if (!authData.clientPrincipal) { switchScreen('login'); return; }
                 
                 const now = new Date();
-                // ★追加: 初期ロード時にリスト画面用日付を表示
                 document.getElementById('list-date-label').textContent = formatDateHeader(now);
                 
                 const apiRes = await fetch('/api/show-env');
@@ -593,7 +674,8 @@
                 globalData = data.records;
                 
                 document.getElementById('disp-name').textContent = data.user.name;
-                document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
+                // company-name-area is no longer used in header but kept in HTML
+                
                 document.getElementById('count-today').textContent = data.todayCount;
                 
                 renderList();
