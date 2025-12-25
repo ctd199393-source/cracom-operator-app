@@ -87,12 +87,12 @@ module.exports = async function (context, req) {
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
         // 5. 配車データ取得
-        // ★修正: new_isdeleted は削除済み
+        // ★修正: modifiedon (修正日) を追加しました
         const selectCols = [
             "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
             "new_table2id", "new_tokuisaki_mei", "new_kyakusaki", "new_sharyou", "new_kashikiri", 
             "new_renraku1", "new_renraku_jikou", "new_type", "new_haisha_zumi",
-            "new_end_time", "new_yousha_irai", 
+            "new_end_time", "new_yousha_irai", "modifiedon",
             "_new_id_value", "_new_sagyouba_value" 
         ].join(",");
 
@@ -100,7 +100,6 @@ module.exports = async function (context, req) {
         dt.setDate(dt.getDate() - 1);
         const yesterdayStr = dt.toISOString().split('T')[0];
 
-        // ★修正: フィルタからも new_isdeleted を削除 (statecode eq 0 で十分)
         const myDispatchFilter = `
             _new_operator_value eq '${user.new_sagyouin_mastaid}' and 
             statecode eq 0 and 
@@ -176,7 +175,6 @@ module.exports = async function (context, req) {
 
         // 7. 部署稼働数
         const today = new Date().toISOString().split('T')[0];
-        // ★修正: ここからも new_isdeleted を削除
         const countFilter = `_owningbusinessunit_value eq '${buId}' and new_day eq ${today} and new_type eq 100000000 and new_haisha_zumi eq true and statecode eq 0`;
         const countQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(countFilter)}&$count=true&$top=0`;
         const countRes = await fetch(countQuery, { headers: { "Authorization": `Bearer ${token}` } });
