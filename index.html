@@ -48,7 +48,7 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            justify-content: flex-start; /* 上揃え */
+            justify-content: flex-start;
             padding-top: 25px; 
             color: #333; 
             flex-shrink: 0; 
@@ -80,12 +80,13 @@
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
         
-        .time-badge { font-weight: bold; font-size: 1.2rem; margin-right: 10px; }
-        .site-name { font-weight: bold; font-size: 1.4rem; display: block; margin-bottom: 4px; line-height: 1.3; } 
-        .work-content { font-size: 1.15rem; color: #444; }
+        .time-badge { font-weight: bold; font-size: 1.15rem; margin-right: 8px; color: #333; }
+        .meta-info { font-size: 0.9rem; color: #555; margin-left: 5px; }
         
-        .future-job-item .fw-bold { font-size: 1.25rem !important; }
-        .future-job-item .small { font-size: 1.1rem !important; color: #555 !important; }
+        .site-name { font-weight: bold; font-size: 1.3rem; display: block; margin-bottom: 2px; line-height: 1.3; margin-top: 4px; } 
+        /* ★追加: 得意先名スタイル */
+        .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
+        .work-content { font-size: 1.0rem; color: #444; border-top: 1px dashed #eee; padding-top: 4px; margin-top: 4px; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; }
@@ -403,8 +404,6 @@
 
             for (let i = 1; i <= 14; i++) {
                 const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
-                
-                // ★修正: 日付ズレ対策 (ローカル日付文字列を生成して比較)
                 const y = targetDate.getFullYear();
                 const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
                 const d = targetDate.getDate().toString().padStart(2, '0');
@@ -422,16 +421,23 @@
                     let jobsHtml = '';
                     dayRecords.forEach(rec => {
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                        
-                        // ★追加: 終了時間の表示
                         let timeStr = formatTime(rec.new_start_time);
                         if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+                        
+                        // 貸切・車両・得意先の取得
+                        const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                        const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
+                        const tokuisaki = rec.new_tokuisaki_mei || "";
 
                         jobsHtml += `
                             <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                 <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
-                                <div class="fw-bold mb-1">${rec.new_genbamei || '現場名未定'}</div>
-                                <div class="small text-muted"><span class="time-badge" style="font-size:1.0rem;">${timeStr}</span></div>
+                                <div class="mb-1">
+                                    <span class="time-badge">${timeStr}</span>
+                                    <span class="meta-info">${kashikiri} ${sharyou}</span>
+                                </div>
+                                <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
+                                <div class="client-name">${tokuisaki}</div>
                             </div>`;
                     });
 
@@ -467,12 +473,27 @@
                 if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
                     hasToday = true;
                     const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                    
-                    // 本日の予定にも終了時間を追加
                     let timeStr = formatTime(rec.new_start_time);
                     if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+                    
+                    const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                    const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
+                    const tokuisaki = rec.new_tokuisaki_mei || "";
+                    const workContent = rec.new_sagyou_naiyou || "";
 
-                    todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')"><div class="d-flex justify-content-between align-items-center mb-1"><span class="time-badge">${timeStr}</span><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div><span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="work-content">${rec.new_sagyou_naiyou || '-'}</div></div>`;
+                    todayContainer.innerHTML += `
+                        <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <div>
+                                    <span class="time-badge">${timeStr}</span>
+                                    <span class="meta-info">${kashikiri} ${sharyou}</span>
+                                </div>
+                                <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
+                            </div>
+                            <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
+                            <div class="client-name">${tokuisaki}</div>
+                            <div class="work-content">${workContent}</div>
+                        </div>`;
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
