@@ -88,18 +88,22 @@
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
         .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
         
-        /* ★追加: マスク表示用コンテナ（上下左右中央寄せ） */
+        /* ★修正: マスク表示用コンテナ（左寄せ） */
         .masked-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            pointer-events: none; /* クリックは親要素へ通す */
+            display: flex; 
+            align-items: center; /* 垂直中央 */
+            justify-content: flex-start; /* 水平左寄せ */
+            padding-left: 15px; /* 左余白 */
+            pointer-events: none; 
         }
         .masked-text {
-            font-size: 1.2rem; /* サイズアップ */
-            font-weight: normal; /* 太字解除 */
+            font-size: 1.2rem; 
+            font-weight: normal; 
+            /* margin-top は削除して純粋な垂直中央に */
         }
         .msg-red { color: #d13438; }
-        .msg-green { color: #006400; } /* 濃いめの緑 */
+        .msg-green { color: #006400; }
 
         .debug-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
         .detail-date { font-size: 1.2rem; font-weight: bold; color: #333; }
@@ -305,7 +309,8 @@
             const rec = globalData.find(r => r.new_table2id === id);
             if(!rec) return;
 
-            if (rec.new_shinkoujoukyou === 100000002) {
+            // ★修正: 通知済み or 変更有り なら更新処理
+            if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                 document.getElementById('loading').style.display = 'flex';
                 const loadMsg = document.getElementById('loading-text');
                 const orgMsg = loadMsg.textContent;
@@ -465,7 +470,6 @@
                             }
                         }
 
-                        // ★修正: 通知済み(100000002) または 変更有り(100000005) ならマスク
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                             let msgText = "";
                             let colorClass = "";
@@ -487,7 +491,6 @@
                                     </div>
                                 </div>`;
                         } else {
-                            // 通常表示
                             let timeStr = formatTime(rec.new_start_time);
                             if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
@@ -546,13 +549,12 @@
                     let newIconHtml = '';
                     if (check.isNew) {
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:35px; right:8px;">'; 
+                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:45px; right:8px;">'; 
                         } else if (rec.new_shinkoujoukyou === 100000003) {
-                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:35px; right:8px;">';
+                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:45px; right:8px;">';
                         }
                     }
 
-                    // ★修正: 本日の予定も同様にマスク処理 (100000002 or 100000005)
                     if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                         let msgText = "";
                         let colorClass = "";
@@ -602,6 +604,41 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
         }
 
         function confirmCompletion() {
@@ -665,41 +702,6 @@
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
-            }
-        }
-
-        function showLocationHelp() {
-            alert("ブラウザの設定から位置情報を許可してください。");
-        }
-
-        function switchScreen(screenName) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-error').style.display = 'none';
-            const wrapper = document.getElementById('view-app-wrapper');
-            const footerList = document.getElementById('footer-list');
-            const footerDetail = document.getElementById('footer-detail');
-            
-            if (screenName === 'login') {
-                wrapper.style.display = 'none';
-                document.getElementById('view-login').style.display = 'flex';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'none';
-                return;
-            }
-            wrapper.style.display = 'block';
-
-            if (screenName === 'list') {
-                document.getElementById('view-list').style.display = 'block';
-                document.getElementById('view-detail').style.display = 'none';
-                footerList.style.display = 'flex';
-                footerDetail.style.display = 'none';
-            } else if (screenName === 'detail') {
-                document.getElementById('view-list').style.display = 'none';
-                document.getElementById('view-detail').style.display = 'block';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'flex';
-                window.scrollTo(0, 0);
             }
         }
 
