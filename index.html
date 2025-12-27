@@ -25,13 +25,11 @@
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
         
-        /* ヘッダー */
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
         .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px; position: relative; }
         .user-name { font-size: 1.25rem; font-weight: bold; color: #333; line-height: 1.2; position: relative; z-index: 2; }
-        
         .safety-msg { 
             font-size: 1.4rem; color: var(--app-blue); font-weight: bold; 
             text-align: center; padding-bottom: 2px;
@@ -48,7 +46,6 @@
 
         .body-date-label { font-size: 1.2rem; font-weight: bold; color: #333; margin: 10px 15px 0 15px; }
 
-        /* リスト画面 */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
@@ -104,7 +101,6 @@
             padding-left: 15px; pointer-events: none; 
         }
         .masked-text { font-size: 1.2rem; font-weight: normal; }
-        
         .msg-red { color: #d13438; } 
         .msg-blue { color: #0078d4; }
 
@@ -117,8 +113,7 @@
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
-        
-        /* ★修正: 車両情報の2行表示対応 */
+        /* 詳細画面の車両情報セル用スタイル */
         .info-box span { 
             flex-grow: 1; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; 
@@ -289,6 +284,7 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
+        // 6時間以内判定
         function checkNewStatus(iso) {
             if (!iso) return { isNew: false };
             let safeIso = iso;
@@ -386,7 +382,7 @@
 
             document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
             
-            // ★修正: 車両情報の詳細表示
+            // ★追加: 詳細画面の車両情報表示
             let dtVehicle = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "-";
             if (rec.new_sharyou) {
                 const nums = [];
@@ -527,7 +523,7 @@
                             const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
-                            // ★修正: リストにも車両詳細を表示
+                            // ★追加: 一覧画面の車両情報表示
                             let vehicleInfo = sharyou;
                             if (rec.new_sharyou) {
                                 const nums = [];
@@ -625,7 +621,7 @@
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
 
-                        // ★修正: リストにも車両詳細を表示
+                        // ★追加: 本日の予定にも車両詳細を表示
                         let vehicleInfo = sharyou;
                         if (rec.new_sharyou) {
                             const nums = [];
@@ -652,6 +648,37 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
         }
 
         function showLocationHelp() {
