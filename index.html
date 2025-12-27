@@ -459,7 +459,7 @@
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
                 document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
 
-                // 作業場リストの動的挿入
+                // ★修正: 作業場リストの動的挿入（リンク対応）
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
                     const siteRow = document.getElementById('row-site'); 
@@ -467,7 +467,13 @@
                     rec.sagyouba_list.forEach(item => {
                         const div = document.createElement('div');
                         div.className = 'detail-row dynamic-sagyouba-row'; 
-                        div.innerHTML = `<div class="detail-label">作業場</div><div class="detail-val">${item.name}</div>`;
+                        
+                        let valHtml = item.name;
+                        if(item.mapLink) {
+                            valHtml = `<a href="${item.mapLink}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${item.name} <i class="fas fa-external-link-alt small"></i></a>`;
+                        }
+                        
+                        div.innerHTML = `<div class="detail-label">作業場</div><div class="detail-val">${valHtml}</div>`;
                         fragment.appendChild(div);
                     });
                     siteRow.after(fragment);
