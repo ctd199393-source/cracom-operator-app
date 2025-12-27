@@ -92,7 +92,6 @@
             50% { transform: translateY(-4px); opacity: 1; }
         }
 
-        /* リスト画面: 時間太字解除 */
         .time-badge { font-weight: normal; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 1.15rem; color: #333; margin-left: 5px; font-weight: normal; }
         
@@ -121,29 +120,27 @@
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
         
-        /* ★修正: フレックスボックスで中央寄せに戻しつつ、position:relativeで絶対配置の子要素も許容 */
         .info-box span { 
             flex-grow: 1; 
             display: flex; 
             align-items: center; 
-            justify-content: center; /* これで通常のテキストは中央に来る */
-            position: relative; /* 子要素の絶対配置基準 */
+            justify-content: center; 
+            position: relative; 
             width: 100%; height: 100%;
             font-size: 1.3rem; font-weight: normal; color: #333; 
             line-height: 1.1; padding: 2px; white-space: normal; 
             text-align: center;
         }
         
-        /* 能力(13t): 左上、太字 */
         .vehicle-spec {
             position: absolute; top: 4px; left: 6px;
             font-size: 1.0rem; color: #333; font-weight: bold; line-height: 1;
         }
-        /* 車番(842): 右下、青色・太字・サイズ小調整 */
         .vehicle-no {
             position: absolute; bottom: 2px; right: 6px;
             font-size: 1.6rem; color: #005a9e; font-weight: bold; line-height: 1;
         }
+        .info-normal-text { width: 100%; text-align: center; }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
@@ -229,7 +226,7 @@
             
             <div class="detail-card">
                 <div class="detail-row"><div class="detail-label">得意先</div><div class="detail-val" id="dt-client">---</div></div>
-                <div class="detail-row"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
+                <div class="detail-row" id="row-site"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
                 <div class="detail-row"><div class="detail-label">作業内容</div><div class="detail-val" id="dt-work">---</div></div>
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
                 <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">無線機 x 1</div></div>
@@ -398,14 +395,14 @@
             const jobDate = new Date(rec.new_day);
             document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
 
-            // ★修正: 時間表示 (終了時間を削除し "～" のみに)
+            // 時間表示
             let timeDisp = formatTime(rec.new_start_time);
             if (timeDisp) timeDisp += " ～"; 
+            document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
             
-            document.getElementById('dt-time').textContent = timeDisp;
-            
+            // 貸切
             let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
-            document.getElementById('dt-type').textContent = dtType;
+            document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
             
             // 車両情報
             let dtVehicle = "-";
@@ -425,15 +422,42 @@
             const client = rec.new_tokuisaki_mei || "-";
             const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
             document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
-            document.getElementById('dt-site').textContent = rec.new_genbamei || "-";
+            
+            // ★修正: 現場名をリンク化
+            const siteName = rec.new_genbamei || "-";
+            // 既存のボタンと同じロジックでGoogleMap検索リンクを生成
+            const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(siteName)}`;
+            document.getElementById('dt-site').innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${siteName} <i class="fas fa-external-link-alt small"></i></a>`;
+
             document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
             document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
             document.getElementById('dt-items').textContent = "無線機 x 1"; 
             document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
 
             const mapBtn = document.getElementById('link-map');
-            if (rec.new_genbamei) mapBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.new_genbamei)}`;
+            if (rec.new_genbamei) mapBtn.href = mapUrl;
             else mapBtn.href = "#";
+
+            // ★追加: 作業場行の動的挿入
+            // まず既存の動的行があれば削除
+            document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
+            
+            // データがあれば行を追加
+            if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
+                const siteRow = document.getElementById('row-site'); // 基準となる行
+                // 逆順に追加しないと順序が逆になるため、forEachで普通に追加して、siteRow.afterを使うなら...
+                // afterは直後に追加するので、リストの後ろから順にafterするか、
+                // あるいは最後の要素を取得しながら追加する必要がある。
+                // ここではシンプルにDocumentFragmentを使ってまとめて挿入する
+                const fragment = document.createDocumentFragment();
+                rec.sagyouba_list.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'detail-row dynamic-sagyouba-row'; // 識別用クラス
+                    div.innerHTML = `<div class="detail-label">作業場</div><div class="detail-val">${item.name}</div>`;
+                    fragment.appendChild(div);
+                });
+                siteRow.after(fragment);
+            }
 
             const docContainer = document.getElementById('dt-doc-list');
             docContainer.innerHTML = '';
@@ -545,10 +569,11 @@
                                 </div>`;
                         } else {
                             let timeStr = formatTime(rec.new_start_time);
-                            if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+                            if(timeDisp) timeStr += " ～";
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
+                            // リスト画面: 時間太字解除、車両情報削除
                             jobsHtml += `
                                 <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
@@ -632,7 +657,7 @@
                             </div>`;
                     } else {
                         let timeStr = formatTime(rec.new_start_time);
-                        if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
+                        if(timeStr) timeStr += " ～";
                         const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
@@ -656,105 +681,6 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
-        }
-
-        function switchScreen(screenName) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-error').style.display = 'none';
-            const wrapper = document.getElementById('view-app-wrapper');
-            const footerList = document.getElementById('footer-list');
-            const footerDetail = document.getElementById('footer-detail');
-            
-            if (screenName === 'login') {
-                wrapper.style.display = 'none';
-                document.getElementById('view-login').style.display = 'flex';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'none';
-                return;
-            }
-            wrapper.style.display = 'block';
-
-            if (screenName === 'list') {
-                document.getElementById('view-list').style.display = 'block';
-                document.getElementById('view-detail').style.display = 'none';
-                footerList.style.display = 'flex';
-                footerDetail.style.display = 'none';
-            } else if (screenName === 'detail') {
-                document.getElementById('view-list').style.display = 'none';
-                document.getElementById('view-detail').style.display = 'block';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'flex';
-                window.scrollTo(0, 0);
-            }
-        }
-
-        function showLocationHelp() {
-            alert("ブラウザの設定から位置情報を許可してください。");
-        }
-
-        function confirmCompletion() {
-            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
-            completeModal.show();
-        }
-        function executeComplete() {
-            if (!currentHaishaId) return;
-            const btn = document.querySelector('#completeModal .btn-danger');
-            const originalText = btn.textContent;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
-            btn.disabled = true;
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
-                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
-                { timeout: 5000, enableHighAccuracy: true }
-            );
-        }
-
-        function confirmUndo() {
-            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
-            undoModal.show();
-        }
-        function executeUndo() {
-            if (!currentHaishaId) return;
-            const btn = document.querySelector('#undoModal .btn-secondary');
-            const originalText = btn.textContent;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
-            btn.disabled = true;
-            sendApi('undo', null, null, btn, originalText, undoModal);
-        }
-
-        async function sendApi(mode, lat, long, btn, originalText, modal) {
-            try {
-                const res = await fetch('/api/update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
-                });
-
-                if (res.status === 401) {
-                    alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
-                    window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
-                    return;
-                }
-
-                if (!res.ok) {
-                    const errBody = await res.json();
-                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
-                }
-
-                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
-                if(modal) modal.hide();
-                location.reload(); 
-
-            } catch (e) {
-                alert("送信に失敗しました:\n" + e.message);
-            } finally {
-                if(btn) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            }
         }
 
         (async () => {
