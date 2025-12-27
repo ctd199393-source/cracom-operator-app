@@ -118,7 +118,6 @@
         
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         
-        /* info-box */
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
         
@@ -130,7 +129,7 @@
             justify-content: center; /* これで通常のテキストは中央に来る */
             position: relative; /* 子要素の絶対配置基準 */
             width: 100%; height: 100%;
-            font-size: 1.2rem; font-weight: normal; color: #333; 
+            font-size: 1.3rem; font-weight: normal; color: #333; 
             line-height: 1.1; padding: 2px; white-space: normal; 
             text-align: center;
         }
@@ -140,15 +139,10 @@
             position: absolute; top: 4px; left: 6px;
             font-size: 1.0rem; color: #333; font-weight: bold; line-height: 1;
         }
-        /* 車番(842): 右下、青色・太字 */
+        /* 車番(842): 右下、青色・太字・サイズ小調整 */
         .vehicle-no {
             position: absolute; bottom: 2px; right: 6px;
             font-size: 1.6rem; color: #005a9e; font-weight: bold; line-height: 1;
-        }
-        
-        /* 通常テキスト用ラッパー */
-        .info-normal-text {
-            width: 100%; text-align: center;
         }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
@@ -408,10 +402,10 @@
             let timeDisp = formatTime(rec.new_start_time);
             if (timeDisp) timeDisp += " ～"; 
             
-            document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
+            document.getElementById('dt-time').textContent = timeDisp;
             
             let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
-            document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
+            document.getElementById('dt-type').textContent = dtType;
             
             // 車両情報
             let dtVehicle = "-";
@@ -553,7 +547,6 @@
                             let timeStr = formatTime(rec.new_start_time);
                             if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                            // ★修正: リスト画面の車両情報を削除し、貸切のみ表示
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
                             jobsHtml += `
@@ -641,10 +634,10 @@
                         let timeStr = formatTime(rec.new_start_time);
                         if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                         const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                        // ★修正: 本日の予定も車両情報削除
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
 
+                        // ★修正: 本日の予定も車両情報削除
                         todayContainer.innerHTML += `
                             <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
@@ -663,6 +656,105 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
+        }
+
+        function confirmCompletion() {
+            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            completeModal.show();
+        }
+        function executeComplete() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#completeModal .btn-danger');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
+                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
+                { timeout: 5000, enableHighAccuracy: true }
+            );
+        }
+
+        function confirmUndo() {
+            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
+            undoModal.show();
+        }
+        function executeUndo() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#undoModal .btn-secondary');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
+            btn.disabled = true;
+            sendApi('undo', null, null, btn, originalText, undoModal);
+        }
+
+        async function sendApi(mode, lat, long, btn, originalText, modal) {
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
+                });
+
+                if (res.status === 401) {
+                    alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
+                    window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
+                    return;
+                }
+
+                if (!res.ok) {
+                    const errBody = await res.json();
+                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
+                }
+
+                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
+                if(modal) modal.hide();
+                location.reload(); 
+
+            } catch (e) {
+                alert("送信に失敗しました:\n" + e.message);
+            } finally {
+                if(btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
         }
 
         (async () => {
