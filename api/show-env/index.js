@@ -87,7 +87,6 @@ module.exports = async function (context, req) {
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
         // 5. 配車データ取得
-        // ★修正: modifiedon を追加
         const selectCols = [
             "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
             "new_table2id", "new_tokuisaki_mei", "new_kyakusaki", "new_sharyou", "new_kashikiri", 
@@ -108,7 +107,7 @@ module.exports = async function (context, req) {
             new_haisha_zumi eq true
         `.replace(/\s+/g, ' ').trim();
 
-        // ★修正: $expand=new_sharyou(...) を追加して、車番と能力を取得
+        // 配車と車両情報を取得
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage)&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
@@ -117,6 +116,45 @@ module.exports = async function (context, req) {
         if (!dispatchRes.ok) throw new Error(`配車取得エラー: ${await dispatchRes.text()}`);
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
+
+        // ★追加: 配車作業場中間テーブルの取得
+        if (records.length > 0) {
+            // 各レコードに作業場リスト用の空配列を用意
+            records.forEach(r => r.sagyouba_list = []);
+
+            // 取得した配車IDのリストを作成
+            const haishaIds = records.map(r => r.new_table2id);
+            
+            // 配車IDで中間テーブルを検索 (Lookup列は _new_haisha_id_value)
+            // 数が多い場合は分割すべきですが、簡易的にORで結合します
+            const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
+
+            if (chuukanFilter) {
+                // new_sagyouba (作業場マスタ) を展開して new_name を取得
+                // ※作業場マスタのプライマリ列が new_name であると仮定しています
+                const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_name)`;
+                
+                try {
+                    const chuukanRes = await fetch(chuukanQuery, { headers: { "Authorization": `Bearer ${token}` } });
+                    if (chuukanRes.ok) {
+                        const chuukanData = await chuukanRes.json();
+                        
+                        // 取得した中間データを配車レコードに紐づけ
+                        chuukanData.value.forEach(c => {
+                            const parentId = c._new_haisha_id_value;
+                            const targetRec = records.find(r => r.new_table2id === parentId);
+                            if (targetRec && c.new_sagyouba) {
+                                targetRec.sagyouba_list.push({
+                                    name: c.new_sagyouba.new_name || "名称不明"
+                                });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("中間テーブル取得エラー(無視して続行):", e);
+                }
+            }
+        }
 
         // 6. 資料データ取得 & SAS発行
         if (records.length > 0 && storageConnString) {
