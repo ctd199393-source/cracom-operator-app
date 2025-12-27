@@ -92,7 +92,6 @@
             50% { transform: translateY(-4px); opacity: 1; }
         }
 
-        /* リスト画面: 時間太字解除 */
         .time-badge { font-weight: normal; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 1.15rem; color: #333; margin-left: 5px; font-weight: normal; }
         
@@ -118,38 +117,30 @@
         
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         
-        /* info-box */
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
         
-        /* 中身をフレックスで中央寄せにしつつ、絶対配置の子要素を許容 */
         .info-box span { 
             flex-grow: 1; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            position: relative; /* 子要素の絶対配置基準 */
+            position: relative; 
             width: 100%; height: 100%;
             font-size: 1.3rem; font-weight: normal; color: #333; 
             line-height: 1.1; padding: 2px; white-space: normal; 
             text-align: center;
         }
         
-        /* 能力(13t): 左上、太字 */
         .vehicle-spec {
             position: absolute; top: 4px; left: 6px;
             font-size: 1.0rem; color: #333; font-weight: bold; line-height: 1;
         }
-        /* 車番(842): 右下、青色・太字 */
         .vehicle-no {
             position: absolute; bottom: 2px; right: 6px;
             font-size: 1.6rem; color: #005a9e; font-weight: bold; line-height: 1;
         }
-        
-        /* 通常テキスト用ラッパー */
-        .info-normal-text {
-            width: 100%; text-align: center;
-        }
+        .info-normal-text { width: 100%; text-align: center; }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
@@ -432,8 +423,15 @@
             const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
             document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
             
+            // ★修正: 現場名にGoogleマップリンク適用
             const siteName = rec.new_genbamei || "-";
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteName)}`;
+            let mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteName)}`;
+            
+            // APIから取得したリンクがあればそれを使う
+            if (rec.new_id && rec.new_id.new_genba && rec.new_id.new_genba.new_googlemap_link) {
+                mapUrl = rec.new_id.new_genba.new_googlemap_link;
+            }
+
             document.getElementById('dt-site').innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${siteName} <i class="fas fa-external-link-alt small"></i></a>`;
 
             document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
@@ -442,10 +440,10 @@
             document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
 
             const mapBtn = document.getElementById('link-map');
-            if (rec.new_genbamei) mapBtn.href = mapUrl;
+            if (mapUrl) mapBtn.href = mapUrl;
             else mapBtn.href = "#";
 
-            // 作業場行の動的挿入
+            // ★追加: 作業場行の動的挿入
             document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
             
             if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
@@ -569,7 +567,6 @@
                                     </div>
                                 </div>`;
                         } else {
-                            // ★修正: timeDisp の再計算 (ループ内)
                             let timeStr = formatTime(rec.new_start_time);
                             if(timeStr) timeStr += " ～";
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
@@ -658,7 +655,6 @@
                                 </div>
                             </div>`;
                     } else {
-                        // ★修正: timeDisp の再計算 (ループ内)
                         let timeStr = formatTime(rec.new_start_time);
                         if(timeStr) timeStr += " ～";
                         const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
