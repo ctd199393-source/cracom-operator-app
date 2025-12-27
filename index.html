@@ -119,6 +119,7 @@
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
+        /* 詳細画面の車両情報セル用スタイル */
         .info-box span { 
             flex-grow: 1; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; 
@@ -289,7 +290,6 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // 6時間以内判定
         function checkNewStatus(iso) {
             if (!iso) return { isNew: false };
             let safeIso = iso;
@@ -393,7 +393,6 @@
                 const shaban = rec.new_sharyou.new_shaban || "";
                 const spec = rec.new_sharyou.new_tsuriage ? rec.new_sharyou.new_tsuriage + "t" : "";
                 
-                // Flexboxで左右に配置。能力は左(標準)、車番は右(大・太・青)
                 dtVehicle = `
                     <div style="display:flex; justify-content:space-between; width:100%; align-items:center; padding:0 5px;">
                         <span style="font-size:1.2rem; color:#333;">${spec}</span>
@@ -527,9 +526,9 @@
                             let timeStr = formatTime(rec.new_start_time);
                             if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                            // ★修正: リスト画面の車両情報を削除し、貸切のみ表示
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
+                            // ★修正: リスト画面: 時間太字解除、車両情報削除
                             jobsHtml += `
                                 <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
@@ -615,10 +614,10 @@
                         let timeStr = formatTime(rec.new_start_time);
                         if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                         const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                        // ★修正: 本日の予定も車両情報削除
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
 
+                        // ★修正: 本日の予定も車両情報削除
                         todayContainer.innerHTML += `
                             <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
@@ -637,6 +636,105 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
+        }
+
+        function switchScreen(screenName) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('view-error').style.display = 'none';
+            const wrapper = document.getElementById('view-app-wrapper');
+            const footerList = document.getElementById('footer-list');
+            const footerDetail = document.getElementById('footer-detail');
+            
+            if (screenName === 'login') {
+                wrapper.style.display = 'none';
+                document.getElementById('view-login').style.display = 'flex';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'none';
+                return;
+            }
+            wrapper.style.display = 'block';
+
+            if (screenName === 'list') {
+                document.getElementById('view-list').style.display = 'block';
+                document.getElementById('view-detail').style.display = 'none';
+                footerList.style.display = 'flex';
+                footerDetail.style.display = 'none';
+            } else if (screenName === 'detail') {
+                document.getElementById('view-list').style.display = 'none';
+                document.getElementById('view-detail').style.display = 'block';
+                footerList.style.display = 'none';
+                footerDetail.style.display = 'flex';
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function confirmCompletion() {
+            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
+            completeModal.show();
+        }
+        function executeComplete() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#completeModal .btn-danger');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
+            btn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
+                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
+                { timeout: 5000, enableHighAccuracy: true }
+            );
+        }
+
+        function confirmUndo() {
+            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
+            undoModal.show();
+        }
+        function executeUndo() {
+            if (!currentHaishaId) return;
+            const btn = document.querySelector('#undoModal .btn-secondary');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
+            btn.disabled = true;
+            sendApi('undo', null, null, btn, originalText, undoModal);
+        }
+
+        async function sendApi(mode, lat, long, btn, originalText, modal) {
+            try {
+                const res = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
+                });
+
+                if (res.status === 401) {
+                    alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
+                    window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
+                    return;
+                }
+
+                if (!res.ok) {
+                    const errBody = await res.json();
+                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
+                }
+
+                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
+                if(modal) modal.hide();
+                location.reload(); 
+
+            } catch (e) {
+                alert("送信に失敗しました:\n" + e.message);
+            } finally {
+                if(btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
         }
 
         (async () => {
