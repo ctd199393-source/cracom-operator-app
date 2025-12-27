@@ -54,7 +54,7 @@ module.exports = async function (context, req) {
             throw new Error("環境変数が不足しています (Dataverse)");
         }
 
-        // 2. ユーザー特定
+        // 2. ユーザー特定 (SWA Authentication)
         const header = req.headers["x-ms-client-principal"];
         let userEmail = "unknown";
         if (header) {
@@ -112,7 +112,6 @@ module.exports = async function (context, req) {
             new_haisha_zumi eq true
         `.replace(/\s+/g, ' ').trim();
 
-        // $expand=new_id は除外
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage)&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
@@ -123,22 +122,32 @@ module.exports = async function (context, req) {
         let records = dispatchData.value;
 
         if (records.length > 0) {
-            // A. 中間テーブル（作業場）の取得
+            // =========================================================
+            // A. 中間テーブル（作業場）の取得 & 結合
+            // =========================================================
             records.forEach(r => r.sagyouba_list = []);
             const haishaIds = records.map(r => r.new_table2id);
+            
+            // ★確定情報: 論理名 new_haisha_id なので _new_haisha_id_value でフィルタ
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
 
             if (chuukanFilter) {
+                // ★確定情報: テーブル名 new_haisha_sagyouba_chuukans (複数形)
+                // ★確定情報: 展開列 new_sagyouba (論理名)
                 const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_name)`;
+                
                 try {
                     const chuukanRes = await fetch(chuukanQuery, { headers: { "Authorization": `Bearer ${token}` } });
                     if (chuukanRes.ok) {
                         const chuukanData = await chuukanRes.json();
                         chuukanData.value.forEach(c => {
-                            const parentId = c._new_haisha_id_value;
+                            // 親IDとの紐付け
+                            const parentId = c._new_haisha_id_value; 
                             const targetRec = records.find(r => r.new_table2id === parentId);
-                            if (targetRec && c.new_sagyouba) {
-                                targetRec.sagyouba_list.push({ name: c.new_sagyouba.new_name || "名称不明" });
+                            
+                            // 名称があればリストに追加
+                            if (targetRec && c.new_sagyouba && c.new_sagyouba.new_name) {
+                                targetRec.sagyouba_list.push({ name: c.new_sagyouba.new_name });
                             }
                         });
                     }
