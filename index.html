@@ -247,7 +247,6 @@
                         <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                         <button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button>
                     </div>
-                    <div class="mt-4 pt-3 border-top text-center"><a href="#" onclick="showLocationHelp(); return false;" class="small text-decoration-none text-secondary"><i class="fas fa-cog me-1"></i>位置情報が許可できない場合</a></div>
                 </div>
             </div>
         </div>
@@ -269,436 +268,516 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let globalData = [];
-        let currentHaishaId = null;
-        let completeModal = null;
-        let undoModal = null;
+        // 即時関数内で変数を保護しつつ、windowオブジェクトに必要な関数を公開する
+        (function() {
+            let globalData = [];
+            let currentHaishaId = null;
+            let completeModal = null; // Bootstrap Modal Instance
+            let undoModal = null;     // Bootstrap Modal Instance
 
-        const STATUS_MAP = {
-            100000000: { text: "予 定", class: "st-yet" },
-            100000001: { text: "現場確定", class: "st-fix" },
-            100000002: { text: "通知済み", class: "st-not" },
-            100000003: { text: "確認済", class: "st-con" },
-            100000004: { text: "作業完了", class: "st-don" },
-            100000005: { text: "変更有り", class: "st-chg" }
-        };
-        
-        const VALID_STATUSES = [100000002, 100000003, 100000004, 100000005];
+            const STATUS_MAP = {
+                100000000: { text: "予 定", class: "st-yet" },
+                100000001: { text: "現場確定", class: "st-fix" },
+                100000002: { text: "通知済み", class: "st-not" },
+                100000003: { text: "確認済", class: "st-con" },
+                100000004: { text: "作業完了", class: "st-don" },
+                100000005: { text: "変更有り", class: "st-chg" }
+            };
+            
+            const VALID_STATUSES = [100000002, 100000003, 100000004, 100000005];
 
-        function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
-        function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
-        function formatTime(iso) {
-            if(!iso) return "";
-            const d = new Date(iso);
-            return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
-        }
-
-        function checkNewStatus(iso) {
-            if (!iso) return { isNew: false };
-            let safeIso = iso;
-            if (!iso.endsWith('Z')) safeIso += 'Z';
-            const now = new Date();
-            const target = new Date(safeIso);
-            const diff = now - target;
-            const isNew = (diff >= -3600000 && diff < 21600000); 
-            return { isNew: isNew };
-        }
-
-        async function renderPdfThumbnail(url, canvasId, spinnerId) {
-            try {
-                const loadingTask = pdfjsLib.getDocument(url);
-                const pdf = await loadingTask.promise;
-                const page = await pdf.getPage(1);
-                const canvas = document.getElementById(canvasId);
-                const spinner = document.getElementById(spinnerId);
-                if (!canvas) return;
-                const context = canvas.getContext('2d');
-                const viewport = page.getViewport({ scale: 0.6 });
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                const renderContext = { canvasContext: context, viewport: viewport };
-                await page.render(renderContext).promise;
-                if(spinner) spinner.style.display = 'none';
-                canvas.style.display = 'block';
-            } catch (error) {
-                console.error("PDF Render Error:", error);
-                const spinner = document.getElementById(spinnerId);
-                if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; 
+            // --- Helper Functions ---
+            function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
+            function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
+            function formatTime(iso) {
+                if(!iso) return "";
+                const d = new Date(iso);
+                return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
             }
-        }
 
-        window.openDetail = async function(id) {
-            const rec = globalData.find(r => r.new_table2id === id);
-            if(!rec) return;
+            function checkNewStatus(iso) {
+                if (!iso) return { isNew: false };
+                let safeIso = iso;
+                if (!iso.endsWith('Z')) safeIso += 'Z';
+                const now = new Date();
+                const target = new Date(safeIso);
+                const diff = now - target;
+                const isNew = (diff >= -3600000 && diff < 21600000); 
+                return { isNew: isNew };
+            }
 
-            if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                document.getElementById('loading').style.display = 'flex';
-                const loadMsg = document.getElementById('loading-text');
-                const orgMsg = loadMsg.textContent;
-                loadMsg.textContent = "確認処理中..."; 
-
+            async function renderPdfThumbnail(url, canvasId, spinnerId) {
                 try {
-                    const res = await fetch('/api/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ haishaId: id, mode: 'confirm' })
-                    });
-
-                    if (res.status === 401) {
-                         alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
-                         window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
-                         return;
-                    }
-
-                    if (!res.ok) {
-                        const err = await res.json();
-                        throw new Error(err.error || "Update Error");
-                    }
-                    rec.new_shinkoujoukyou = 100000003;
-                    renderList();
-                } catch(e) {
-                    console.error(e);
-                    alert("ステータス更新に失敗しました: " + e.message);
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
-                    loadMsg.textContent = orgMsg;
+                    const loadingTask = pdfjsLib.getDocument(url);
+                    const pdf = await loadingTask.promise;
+                    const page = await pdf.getPage(1);
+                    const canvas = document.getElementById(canvasId);
+                    const spinner = document.getElementById(spinnerId);
+                    if (!canvas) return;
+                    const context = canvas.getContext('2d');
+                    const viewport = page.getViewport({ scale: 0.6 });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    const renderContext = { canvasContext: context, viewport: viewport };
+                    await page.render(renderContext).promise;
+                    if(spinner) spinner.style.display = 'none';
+                    canvas.style.display = 'block';
+                } catch (error) {
+                    console.error("PDF Render Error:", error);
+                    const spinner = document.getElementById(spinnerId);
+                    if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; 
                 }
             }
 
-            currentHaishaId = id;
-            const btnFinish = document.getElementById('btn-do-finish');
-            const btnUndo = document.getElementById('btn-do-undo');
-            const statusVal = rec.new_shinkoujoukyou;
-            
-            if (statusVal === 100000004) {
-                btnFinish.style.display = 'none';
-                btnUndo.style.display = 'block';
-            } else {
-                btnFinish.style.display = 'block';
-                btnUndo.style.display = 'none';
-            }
+            // --- Window公開関数 (HTMLから呼ばれる) ---
 
-            document.getElementById('dt-debug-id').textContent = rec.new_table2id;
-            document.getElementById('dt-yousha-mark').style.display = rec.new_yousha_irai ? 'inline' : 'none';
-            
-            const jobDate = new Date(rec.new_day);
-            document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
-
-            let timeDisp = formatTime(rec.new_start_time);
-            if (timeDisp) timeDisp += " ～"; 
-            
-            document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
-            
-            let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
-            document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
-            
-            let dtVehicle = "-";
-            if (rec.new_sharyou) {
-                const shaban = rec.new_sharyou.new_shaban || "";
-                const spec = rec.new_sharyou.new_tsuriage ? rec.new_sharyou.new_tsuriage + "t" : "";
+            window.switchScreen = function(screenId) {
+                document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+                const target = document.getElementById('view-' + screenId);
+                if(target) target.style.display = 'block';
                 
-                dtVehicle = `
-                    <div class="vehicle-spec">${spec}</div>
-                    <div class="vehicle-no">${shaban}</div>
-                `;
-            } else {
-                dtVehicle = `<span class="info-normal-text">-</span>`;
-            }
-            document.getElementById('dt-vehicle').innerHTML = dtVehicle;
+                // Footer制御
+                if (screenId === 'list') {
+                    document.getElementById('footer-list').style.display = 'flex';
+                    document.getElementById('footer-detail').style.display = 'none';
+                } else if (screenId === 'detail') {
+                    document.getElementById('footer-list').style.display = 'none';
+                    document.getElementById('footer-detail').style.display = 'flex';
+                } else {
+                    document.getElementById('footer-list').style.display = 'none';
+                    document.getElementById('footer-detail').style.display = 'none';
+                }
+                window.scrollTo(0, 0);
+            };
 
-            const client = rec.new_tokuisaki_mei || "-";
-            const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
-            document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
-            
-            // ★修正: Googleマップリンクの適用 (API取得値があれば優先)
-            const siteName = rec.new_genbamei || "-";
-            let mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteName)}`;
-            
-            // APIで取得した googlemap_link があればそれを使う
-            if (rec.googlemap_link) {
-                mapUrl = rec.googlemap_link;
-            }
+            window.openDetail = async function(id) {
+                const rec = globalData.find(r => r.new_table2id === id);
+                if(!rec) return;
 
-            document.getElementById('dt-site').innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${siteName} <i class="fas fa-external-link-alt small"></i></a>`;
+                // 1. ステータス更新 (通知済/変更有 -> 確認済)
+                if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
+                    document.getElementById('loading').style.display = 'flex';
+                    const loadMsg = document.getElementById('loading-text');
+                    const orgMsg = loadMsg.textContent;
+                    loadMsg.textContent = "確認処理中..."; 
 
-            document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
-            document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
-            document.getElementById('dt-items').textContent = "無線機 x 1"; 
-            document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
+                    try {
+                        const res = await fetch('/api/update-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ haishaId: id, mode: 'confirm' })
+                        });
 
-            const mapBtn = document.getElementById('link-map');
-            if (mapUrl) mapBtn.href = mapUrl;
-            else mapBtn.href = "#";
+                        if (res.status === 401) {
+                             alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
+                             window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
+                             return;
+                        }
 
-            // ★作業場リストの動的挿入
-            document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
-            
-            if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
-                const siteRow = document.getElementById('row-site'); 
-                const fragment = document.createDocumentFragment();
-                rec.sagyouba_list.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'detail-row dynamic-sagyouba-row'; 
-                    div.innerHTML = `<div class="detail-label">作業場</div><div class="detail-val">${item.name}</div>`;
-                    fragment.appendChild(div);
-                });
-                siteRow.after(fragment);
-            }
+                        if (!res.ok) {
+                            const err = await res.json();
+                            throw new Error(err.error || "Update Error");
+                        }
+                        rec.new_shinkoujoukyou = 100000003;
+                        renderList(); // リストのバッジを更新
+                    } catch(e) {
+                        console.error(e);
+                        alert("ステータス更新に失敗しました: " + e.message);
+                    } finally {
+                        document.getElementById('loading').style.display = 'none';
+                        loadMsg.textContent = orgMsg;
+                    }
+                }
 
-            const docContainer = document.getElementById('dt-doc-list');
-            docContainer.innerHTML = '';
-            const pdfRenderQueue = [];
+                currentHaishaId = id;
+                const btnFinish = document.getElementById('btn-do-finish');
+                const btnUndo = document.getElementById('btn-do-undo');
+                
+                if (rec.new_shinkoujoukyou === 100000004) {
+                    btnFinish.style.display = 'none';
+                    btnUndo.style.display = 'block';
+                } else {
+                    btnFinish.style.display = 'block';
+                    btnUndo.style.display = 'none';
+                }
 
-            if (rec.documents && rec.documents.length > 0) {
-                let docHtml = '';
-                rec.documents.forEach((doc, index) => {
-                    const url = doc.new_url || "#";
-                    const ext = (doc.new_kakuchoushi || "").toLowerCase();
-                    const thumbUrl = doc.new_blobthmbnailurl;
+                document.getElementById('dt-debug-id').textContent = rec.new_table2id;
+                document.getElementById('dt-yousha-mark').style.display = rec.new_yousha_irai ? 'inline' : 'none';
+                
+                const jobDate = new Date(rec.new_day);
+                document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
+
+                let timeDisp = formatTime(rec.new_start_time);
+                if (timeDisp) timeDisp += " ～"; 
+                
+                document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
+                
+                let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
+                document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
+                
+                let dtVehicle = "-";
+                if (rec.new_sharyou) {
+                    const shaban = rec.new_sharyou.new_shaban || "";
+                    const spec = rec.new_sharyou.new_tsuriage ? rec.new_sharyou.new_tsuriage + "t" : "";
+                    dtVehicle = `<div class="vehicle-spec">${spec}</div><div class="vehicle-no">${shaban}</div>`;
+                } else {
+                    dtVehicle = `<span class="info-normal-text">-</span>`;
+                }
+                document.getElementById('dt-vehicle').innerHTML = dtVehicle;
+
+                const client = rec.new_tokuisaki_mei || "-";
+                const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
+                document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
+                
+                // Googleマップリンクの生成
+                const siteName = rec.new_genbamei || "現場";
+                // デフォルトはGoogle検索URL (フォールバック)
+                let mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteName)}`;
+                // APIで取得した googlemap_link があればそれを使う
+                if (rec.googlemap_link) {
+                    mapUrl = rec.googlemap_link;
+                }
+
+                document.getElementById('dt-site').innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${rec.new_genbamei || "-"} <i class="fas fa-external-link-alt small"></i></a>`;
+
+                document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
+                document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
+                document.getElementById('dt-items').textContent = "無線機 x 1"; 
+                document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
+
+                const mapBtn = document.getElementById('link-map');
+                if (mapUrl) mapBtn.href = mapUrl;
+                else mapBtn.href = "#";
+
+                // 作業場リストの動的挿入
+                document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
+                if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
+                    const siteRow = document.getElementById('row-site'); 
+                    const fragment = document.createDocumentFragment();
+                    rec.sagyouba_list.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'detail-row dynamic-sagyouba-row'; 
+                        div.innerHTML = `<div class="detail-label">作業場</div><div class="detail-val">${item.name}</div>`;
+                        fragment.appendChild(div);
+                    });
+                    siteRow.after(fragment);
+                }
+
+                const docContainer = document.getElementById('dt-doc-list');
+                docContainer.innerHTML = '';
+                const pdfRenderQueue = [];
+
+                if (rec.documents && rec.documents.length > 0) {
+                    let docHtml = '';
+                    rec.documents.forEach((doc, index) => {
+                        const url = doc.new_url || "#";
+                        const ext = (doc.new_kakuchoushi || "").toLowerCase();
+                        const thumbUrl = doc.new_blobthmbnailurl;
+                        
+                        let previewContent = '';
+                        if (ext.match(/(jpg|jpeg|png|gif)/i)) {
+                            const imgSrc = thumbUrl || url; 
+                            previewContent = `<img src="${imgSrc}" class="doc-thumb-img">`;
+                        } else if (ext.includes("pdf")) {
+                            const canvasId = `pdf-canvas-${index}`;
+                            const spinnerId = `pdf-spinner-${index}`;
+                            previewContent = `<div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div><canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`;
+                            pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId });
+                        } else {
+                            let iconClass = "fa-file";
+                            if(ext.includes("xls")) iconClass = "fa-file-excel";
+                            previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
+                        }
+
+                        docHtml += `<a href="${url}" target="_blank" class="doc-item"><div class="doc-preview-box">${previewContent}</div><div class="doc-info"><div class="doc-title">${doc.new_name || '無題の資料'}</div><div class="doc-meta">${ext.toUpperCase()} ファイル</div></div><i class="fas fa-chevron-right text-muted"></i></a>`;
+                    });
+                    docContainer.innerHTML = docHtml;
+                    pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId); });
+                } else { 
+                    docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; 
+                }
+
+                window.switchScreen('detail');
+            };
+
+            window.goBack = function() { 
+                const now = new Date();
+                document.getElementById('list-date-label').textContent = formatDateHeader(now);
+                window.switchScreen('list'); 
+            };
+
+            // Modal Controls
+            window.confirmCompletion = function() {
+                const el = document.getElementById('completeModal');
+                if(!el) return;
+                const modal = new bootstrap.Modal(el);
+                modal.show();
+            };
+
+            window.executeComplete = async function() {
+                // Modalを閉じる
+                const el = document.getElementById('completeModal');
+                const modal = bootstrap.Modal.getInstance(el);
+                if(modal) modal.hide();
+
+                // APIコール (status -> 100000004)
+                if(!currentHaishaId) return;
+                
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('loading-text').textContent = "完了登録中...";
+
+                try {
+                    // 位置情報取得 (省略可だが要件にあるなら追加実装が必要。今回は完了のみ)
+                    const res = await fetch('/api/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) // mode: completeを想定
+                    });
                     
-                    let previewContent = '';
-                    if (ext.match(/(jpg|jpeg|png|gif)/i)) {
-                        const imgSrc = thumbUrl || url; 
-                        previewContent = `<img src="${imgSrc}" class="doc-thumb-img">`;
-                    } else if (ext.includes("pdf")) {
-                        const canvasId = `pdf-canvas-${index}`;
-                        const spinnerId = `pdf-spinner-${index}`;
-                        previewContent = `
-                            <div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div>
-                            <canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`;
-                        pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId });
+                    if(!res.ok) throw new Error("完了登録に失敗しました");
+                    
+                    alert("作業完了を登録しました");
+                    // データ再読み込みまたはローカル更新
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId);
+                    if(rec) rec.new_shinkoujoukyou = 100000004;
+                    
+                    window.goBack();
+                    renderList();
+                } catch(e) {
+                    alert(e.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+
+            window.confirmUndo = function() {
+                const el = document.getElementById('undoModal');
+                if(!el) return;
+                const modal = new bootstrap.Modal(el);
+                modal.show();
+            };
+
+            window.executeUndo = async function() {
+                const el = document.getElementById('undoModal');
+                const modal = bootstrap.Modal.getInstance(el);
+                if(modal) modal.hide();
+
+                if(!currentHaishaId) return;
+
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('loading-text').textContent = "取消中...";
+
+                try {
+                     const res = await fetch('/api/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) // mode: undoを想定
+                    });
+                    if(!res.ok) throw new Error("取消に失敗しました");
+
+                    alert("完了を取り消しました");
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId);
+                    if(rec) rec.new_shinkoujoukyou = 100000003; // 確認済に戻す
+                    
+                    // 画面更新
+                    window.openDetail(currentHaishaId);
+                } catch(e) {
+                    alert(e.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+            
+            window.showLocationHelp = function() {
+                alert("ブラウザの設定から位置情報の許可を確認してください。");
+            };
+
+            // --- Render Logic ---
+            function renderList() {
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const yest = new Date(now); yest.setDate(yest.getDate()-1);
+                const yestStr = yest.toISOString().split('T')[0];
+
+                const todayContainer = document.getElementById('today-container');
+                const futureContainer = document.getElementById('future-container');
+                todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
+                let hasToday = false;
+
+                // 未来14日分
+                for (let i = 1; i <= 14; i++) {
+                    const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
+                    const y = targetDate.getFullYear();
+                    const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+                    const d = targetDate.getDate().toString().padStart(2, '0');
+                    const dateKey = `${y}-${m}-${d}`;
+
+                    const wDay = getWeekDay(targetDate);
+                    const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+                    
+                    const dayRecords = globalData.filter(r => 
+                        r.new_day.startsWith(dateKey) && 
+                        VALID_STATUSES.includes(r.new_shinkoujoukyou)
+                    );
+
+                    let jobsHtml = '';
+                    if (dayRecords.length > 0) {
+                        dayRecords.forEach(rec => {
+                            const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
+                            const modDate = rec.modifiedon || rec.ModifiedOn;
+                            const check = checkNewStatus(modDate);
+                            
+                            let newIconHtml = '';
+                            if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) {
+                                const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png";
+                                newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW">`;
+                            }
+
+                            if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
+                                // 通知済 or 変更有 (マスク表示)
+                                let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認";
+                                let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red";
+                                
+                                jobsHtml += `
+                                    <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                        ${newIconHtml}
+                                        <div class="masked-container">
+                                            <span class="masked-text ${colorClass}">${msgText}</span>
+                                        </div>
+                                    </div>`;
+                            } else {
+                                // 通常表示
+                                let timeStr = formatTime(rec.new_start_time);
+                                if(timeStr) timeStr += " ～";
+                                const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                                const tokuisaki = rec.new_tokuisaki_mei || "";
+
+                                jobsHtml += `
+                                    <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                        ${newIconHtml}
+                                        <div class="mb-1">
+                                            <span class="time-badge">${timeStr}</span>
+                                            <span class="meta-info">${kashikiri}</span>
+                                        </div>
+                                        <div class="client-name">${tokuisaki}</div>
+                                        <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
+                                    </div>`;
+                            }
+                        });
                     } else {
-                        let iconClass = "fa-file";
-                        if(ext.includes("xls")) iconClass = "fa-file-excel";
-                        previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
+                        // 予定なし
+                        jobsHtml = `<div class="d-flex align-items-center"><div class="no-job-text">予定なし</div></div>`;
                     }
 
-                    docHtml += `<a href="${url}" target="_blank" class="doc-item"><div class="doc-preview-box">${previewContent}</div><div class="doc-info"><div class="doc-title">${doc.new_name || '無題の資料'}</div><div class="doc-meta">${ext.toUpperCase()} ファイル</div></div><i class="fas fa-chevron-right text-muted"></i></a>`;
-                });
-                docContainer.innerHTML = docHtml;
-                pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId); });
-            } else { 
-                docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; 
-            }
-
-            switchScreen('detail');
-        };
-
-        window.goBack = function() { 
-            const now = new Date();
-            document.getElementById('list-date-label').textContent = formatDateHeader(now);
-            switchScreen('list'); 
-        };
-
-        function renderList() {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const yest = new Date(now); yest.setDate(yest.getDate()-1);
-            const yestStr = yest.toISOString().split('T')[0];
-
-            const todayContainer = document.getElementById('today-container');
-            const futureContainer = document.getElementById('future-container');
-            todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
-            let hasToday = false;
-
-            for (let i = 1; i <= 14; i++) {
-                const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
-                const y = targetDate.getFullYear();
-                const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-                const d = targetDate.getDate().toString().padStart(2, '0');
-                const dateKey = `${y}-${m}-${d}`;
-
-                const wDay = getWeekDay(targetDate);
-                const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+                    futureContainer.innerHTML += `
+                        <div class="future-row">
+                            <div class="date-col ${dateColor}">
+                                <span class="month-label">${targetDate.getMonth()+1}/</span>
+                                <div class="day-label">${targetDate.getDate()}</div>
+                                <div class="weekday-label">(${wDay})</div>
+                            </div>
+                            <div class="job-col">${jobsHtml}</div>
+                        </div>`;
+                }
                 
-                const dayRecords = globalData.filter(r => 
-                    r.new_day.startsWith(dateKey) && 
-                    VALID_STATUSES.includes(r.new_shinkoujoukyou)
-                );
-
-                if (dayRecords.length > 0) {
-                    let jobsHtml = '';
-                    dayRecords.forEach(rec => {
+                // 本日の予定 (Today)
+                globalData.forEach(rec => {
+                    const jobDateStr = rec.new_day.split('T')[0];
+                    const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
+                    // 今日 または (昨日かつ夜間)
+                    if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
+                        hasToday = true;
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                        
                         const modDate = rec.modifiedon || rec.ModifiedOn;
                         const check = checkNewStatus(modDate);
                         
                         let newIconHtml = '';
-                        if (check.isNew) {
-                            if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                                newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW">'; 
-                            } else if (rec.new_shinkoujoukyou === 100000003) {
-                                newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW">'; 
-                            }
+                        if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) {
+                            const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png";
+                            newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW" style="top:35px; right:8px;">`;
                         }
 
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            let msgText = "";
-                            let colorClass = "";
+                            let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認";
+                            let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red";
                             
-                            if (rec.new_shinkoujoukyou === 100000002) {
-                                msgText = "通知済みの予定を確認";
-                                colorClass = "msg-blue"; 
-                            } else {
-                                msgText = "変更有りの予定を確認";
-                                colorClass = "msg-red"; 
-                            }
-
-                            jobsHtml += `
-                                <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
-                                    <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                            todayContainer.innerHTML += `
+                                <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <div></div>
+                                        <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
+                                    </div>
                                     ${newIconHtml}
                                     <div class="masked-container">
                                         <span class="masked-text ${colorClass}">${msgText}</span>
                                     </div>
                                 </div>`;
                         } else {
-                            // ★修正: timeDisp エラー解消のため変数名を timeStr に統一
                             let timeStr = formatTime(rec.new_start_time);
                             if(timeStr) timeStr += " ～";
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
+                            const workContent = rec.new_sagyou_naiyou || "";
 
-                            // リスト画面: 時間太字解除、車両情報削除
-                            jobsHtml += `
-                                <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
-                                    <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
-                                    ${newIconHtml}
-                                    <div class="mb-1">
-                                        <span class="time-badge">${timeStr}</span>
-                                        <span class="meta-info">${kashikiri}</span>
+                            todayContainer.innerHTML += `
+                                <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <div>
+                                            <span class="time-badge">${timeStr}</span>
+                                            <span class="meta-info">${kashikiri}</span>
+                                        </div>
+                                        <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
                                     </div>
+                                    ${newIconHtml}
+                                    <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
                                     <div class="client-name">${tokuisaki}</div>
-                                    <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
+                                    <div class="work-content">${workContent}</div>
                                 </div>`;
                         }
-                    });
-
-                    futureContainer.innerHTML += `
-                        <div class="future-row">
-                            <div class="date-col ${dateColor}">
-                                <span class="month-label">${targetDate.getMonth()+1}/</span>
-                                <div class="day-label">${targetDate.getDate()}</div>
-                                <div class="weekday-label">(${wDay})</div>
-                            </div>
-                            <div class="job-col">
-                                ${jobsHtml}
-                            </div>
-                        </div>`;
-                } else {
-                    futureContainer.innerHTML += `
-                        <div class="future-row">
-                            <div class="date-col ${dateColor}">
-                                <span class="month-label">${targetDate.getMonth()+1}/</span>
-                                <div class="day-label">${targetDate.getDate()}</div>
-                                <div class="weekday-label">(${wDay})</div>
-                            </div>
-                            <div class="job-col d-flex align-items-center">
-                                <div class="no-job-text">予定なし</div>
-                            </div>
-                        </div>`;
-                }
+                    }
+                });
+                if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
             }
-            
-            globalData.forEach(rec => {
-                const jobDateStr = rec.new_day.split('T')[0];
-                const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
-                if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
-                    hasToday = true;
-                    const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
-                    const modDate = rec.modifiedon || rec.ModifiedOn;
-                    const check = checkNewStatus(modDate);
+
+            // --- Init ---
+            (async () => {
+                try {
+                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
+                    const authData = await authRes.json();
+                    if (!authData.clientPrincipal) { 
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('view-login').style.display = 'flex';
+                        return; 
+                    }
                     
-                    let newIconHtml = '';
-                    if (check.isNew) {
-                        if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                            newIconHtml = '<img src="new-icon0101.png" class="new-icon" alt="NEW" style="top:35px; right:8px;">'; 
-                        } else if (rec.new_shinkoujoukyou === 100000003) {
-                            newIconHtml = '<img src="new-icon0103.png" class="new-icon" alt="NEW" style="top:35px; right:8px;">';
-                        }
-                    }
-
-                    if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
-                        let msgText = "";
-                        let colorClass = "";
-                        
-                        if (rec.new_shinkoujoukyou === 100000002) {
-                            msgText = "通知済みの予定を確認";
-                            colorClass = "msg-blue"; 
-                        } else {
-                            msgText = "変更有りの予定を確認";
-                            colorClass = "msg-red"; 
-                        }
-
-                        todayContainer.innerHTML += `
-                            <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;">
-                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                    <div></div>
-                                    <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
-                                </div>
-                                ${newIconHtml}
-                                <div class="masked-container">
-                                    <span class="masked-text ${colorClass}">${msgText}</span>
-                                </div>
-                            </div>`;
-                    } else {
-                        // ★修正: timeDisp エラー解消のため変数名を timeStr に統一
-                        let timeStr = formatTime(rec.new_start_time);
-                        if(timeStr) timeStr += " ～";
-                        const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
-                        const tokuisaki = rec.new_tokuisaki_mei || "";
-                        const workContent = rec.new_sagyou_naiyou || "";
-
-                        // ★修正: 本日の予定も車両情報削除
-                        todayContainer.innerHTML += `
-                            <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
-                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                    <div>
-                                        <span class="time-badge">${timeStr}</span>
-                                        <span class="meta-info">${kashikiri}</span>
-                                    </div>
-                                    <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
-                                </div>
-                                ${newIconHtml}
-                                <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
-                                <div class="client-name">${tokuisaki}</div>
-                                <div class="work-content">${workContent}</div>
-                            </div>`;
-                    }
+                    const now = new Date();
+                    document.getElementById('list-date-label').textContent = formatDateHeader(now);
+                    
+                    const apiRes = await fetch('/api/show-env');
+                    if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
+                    
+                    const data = await apiRes.json();
+                    globalData = data.records;
+                    
+                    document.getElementById('disp-name').textContent = data.user.name;
+                    document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
+                    document.getElementById('count-today').textContent = data.todayCount;
+                    
+                    renderList();
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('view-app-wrapper').style.display = 'block';
+                    window.switchScreen('list');
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('error-message').textContent = e.message;
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('view-error').style.display = 'block';
                 }
-            });
-            if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
-        }
+            })();
 
-        (async () => {
-            try {
-                const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
-                const authData = await authRes.json();
-                if (!authData.clientPrincipal) { switchScreen('login'); return; }
-                
-                const now = new Date();
-                document.getElementById('list-date-label').textContent = formatDateHeader(now);
-                
-                const apiRes = await fetch('/api/show-env');
-                if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
-                
-                const data = await apiRes.json();
-                globalData = data.records;
-                
-                document.getElementById('disp-name').textContent = data.user.name;
-                document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
-                document.getElementById('count-today').textContent = data.todayCount;
-                
-                renderList();
-                
-                switchScreen('list');
-            } catch (e) {
-                console.error(e);
-                document.getElementById('error-message').textContent = e.message;
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('view-error').style.display = 'block';
-            }
         })();
     </script>
 </body>
