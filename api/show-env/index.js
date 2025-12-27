@@ -87,7 +87,6 @@ module.exports = async function (context, req) {
         const buName = user["_owningbusinessunit_value@OData.Community.Display.V1.FormattedValue"];
 
         // 5. 配車データ取得
-        // ★修正: modifiedon (修正日) を追加しました
         const selectCols = [
             "new_day", "new_start_time", "new_genbamei", "new_sagyou_naiyou", "new_shinkoujoukyou", 
             "new_table2id", "new_tokuisaki_mei", "new_kyakusaki", "new_sharyou", "new_kashikiri", 
@@ -108,7 +107,8 @@ module.exports = async function (context, req) {
             new_haisha_zumi eq true
         `.replace(/\s+/g, ' ').trim();
 
-        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$orderby=new_day asc`;
+        // ★修正: $expand を追加して、紐づく車両(new_sharyou)の 車番(new_shaban)と能力(new_tsuriage)を取得
+        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage)&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { "Authorization": `Bearer ${token}`, "Prefer": "odata.include-annotations=\"*\"" } 
