@@ -128,26 +128,24 @@ module.exports = async function (context, req) {
             records.forEach(r => r.sagyouba_list = []);
             const haishaIds = records.map(r => r.new_table2id);
             
-            // ★確定情報: 論理名 new_haisha_id なので _new_haisha_id_value でフィルタ
+            // フィルタ: _new_haisha_id_value
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
 
             if (chuukanFilter) {
-                // ★確定情報: テーブル名 new_haisha_sagyouba_chuukans (複数形)
-                // ★確定情報: 展開列 new_sagyouba (論理名)
-                const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_name)`;
+                // ★修正点: 作業場マスタの名称列は 'new_title' なので、ここを指定して取得します
+                const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_title)`;
                 
                 try {
                     const chuukanRes = await fetch(chuukanQuery, { headers: { "Authorization": `Bearer ${token}` } });
                     if (chuukanRes.ok) {
                         const chuukanData = await chuukanRes.json();
                         chuukanData.value.forEach(c => {
-                            // 親IDとの紐付け
                             const parentId = c._new_haisha_id_value; 
                             const targetRec = records.find(r => r.new_table2id === parentId);
                             
-                            // 名称があればリストに追加
-                            if (targetRec && c.new_sagyouba && c.new_sagyouba.new_name) {
-                                targetRec.sagyouba_list.push({ name: c.new_sagyouba.new_name });
+                            // ★修正点: new_title から値を取得します
+                            if (targetRec && c.new_sagyouba && c.new_sagyouba.new_title) {
+                                targetRec.sagyouba_list.push({ name: c.new_sagyouba.new_title });
                             }
                         });
                     }
