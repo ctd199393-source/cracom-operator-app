@@ -8,8 +8,13 @@ function generateSasToken(connectionString, containerName, blobPath) {
         if (!connectionString || !containerName || !blobPath) return null;
         
         const parts = connectionString.split(';');
-        const accountName = parts.find(p => p.startsWith('AccountName=')).split('=')[1];
-        const accountKey = parts.find(p => p.startsWith('AccountKey=')).split('=')[1];
+        const accountNameMatch = parts.find(p => p.startsWith('AccountName='));
+        const accountKeyMatch = parts.find(p => p.startsWith('AccountKey='));
+
+        if (!accountNameMatch || !accountKeyMatch) return null;
+
+        const accountName = accountNameMatch.split('=')[1];
+        const accountKey = accountKeyMatch.split('=')[1];
 
         // Blobパス正規化
         let blobName = blobPath;
@@ -42,7 +47,7 @@ module.exports = async function (context, req) {
         const tenantId = process.env.TENANT_ID;
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
-        const dataverseUrl = process.env.DATAVERSE_URL;
+        const dataverseUrl = process.env.DATAVERSE_URL; 
         const storageConnString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
         if (!tenantId || !clientId || !clientSecret || !dataverseUrl) {
@@ -107,7 +112,7 @@ module.exports = async function (context, req) {
             new_haisha_zumi eq true
         `.replace(/\s+/g, ' ').trim();
 
-        // ★修正: エラー回避のため new_id の expand を削除
+        // $expand=new_id は除外
         const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage)&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
@@ -140,20 +145,16 @@ module.exports = async function (context, req) {
                 } catch (e) { console.error("中間テーブル取得エラー:", e); }
             }
 
-            // B. ★追加: 案件・現場マスタ（GoogleMapリンク）の別途取得
-            // _new_id_value (案件ID) を持っているレコードを抽出
+            // B. 案件・現場マスタ（GoogleMapリンク）の別途取得
             const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
             if (ankenIds.length > 0) {
                 const ankenFilter = ankenIds.map(id => `new_ankenid eq '${id}'`).join(" or ");
-                // 案件(new_anken) -> 現場(new_genba) -> リンク(new_googlemap_link)
-                // ※リレーション名が 'new_genba' であると仮定
                 const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_ankens?$filter=${encodeURIComponent(ankenFilter)}&$select=new_ankenid&$expand=new_genba($select=new_googlemap_link)`;
                 
                 try {
                     const ankenRes = await fetch(ankenQuery, { headers: { "Authorization": `Bearer ${token}` } });
                     if (ankenRes.ok) {
                         const ankenData = await ankenRes.json();
-                        // 取得したリンクを配車レコードにマージ
                         ankenData.value.forEach(a => {
                             if (a.new_genba && a.new_genba.new_googlemap_link) {
                                 records.filter(r => r._new_id_value === a.new_ankenid).forEach(r => {
