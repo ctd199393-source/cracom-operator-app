@@ -92,7 +92,6 @@
             50% { transform: translateY(-4px); opacity: 1; }
         }
 
-        /* ★修正: 時間の太字解除、メタ情報(貸切)のフォントを時間に合わせる */
         .time-badge { font-weight: normal; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 1.15rem; color: #333; margin-left: 5px; font-weight: normal; }
         
@@ -117,15 +116,33 @@
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: inline-block; margin-bottom: 2px;}
         
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
+        
+        /* ★修正: モバイル対応 info-box レイアウト */
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
-        /* 詳細画面の車両情報セル用スタイル */
+        
+        /* 中身を相対配置にして絶対配置の子要素を制御 */
         .info-box span { 
-            flex-grow: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            font-size: 1.2rem; font-weight: normal; color: #333; 
-            line-height: 1.1; padding: 2px; white-space: normal; 
-            text-align: center;
+            flex-grow: 1; position: relative; width: 100%; height: 100%;
+            display: block; /* blockにして内部で絶対配置を使う */
+        }
+        
+        /* 能力(13t): 左上 */
+        .vehicle-spec {
+            position: absolute; top: 4px; left: 6px;
+            font-size: 1.0rem; color: #333; font-weight: normal; line-height: 1;
+        }
+        /* 車番(842): 右下、サイズ調整 (1.5rem) */
+        .vehicle-no {
+            position: absolute; bottom: 2px; right: 6px;
+            font-size: 1.6rem; color: #005a9e; font-weight: bold; line-height: 1;
+        }
+        
+        /* 通常のテキスト表示用 (時間・貸切など) */
+        .info-normal-text {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%;
+            font-size: 1.3rem; color: #333;
         }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
@@ -383,21 +400,27 @@
 
             let timeDisp = formatTime(rec.new_start_time);
             if(rec.new_end_time) timeDisp += " ～ " + formatTime(rec.new_end_time);
-            document.getElementById('dt-time').textContent = timeDisp;
-
-            document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
             
-            // ★修正: 詳細画面の車両情報レイアウト (能力左寄せ、車番右寄せ・大)
-            let dtVehicle = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "-";
+            // ★修正: 時間・貸切・車両はクラス制御でスタイル統一
+            document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
+            
+            // 貸切
+            let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
+            document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
+            
+            // ★修正: 車両情報の絶対配置レイアウト
+            let dtVehicle = "-";
             if (rec.new_sharyou) {
                 const shaban = rec.new_sharyou.new_shaban || "";
                 const spec = rec.new_sharyou.new_tsuriage ? rec.new_sharyou.new_tsuriage + "t" : "";
                 
                 dtVehicle = `
-                    <div style="display:flex; justify-content:space-between; width:100%; align-items:center; padding:0 5px;">
-                        <span style="font-size:1.2rem; color:#333;">${spec}</span>
-                        <span style="font-size:1.8rem; font-weight:bold; color:#005a9e; line-height:1;">${shaban}</span>
-                    </div>`;
+                    <div class="vehicle-spec">${spec}</div>
+                    <div class="vehicle-no">${shaban}</div>
+                `;
+            } else {
+                // 車両なしの場合
+                dtVehicle = `<span class="info-normal-text">-</span>`;
             }
             document.getElementById('dt-vehicle').innerHTML = dtVehicle;
 
@@ -528,7 +551,7 @@
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
-                            // ★修正: リスト画面: 時間太字解除、車両情報削除
+                            // ★修正: リスト画面の車両情報を削除 & 貸切のみ表示
                             jobsHtml += `
                                 <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
@@ -638,10 +661,6 @@
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
         }
 
-        function showLocationHelp() {
-            alert("ブラウザの設定から位置情報を許可してください。");
-        }
-
         function switchScreen(screenName) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('view-login').style.display = 'none';
@@ -671,6 +690,10 @@
                 footerDetail.style.display = 'flex';
                 window.scrollTo(0, 0);
             }
+        }
+
+        function showLocationHelp() {
+            alert("ブラウザの設定から位置情報を許可してください。");
         }
 
         function confirmCompletion() {
