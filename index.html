@@ -553,6 +553,7 @@
                             let timeStr = formatTime(rec.new_start_time);
                             if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                            // ★修正: リスト画面の車両情報を削除し、貸切のみ表示
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
                             jobsHtml += `
@@ -640,10 +641,10 @@
                         let timeStr = formatTime(rec.new_start_time);
                         if(rec.new_end_time) timeStr += ` ～ ${formatTime(rec.new_end_time)}`;
                         const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                        // ★修正: 本日の予定も車両情報削除
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
 
-                        // ★修正: 本日の予定も車両情報削除
                         todayContainer.innerHTML += `
                             <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
