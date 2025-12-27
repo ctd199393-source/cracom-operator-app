@@ -92,6 +92,7 @@
             50% { transform: translateY(-4px); opacity: 1; }
         }
 
+        /* リスト画面: 時間太字解除 */
         .time-badge { font-weight: normal; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 1.15rem; color: #333; margin-left: 5px; font-weight: normal; }
         
@@ -117,32 +118,37 @@
         
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         
-        /* ★修正: モバイル対応 info-box レイアウト */
+        /* info-box */
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
         
-        /* 中身を相対配置にして絶対配置の子要素を制御 */
+        /* ★修正: フレックスボックスで中央寄せに戻しつつ、position:relativeで絶対配置の子要素も許容 */
         .info-box span { 
-            flex-grow: 1; position: relative; width: 100%; height: 100%;
-            display: block; /* blockにして内部で絶対配置を使う */
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; /* これで通常のテキストは中央に来る */
+            position: relative; /* 子要素の絶対配置基準 */
+            width: 100%; height: 100%;
+            font-size: 1.2rem; font-weight: normal; color: #333; 
+            line-height: 1.1; padding: 2px; white-space: normal; 
+            text-align: center;
         }
         
-        /* 能力(13t): 左上 */
+        /* 能力(13t): 左上、太字 */
         .vehicle-spec {
             position: absolute; top: 4px; left: 6px;
-            font-size: 1.0rem; color: #333; font-weight: normal; line-height: 1;
+            font-size: 1.0rem; color: #333; font-weight: bold; line-height: 1;
         }
-        /* 車番(842): 右下、サイズ調整 (1.5rem) */
+        /* 車番(842): 右下、青色・太字 */
         .vehicle-no {
             position: absolute; bottom: 2px; right: 6px;
             font-size: 1.6rem; color: #005a9e; font-weight: bold; line-height: 1;
         }
         
-        /* 通常のテキスト表示用 (時間・貸切など) */
+        /* 通常テキスト用ラッパー */
         .info-normal-text {
-            display: flex; align-items: center; justify-content: center;
-            width: 100%; height: 100%;
-            font-size: 1.3rem; color: #333;
+            width: 100%; text-align: center;
         }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
@@ -398,17 +404,16 @@
             const jobDate = new Date(rec.new_day);
             document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
 
+            // ★修正: 時間表示 (終了時間を削除し "～" のみに)
             let timeDisp = formatTime(rec.new_start_time);
-            if(rec.new_end_time) timeDisp += " ～ " + formatTime(rec.new_end_time);
+            if (timeDisp) timeDisp += " ～"; 
             
-            // ★修正: 時間・貸切・車両はクラス制御でスタイル統一
             document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
             
-            // 貸切
             let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
             document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
             
-            // ★修正: 車両情報の絶対配置レイアウト
+            // 車両情報
             let dtVehicle = "-";
             if (rec.new_sharyou) {
                 const shaban = rec.new_sharyou.new_shaban || "";
@@ -419,7 +424,6 @@
                     <div class="vehicle-no">${shaban}</div>
                 `;
             } else {
-                // 車両なしの場合
                 dtVehicle = `<span class="info-normal-text">-</span>`;
             }
             document.getElementById('dt-vehicle').innerHTML = dtVehicle;
@@ -551,7 +555,6 @@
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
-                            // ★修正: リスト画面の車両情報を削除 & 貸切のみ表示
                             jobsHtml += `
                                 <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
@@ -659,105 +662,6 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
-        }
-
-        function switchScreen(screenName) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-error').style.display = 'none';
-            const wrapper = document.getElementById('view-app-wrapper');
-            const footerList = document.getElementById('footer-list');
-            const footerDetail = document.getElementById('footer-detail');
-            
-            if (screenName === 'login') {
-                wrapper.style.display = 'none';
-                document.getElementById('view-login').style.display = 'flex';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'none';
-                return;
-            }
-            wrapper.style.display = 'block';
-
-            if (screenName === 'list') {
-                document.getElementById('view-list').style.display = 'block';
-                document.getElementById('view-detail').style.display = 'none';
-                footerList.style.display = 'flex';
-                footerDetail.style.display = 'none';
-            } else if (screenName === 'detail') {
-                document.getElementById('view-list').style.display = 'none';
-                document.getElementById('view-detail').style.display = 'block';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'flex';
-                window.scrollTo(0, 0);
-            }
-        }
-
-        function showLocationHelp() {
-            alert("ブラウザの設定から位置情報を許可してください。");
-        }
-
-        function confirmCompletion() {
-            if (!completeModal) completeModal = new bootstrap.Modal(document.getElementById('completeModal'));
-            completeModal.show();
-        }
-        function executeComplete() {
-            if (!currentHaishaId) return;
-            const btn = document.querySelector('#completeModal .btn-danger');
-            const originalText = btn.textContent;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 送信中...';
-            btn.disabled = true;
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => sendApi('complete', pos.coords.latitude, pos.coords.longitude, btn, originalText, completeModal),
-                (err) => sendApi('complete', null, null, btn, originalText, completeModal),
-                { timeout: 5000, enableHighAccuracy: true }
-            );
-        }
-
-        function confirmUndo() {
-            if (!undoModal) undoModal = new bootstrap.Modal(document.getElementById('undoModal'));
-            undoModal.show();
-        }
-        function executeUndo() {
-            if (!currentHaishaId) return;
-            const btn = document.querySelector('#undoModal .btn-secondary');
-            const originalText = btn.textContent;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 処理中...';
-            btn.disabled = true;
-            sendApi('undo', null, null, btn, originalText, undoModal);
-        }
-
-        async function sendApi(mode, lat, long, btn, originalText, modal) {
-            try {
-                const res = await fetch('/api/update-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ haishaId: currentHaishaId, lat: lat, long: long, mode: mode })
-                });
-
-                if (res.status === 401) {
-                    alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
-                    window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
-                    return;
-                }
-
-                if (!res.ok) {
-                    const errBody = await res.json();
-                    throw new Error(errBody.error || `サーバーエラー (${res.status})`);
-                }
-
-                alert(mode === 'undo' ? "作業完了を取り消しました。" : "作業完了を通知しました。");
-                if(modal) modal.hide();
-                location.reload(); 
-
-            } catch (e) {
-                alert("送信に失敗しました:\n" + e.message);
-            } finally {
-                if(btn) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            }
         }
 
         (async () => {
