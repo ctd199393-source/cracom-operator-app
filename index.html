@@ -105,7 +105,6 @@
         }
         .masked-text { font-size: 1.2rem; font-weight: normal; }
         
-        /* ★修正: 配色変更 (変更有り=赤, 通知済み=青) */
         .msg-red { color: #d13438; } 
         .msg-blue { color: #0078d4; }
 
@@ -118,7 +117,15 @@
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
-        .info-box span { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: normal; color: #333; line-height: 1; padding: 2px; white-space: nowrap; }
+        
+        /* ★修正: 車両情報の2行表示対応 */
+        .info-box span { 
+            flex-grow: 1; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; 
+            font-size: 1.2rem; font-weight: normal; color: #333; 
+            line-height: 1.1; padding: 2px; white-space: normal; 
+            text-align: center;
+        }
 
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
@@ -282,7 +289,6 @@
             return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
         }
 
-        // 6時間以内判定
         function checkNewStatus(iso) {
             if (!iso) return { isNew: false };
             let safeIso = iso;
@@ -379,7 +385,20 @@
             document.getElementById('dt-time').textContent = timeDisp;
 
             document.getElementById('dt-type').textContent = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
-            document.getElementById('dt-vehicle').textContent = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "-";
+            
+            // ★修正: 車両情報の詳細表示
+            let dtVehicle = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "-";
+            if (rec.new_sharyou) {
+                const nums = [];
+                if(rec.new_sharyou.new_shaban) nums.push("No." + rec.new_sharyou.new_shaban);
+                if(rec.new_sharyou.new_tsuriage) nums.push(rec.new_sharyou.new_tsuriage + "t");
+                
+                if(nums.length > 0) {
+                    dtVehicle += `<br><span style="font-size:0.85rem; color:#005a9e;">${nums.join(' / ')}</span>`;
+                }
+            }
+            document.getElementById('dt-vehicle').innerHTML = dtVehicle;
+
             const client = rec.new_tokuisaki_mei || "-";
             const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
             document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
@@ -487,10 +506,10 @@
                             
                             if (rec.new_shinkoujoukyou === 100000002) {
                                 msgText = "通知済みの予定を確認";
-                                colorClass = "msg-blue"; // ★修正: 通知済み -> 青
+                                colorClass = "msg-blue"; 
                             } else {
                                 msgText = "変更有りの予定を確認";
-                                colorClass = "msg-red"; // ★修正: 変更有り -> 赤
+                                colorClass = "msg-red"; 
                             }
 
                             jobsHtml += `
@@ -508,13 +527,22 @@
                             const sharyou = rec["new_sharyou@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
 
+                            // ★修正: リストにも車両詳細を表示
+                            let vehicleInfo = sharyou;
+                            if (rec.new_sharyou) {
+                                const nums = [];
+                                if(rec.new_sharyou.new_shaban) nums.push("No." + rec.new_sharyou.new_shaban);
+                                if(rec.new_sharyou.new_tsuriage) nums.push(rec.new_sharyou.new_tsuriage + "t");
+                                if(nums.length > 0) vehicleInfo += ` (${nums.join(' / ')})`;
+                            }
+
                             jobsHtml += `
                                 <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
                                     <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
                                     ${newIconHtml}
                                     <div class="mb-1">
                                         <span class="time-badge">${timeStr}</span>
-                                        <span class="meta-info">${kashikiri} ${sharyou}</span>
+                                        <span class="meta-info">${kashikiri} ${vehicleInfo}</span>
                                     </div>
                                     <div class="client-name">${tokuisaki}</div>
                                     <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
@@ -572,10 +600,10 @@
                         
                         if (rec.new_shinkoujoukyou === 100000002) {
                             msgText = "通知済みの予定を確認";
-                            colorClass = "msg-blue"; // ★修正: 通知済み -> 青
+                            colorClass = "msg-blue"; 
                         } else {
                             msgText = "変更有りの予定を確認";
-                            colorClass = "msg-red"; // ★修正: 変更有り -> 赤
+                            colorClass = "msg-red"; 
                         }
 
                         todayContainer.innerHTML += `
@@ -597,12 +625,21 @@
                         const tokuisaki = rec.new_tokuisaki_mei || "";
                         const workContent = rec.new_sagyou_naiyou || "";
 
+                        // ★修正: リストにも車両詳細を表示
+                        let vehicleInfo = sharyou;
+                        if (rec.new_sharyou) {
+                            const nums = [];
+                            if(rec.new_sharyou.new_shaban) nums.push("No." + rec.new_sharyou.new_shaban);
+                            if(rec.new_sharyou.new_tsuriage) nums.push(rec.new_sharyou.new_tsuriage + "t");
+                            if(nums.length > 0) vehicleInfo += ` (${nums.join(' / ')})`;
+                        }
+
                         todayContainer.innerHTML += `
                             <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
                                     <div>
                                         <span class="time-badge">${timeStr}</span>
-                                        <span class="meta-info">${kashikiri} ${sharyou}</span>
+                                        <span class="meta-info">${kashikiri} ${vehicleInfo}</span>
                                     </div>
                                     <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
                                 </div>
@@ -615,37 +652,6 @@
                 }
             });
             if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
-        }
-
-        function switchScreen(screenName) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('view-login').style.display = 'none';
-            document.getElementById('view-error').style.display = 'none';
-            const wrapper = document.getElementById('view-app-wrapper');
-            const footerList = document.getElementById('footer-list');
-            const footerDetail = document.getElementById('footer-detail');
-            
-            if (screenName === 'login') {
-                wrapper.style.display = 'none';
-                document.getElementById('view-login').style.display = 'flex';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'none';
-                return;
-            }
-            wrapper.style.display = 'block';
-
-            if (screenName === 'list') {
-                document.getElementById('view-list').style.display = 'block';
-                document.getElementById('view-detail').style.display = 'none';
-                footerList.style.display = 'flex';
-                footerDetail.style.display = 'none';
-            } else if (screenName === 'detail') {
-                document.getElementById('view-list').style.display = 'none';
-                document.getElementById('view-detail').style.display = 'block';
-                footerList.style.display = 'none';
-                footerDetail.style.display = 'flex';
-                window.scrollTo(0, 0);
-            }
         }
 
         function showLocationHelp() {
