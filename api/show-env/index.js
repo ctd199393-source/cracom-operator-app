@@ -107,9 +107,8 @@ module.exports = async function (context, req) {
             new_haisha_zumi eq true
         `.replace(/\s+/g, ' ').trim();
 
-        // ★修正: 配車(table2) -> 車両(new_sharyou) 
-        // ★修正: 配車(table2) -> 案件(new_id) -> 現場(new_genba) -> マップリンク(new_googlemap_link)
-        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage),new_id($select=new_name;$expand=new_genba($select=new_googlemap_link))&$orderby=new_day asc`;
+        // ★修正: エラー回避のため new_id の expand を削除
+        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage)&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { "Authorization": `Bearer ${token}`, "Prefer": "odata.include-annotations=\"*\"" } 
@@ -118,17 +117,14 @@ module.exports = async function (context, req) {
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
 
-        // ★配車作業場中間テーブルの取得
         if (records.length > 0) {
+            // A. 中間テーブル（作業場）の取得
             records.forEach(r => r.sagyouba_list = []);
             const haishaIds = records.map(r => r.new_table2id);
-            // 配車IDで中間テーブルを検索
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
 
             if (chuukanFilter) {
-                // 中間テーブル -> 作業場マスタ(new_sagyouba) -> 名前(new_name)を取得
                 const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_name)`;
-                
                 try {
                     const chuukanRes = await fetch(chuukanQuery, { headers: { "Authorization": `Bearer ${token}` } });
                     if (chuukanRes.ok) {
@@ -136,17 +132,37 @@ module.exports = async function (context, req) {
                         chuukanData.value.forEach(c => {
                             const parentId = c._new_haisha_id_value;
                             const targetRec = records.find(r => r.new_table2id === parentId);
-                            // 作業場マスタの名前をリストに追加
                             if (targetRec && c.new_sagyouba) {
-                                targetRec.sagyouba_list.push({
-                                    name: c.new_sagyouba.new_name || "名称不明"
+                                targetRec.sagyouba_list.push({ name: c.new_sagyouba.new_name || "名称不明" });
+                            }
+                        });
+                    }
+                } catch (e) { console.error("中間テーブル取得エラー:", e); }
+            }
+
+            // B. ★追加: 案件・現場マスタ（GoogleMapリンク）の別途取得
+            // _new_id_value (案件ID) を持っているレコードを抽出
+            const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
+            if (ankenIds.length > 0) {
+                const ankenFilter = ankenIds.map(id => `new_ankenid eq '${id}'`).join(" or ");
+                // 案件(new_anken) -> 現場(new_genba) -> リンク(new_googlemap_link)
+                // ※リレーション名が 'new_genba' であると仮定
+                const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_ankens?$filter=${encodeURIComponent(ankenFilter)}&$select=new_ankenid&$expand=new_genba($select=new_googlemap_link)`;
+                
+                try {
+                    const ankenRes = await fetch(ankenQuery, { headers: { "Authorization": `Bearer ${token}` } });
+                    if (ankenRes.ok) {
+                        const ankenData = await ankenRes.json();
+                        // 取得したリンクを配車レコードにマージ
+                        ankenData.value.forEach(a => {
+                            if (a.new_genba && a.new_genba.new_googlemap_link) {
+                                records.filter(r => r._new_id_value === a.new_ankenid).forEach(r => {
+                                    r.googlemap_link = a.new_genba.new_googlemap_link;
                                 });
                             }
                         });
                     }
-                } catch (e) {
-                    console.error("中間テーブル取得エラー(無視して続行):", e);
-                }
+                } catch (e) { console.error("案件・現場取得エラー:", e); }
             }
         }
 
