@@ -107,8 +107,9 @@ module.exports = async function (context, req) {
             new_haisha_zumi eq true
         `.replace(/\s+/g, ' ').trim();
 
-        // 配車と車両情報を取得
-        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage)&$orderby=new_day asc`;
+        // ★修正: 配車(table2) -> 車両(new_sharyou) 
+        // ★修正: 配車(table2) -> 案件(new_id) -> 現場(new_genba) -> マップリンク(new_googlemap_link)
+        const myDispatchQuery = `${dataverseUrl}/api/data/v9.2/new_table2s?$filter=${encodeURIComponent(myDispatchFilter)}&$select=${selectCols}&$expand=new_sharyou($select=new_shaban,new_tsuriage),new_id($select=new_name;$expand=new_genba($select=new_googlemap_link))&$orderby=new_day asc`;
 
         const dispatchRes = await fetch(myDispatchQuery, { 
             headers: { "Authorization": `Bearer ${token}`, "Prefer": "odata.include-annotations=\"*\"" } 
@@ -117,32 +118,25 @@ module.exports = async function (context, req) {
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
 
-        // ★追加: 配車作業場中間テーブルの取得
+        // ★配車作業場中間テーブルの取得
         if (records.length > 0) {
-            // 各レコードに作業場リスト用の空配列を用意
             records.forEach(r => r.sagyouba_list = []);
-
-            // 取得した配車IDのリストを作成
             const haishaIds = records.map(r => r.new_table2id);
-            
-            // 配車IDで中間テーブルを検索 (Lookup列は _new_haisha_id_value)
-            // 数が多い場合は分割すべきですが、簡易的にORで結合します
+            // 配車IDで中間テーブルを検索
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
 
             if (chuukanFilter) {
-                // new_sagyouba (作業場マスタ) を展開して new_name を取得
-                // ※作業場マスタのプライマリ列が new_name であると仮定しています
+                // 中間テーブル -> 作業場マスタ(new_sagyouba) -> 名前(new_name)を取得
                 const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_name)`;
                 
                 try {
                     const chuukanRes = await fetch(chuukanQuery, { headers: { "Authorization": `Bearer ${token}` } });
                     if (chuukanRes.ok) {
                         const chuukanData = await chuukanRes.json();
-                        
-                        // 取得した中間データを配車レコードに紐づけ
                         chuukanData.value.forEach(c => {
                             const parentId = c._new_haisha_id_value;
                             const targetRec = records.find(r => r.new_table2id === parentId);
+                            // 作業場マスタの名前をリストに追加
                             if (targetRec && c.new_sagyouba) {
                                 targetRec.sagyouba_list.push({
                                     name: c.new_sagyouba.new_name || "名称不明"
