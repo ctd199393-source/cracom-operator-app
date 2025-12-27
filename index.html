@@ -429,25 +429,35 @@
                 const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
                 document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
                 
-                // Googleマップリンクの生成
-                const siteName = rec.new_genbamei || "現場";
-                // デフォルトはGoogle検索URL (フォールバック)
-                let mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteName)}`;
-                // APIで取得した googlemap_link があればそれを使う
+                // Googleマップリンクの制御
+                // 修正: new_googlemap_link がある場合のみリンク化する
+                let mapUrl = null;
                 if (rec.googlemap_link) {
                     mapUrl = rec.googlemap_link;
                 }
 
-                document.getElementById('dt-site').innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${rec.new_genbamei || "-"} <i class="fas fa-external-link-alt small"></i></a>`;
+                // 現場名の表示切り替え
+                const siteValEl = document.getElementById('dt-site');
+                if (mapUrl) {
+                    siteValEl.innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${rec.new_genbamei || "-"} <i class="fas fa-external-link-alt small"></i></a>`;
+                } else {
+                    siteValEl.textContent = rec.new_genbamei || "-";
+                }
+
+                // 下部ボタンの制御
+                const mapBtn = document.getElementById('link-map');
+                if (mapUrl) {
+                    mapBtn.href = mapUrl;
+                    mapBtn.style.display = ''; // restore default (flex via css class, but here just remove inline none)
+                } else {
+                    mapBtn.href = "#";
+                    mapBtn.style.display = 'none'; // hide button
+                }
 
                 document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
                 document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
                 document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
-
-                const mapBtn = document.getElementById('link-map');
-                if (mapUrl) mapBtn.href = mapUrl;
-                else mapBtn.href = "#";
 
                 // 作業場リストの動的挿入
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
