@@ -127,12 +127,10 @@ module.exports = async function (context, req) {
             // =========================================================
             records.forEach(r => r.sagyouba_list = []);
             const haishaIds = records.map(r => r.new_table2id);
-            
-            // フィルタ: _new_haisha_id_value
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
 
             if (chuukanFilter) {
-                // ★修正点: 作業場マスタの名称列は 'new_title' なので、ここを指定して取得します
+                // 作業場マスタの名称列 'new_title' を取得
                 const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_title)`;
                 
                 try {
@@ -143,7 +141,6 @@ module.exports = async function (context, req) {
                             const parentId = c._new_haisha_id_value; 
                             const targetRec = records.find(r => r.new_table2id === parentId);
                             
-                            // ★修正点: new_title から値を取得します
                             if (targetRec && c.new_sagyouba && c.new_sagyouba.new_title) {
                                 targetRec.sagyouba_list.push({ name: c.new_sagyouba.new_title });
                             }
@@ -152,10 +149,13 @@ module.exports = async function (context, req) {
                 } catch (e) { console.error("中間テーブル取得エラー:", e); }
             }
 
+            // =========================================================
             // B. 案件・現場マスタ（GoogleMapリンク）の別途取得
+            // =========================================================
             const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
             if (ankenIds.length > 0) {
                 const ankenFilter = ankenIds.map(id => `new_ankenid eq '${id}'`).join(" or ");
+                // 論理名 new_googlemap_link を指定
                 const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_ankens?$filter=${encodeURIComponent(ankenFilter)}&$select=new_ankenid&$expand=new_genba($select=new_googlemap_link)`;
                 
                 try {
@@ -163,10 +163,15 @@ module.exports = async function (context, req) {
                     if (ankenRes.ok) {
                         const ankenData = await ankenRes.json();
                         ankenData.value.forEach(a => {
-                            if (a.new_genba && a.new_genba.new_googlemap_link) {
-                                records.filter(r => r._new_id_value === a.new_ankenid).forEach(r => {
-                                    r.googlemap_link = a.new_genba.new_googlemap_link;
-                                });
+                            if (a.new_genba) {
+                                // ★修正: スキーマ名(Capital G)と論理名(lowercase)の両方をチェックして取得
+                                const linkVal = a.new_genba.new_googlemap_link || a.new_genba.new_Googlemap_link;
+                                
+                                if (linkVal) {
+                                    records.filter(r => r._new_id_value === a.new_ankenid).forEach(r => {
+                                        r.googlemap_link = linkVal;
+                                    });
+                                }
                             }
                         });
                     }
