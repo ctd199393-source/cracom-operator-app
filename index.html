@@ -292,7 +292,24 @@
             function formatTime(iso) {
                 if(!iso) return "";
                 const d = new Date(iso);
+                // 時間表示はあえてgetUTCHoursのままにする（DataverseがTimezone Independentの場合のため）
+                // もしTimezone UserLocalなら getHours() に変更すべきだが、現状維持
                 return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
+            }
+
+            // ★追加: タイムゾーンを考慮して YYYY-MM-DD 文字列を返す
+            function getLocalYMD(dateObj) {
+                const y = dateObj.getFullYear();
+                const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const d = dateObj.getDate().toString().padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            // ★修正: UTC文字列の日付をローカルタイムの YYYY-MM-DD に変換する
+            function getRecordLocalYMD(isoStr) {
+                if(!isoStr) return "";
+                const d = new Date(isoStr);
+                return getLocalYMD(d);
             }
 
             function checkNewStatus(iso) {
@@ -430,7 +447,6 @@
                 document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
                 
                 // Googleマップリンクの制御
-                // 修正: new_googlemap_link がある場合のみリンク化する
                 let mapUrl = null;
                 if (rec.googlemap_link) {
                     mapUrl = rec.googlemap_link;
@@ -448,10 +464,10 @@
                 const mapBtn = document.getElementById('link-map');
                 if (mapUrl) {
                     mapBtn.href = mapUrl;
-                    mapBtn.style.display = ''; // restore default (flex via css class, but here just remove inline none)
+                    mapBtn.style.display = ''; 
                 } else {
                     mapBtn.href = "#";
-                    mapBtn.style.display = 'none'; // hide button
+                    mapBtn.style.display = 'none'; 
                 }
 
                 document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
@@ -459,7 +475,7 @@
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
                 document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
 
-                // ★修正: 作業場リストの動的挿入（リンク対応）
+                // 作業場リストの動的挿入（リンク対応）
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
                     const siteRow = document.getElementById('row-site'); 
@@ -611,9 +627,12 @@
             // --- Render Logic ---
             function renderList() {
                 const now = new Date();
-                const todayStr = now.toISOString().split('T')[0];
+                
+                // ★修正: ローカル時間の YYYY-MM-DD を取得
+                const todayStr = getLocalYMD(now);
+                
                 const yest = new Date(now); yest.setDate(yest.getDate()-1);
-                const yestStr = yest.toISOString().split('T')[0];
+                const yestStr = getLocalYMD(yest);
 
                 const todayContainer = document.getElementById('today-container');
                 const futureContainer = document.getElementById('future-container');
@@ -623,18 +642,18 @@
                 // 未来14日分
                 for (let i = 1; i <= 14; i++) {
                     const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
-                    const y = targetDate.getFullYear();
-                    const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-                    const d = targetDate.getDate().toString().padStart(2, '0');
-                    const dateKey = `${y}-${m}-${d}`;
+                    
+                    // ★修正: ローカル時間の YYYY-MM-DD
+                    const dateKey = getLocalYMD(targetDate);
 
                     const wDay = getWeekDay(targetDate);
                     const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
                     
-                    const dayRecords = globalData.filter(r => 
-                        r.new_day.startsWith(dateKey) && 
-                        VALID_STATUSES.includes(r.new_shinkoujoukyou)
-                    );
+                    // ★修正: レコードの日付もローカル時間に変換して比較
+                    const dayRecords = globalData.filter(r => {
+                        const rDateStr = getRecordLocalYMD(r.new_day);
+                        return rDateStr === dateKey && VALID_STATUSES.includes(r.new_shinkoujoukyou);
+                    });
 
                     let jobsHtml = '';
                     if (dayRecords.length > 0) {
@@ -700,7 +719,9 @@
                 
                 // 本日の予定 (Today)
                 globalData.forEach(rec => {
-                    const jobDateStr = rec.new_day.split('T')[0];
+                    // ★修正: レコードの日付をローカル時間に変換
+                    const jobDateStr = getRecordLocalYMD(rec.new_day);
+                    
                     const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
                     // 今日 または (昨日かつ夜間)
                     if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
