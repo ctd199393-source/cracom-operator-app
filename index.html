@@ -3,41 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <title>クラコム オペ</title>
+    
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="apple-touch-icon" href="icon.png">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
     <style>
-        :root { --app-blue: #005a9e; --app-bg: #f3f2f1; --col-fix: #052832; --col-not: #379E1D; --col-con: #0F6CBD; --col-don: #D73A3C; --col-chg: #0F9E3C; --col-yet: #605e5c; }
+        :root {
+            --app-blue: #005a9e; --app-bg: #f3f2f1;
+            --col-fix: #052832; --col-not: #379E1D; --col-con: #0F6CBD; --col-don: #D73A3C; --col-chg: #0F9E3C; --col-yet: #605e5c;
+        }
         body { background-color: var(--app-bg); font-family: "Segoe UI", "Meiryo", sans-serif; padding-bottom: 80px; }
         .view-section { display: none; }
+        
         .header-bar { background: white; border-bottom: 3px solid var(--col-don); padding: 8px 15px; position: sticky; top: 0; z-index: 100; }
         .header-row-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
         .company-name { font-size: 0.85rem; color: #666; font-weight: bold; }
         .header-row-main { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 5px; position: relative; }
         .user-name { font-size: 1.25rem; font-weight: bold; color: #333; line-height: 1.2; position: relative; z-index: 2; }
-        .safety-msg { font-size: 1.4rem; color: var(--app-blue); font-weight: bold; text-align: center; padding-bottom: 2px; position: absolute; left: 0; width: 100%; bottom: 0; z-index: 1; }
-        .btn-refresh { background: white; border: 1px solid #ccc; color: #555; border-radius: 4px; padding: 4px 10px; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 5px; cursor: pointer; position: relative; z-index: 2; transition: background 0.1s; }
+        .safety-msg { 
+            font-size: 1.4rem; color: var(--app-blue); font-weight: bold; 
+            text-align: center; padding-bottom: 2px;
+            position: absolute; left: 0; width: 100%; bottom: 0; z-index: 1; 
+        }
+        
+        .btn-refresh {
+            background: white; border: 1px solid #ccc; color: #555; border-radius: 4px;
+            padding: 4px 10px; font-size: 0.9rem; font-weight: bold; display: flex;
+            align-items: center; gap: 5px; cursor: pointer; position: relative;
+            z-index: 2; transition: background 0.1s;
+        }
         .btn-refresh:active { background: #f0f0f0; }
+
         .body-date-label { font-size: 1.2rem; font-weight: bold; color: #333; margin: 10px 15px 0 15px; }
+
+        /* リスト画面 */
         .today-section { margin: 10px; background: white; border: 2px solid var(--app-blue); border-radius: 4px; display: flex; }
         .today-label-col { background-color: var(--app-blue); color: white; width: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; writing-mode: vertical-rl; letter-spacing: 3px; font-size: 1rem; border-right: 1px solid var(--app-blue); }
         .today-content { flex-grow: 1; padding: 10px; position: relative; }
         .future-list { margin: 10px; }
         .future-row { background: white; border-bottom: 1px solid #ccc; display: flex; min-height: 80px; }
-        .date-col { width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 25px; color: #333; flex-shrink: 0; }
+        
+        .date-col { 
+            width: 60px; background: #fff; border-right: 1px solid #eee; position: relative; 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            padding-top: 25px; color: #333; flex-shrink: 0; 
+        }
         .month-label { position: absolute; top: 4px; left: 4px; font-size: 0.75rem; color: #666; line-height: 1; }
         .day-label { font-size: 1.5rem; font-weight: bold; line-height: 1; margin-top: 5px; }
         .weekday-label { font-size: 0.8rem; font-weight: bold; margin-top: 2px; }
         .date-col.is-blue .day-label, .date-col.is-blue .weekday-label { color: #0078d4; } .date-col.is-red .day-label, .date-col.is-red .weekday-label { color: #d13438; }
+        
         .job-col { flex-grow: 1; padding: 0; position: relative; }
         .no-job-text { color: #aaa; font-size: 0.9rem; padding: 15px; }
-        .future-job-item { padding: 10px; border-bottom: 1px solid #eee; position: relative; background: white; transition: background 0.1s; min-height: 85px; }
+        
+        .future-job-item {
+            padding: 10px; border-bottom: 1px solid #eee; position: relative;
+            background: white; transition: background 0.1s; min-height: 85px; 
+        }
         .future-job-item:last-child { border-bottom: none; }
         .future-job-item:active { background: #f5f5f5; }
+
         .status-badge { position: absolute; top: 8px; right: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid; z-index: 5; }
         .st-yet { color: var(--col-yet); background: #f0f0f0; border-color: var(--col-yet); }
         .st-fix { color: var(--col-fix); background: #eef6f8; border-color: var(--col-fix); }
@@ -45,28 +80,57 @@
         .st-con { color: var(--col-con); background: #e6f2ff; border-color: var(--col-con); }
         .st-don { color: var(--col-don); background: #fdecec; border-color: var(--col-don); }
         .st-chg { color: var(--col-chg); background: #ebf9e9; border-color: var(--col-chg); }
-        .new-icon { position: absolute; top: 45px; right: 15px; width: 38px; height: auto; animation: float-anim 2s ease-in-out infinite; z-index: 10; }
-        @keyframes float-anim { 0%, 100% { transform: translateY(0); opacity: 0.9; } 50% { transform: translateY(-4px); opacity: 1; } }
+        
+        .new-icon {
+            position: absolute; top: 45px; right: 15px; width: 38px; height: auto;
+            animation: float-anim 2s ease-in-out infinite; z-index: 10;
+        }
+        @keyframes float-anim {
+            0%, 100% { transform: translateY(0); opacity: 0.9; }
+            50% { transform: translateY(-4px); opacity: 1; }
+        }
+
         .time-badge { font-weight: normal; font-size: 1.15rem; margin-right: 8px; color: #333; }
         .meta-info { font-size: 1.15rem; color: #333; margin-left: 5px; font-weight: normal; }
+        
         .site-name { font-weight: bold; font-size: 1.3rem; display: block; margin-bottom: 2px; line-height: 1.3; margin-top: 4px; } 
         .client-name { font-size: 1.0rem; color: #666; margin-bottom: 4px; font-weight: bold; }
         .work-content { font-size: 1.0rem; color: #444; margin-top: 4px; }
-        .masked-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: flex-start; padding-left: 15px; pointer-events: none; }
+        
+        .masked-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: flex-start;
+            padding-left: 15px; pointer-events: none; 
+        }
         .masked-text { font-size: 1.2rem; font-weight: normal; }
-        .msg-red { color: #d13438; } .msg-blue { color: #0078d4; }
+        
+        .msg-red { color: #d13438; } 
+        .msg-blue { color: #0078d4; }
+
         .debug-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
         .detail-date { font-size: 1.2rem; font-weight: bold; color: #333; }
         .debug-id-area { text-align: right; }
         .debug-id { font-size: 0.7rem; color: #ccc; font-family: monospace; user-select: all; display: block; }
         .yousha-mark { color: red; font-weight: bold; font-size: 0.9rem; display: inline-block; margin-bottom: 2px;}
+        
         .detail-info-row { display: flex; gap: 5px; margin-bottom: 15px; }
+        
         .info-box { background: white; border: 1px solid #005a9e; border-radius: 6px; display: flex; overflow: hidden; flex: 1; height: 50px; }
         .info-box label { background: white; color: #005a9e; font-weight: bold; font-size: 0.9rem; width: 32px; display: flex; align-items: center; justify-content: center; border-right: none; margin: 0; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; flex-shrink: 0; line-height: 1; }
-        .info-box span { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; height: 100%; font-size: 1.3rem; font-weight: normal; color: #333; line-height: 1.1; padding: 2px; white-space: normal; text-align: center; }
+        
+        .info-box span { 
+            flex-grow: 1; 
+            display: flex; align-items: center; justify-content: center; 
+            position: relative; width: 100%; height: 100%;
+            font-size: 1.3rem; font-weight: normal; color: #333; 
+            line-height: 1.1; padding: 2px; white-space: normal; 
+            text-align: center;
+        }
+        
         .vehicle-spec { position: absolute; top: 4px; left: 6px; font-size: 1.0rem; color: #333; font-weight: bold; line-height: 1; }
         .vehicle-no { position: absolute; bottom: 2px; right: 6px; font-size: 1.6rem; color: #005a9e; font-weight: bold; line-height: 1; }
         .info-normal-text { width: 100%; text-align: center; }
+
         .detail-card { background: white; border: 1px solid #005a9e; border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
         .detail-row { display: flex; border-bottom: 1px solid #ddd; }
         .detail-row:last-child { border-bottom: none; }
@@ -75,19 +139,45 @@
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
         .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
         .link-btn { text-decoration: none; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; color: #005a9e; }
+        
         .detail-row-sub { display: flex; }
-        .detail-label-sub { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 4px 8px; padding-left: 25px; border-right: 1px solid #ddd; flex-shrink: 0; }
-        .detail-val-sub { flex: 1; padding: 6px 12px 6px 25px; font-size: 1.1rem; color: #444; display: flex; align-items: center; line-height: 1.3; font-weight: 500; border-bottom: 1px solid #ddd; }
+        .detail-label-sub { 
+            width: 95px; 
+            background: #f0f8ff; 
+            color: #005a9e; 
+            font-weight: bold; 
+            font-size: 0.95rem; 
+            display: flex; 
+            align-items: center; 
+            padding: 4px 8px;
+            padding-left: 25px; 
+            border-right: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        .detail-val-sub { 
+            flex: 1; 
+            padding: 6px 12px 6px 25px; 
+            font-size: 1.1rem; 
+            color: #444; 
+            display: flex; 
+            align-items: center; 
+            line-height: 1.3; 
+            font-weight: 500; 
+            border-bottom: 1px solid #ddd;
+        }
+
         .doc-list-area { margin-top: 10px; }
         .doc-header { font-size: 1.0rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
         .doc-preview-box { width: 120px; height: 90px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; position: relative; flex-shrink: 0; }
         .doc-thumb-img, canvas.doc-thumb-img { width: 100%; height: 100%; object-fit: contain; }
-        .doc-icon { font-size: 2.5rem; color: #d13438; } .doc-info { flex: 1; overflow: hidden; }
+        .doc-icon { font-size: 2.5rem; color: #d13438; } 
+        .doc-info { flex: 1; overflow: hidden; }
         .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
+
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
         .nav-btn.active { background: var(--app-blue); color: white; }
@@ -96,6 +186,7 @@
         .btn-camera { background: white; color: #0078d4; border: 1px solid #0078d4; flex: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem; }
         .btn-finish { background: #ff5722; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; }
         .btn-undo   { background: #607d8b; color: white; border: none; width: 120px; border-radius: 4px; font-weight: bold; font-size: 1rem; display: none; }
+
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,1); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         #view-login { height: 100vh; width: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; background: white; position: absolute; top: 0; left: 0; z-index: 2000; }
         .login-logo { max-width: 80%; height: auto; margin-bottom: 40px; }
@@ -108,21 +199,46 @@
         <div class="spinner-border text-primary" role="status"></div>
         <div id="loading-text" class="mt-3 fw-bold text-primary">アプリを起動中...</div>
     </div>
+
     <div id="view-login"><img src="logo.png" alt="Logo" class="login-logo"><a href="/.auth/login/aad?post_login_redirect_uri=/" class="btn btn-primary w-75 py-3 fw-bold fs-5 shadow">ログインして開始</a></div>
+    
     <div id="view-error" class="view-section text-center mt-5"><div class="alert alert-danger mx-3"><p id="error-message">エラー</p></div><a href="/.auth/logout" class="btn btn-outline-secondary btn-sm mt-3">ログアウト</a></div>
+
     <div id="view-app-wrapper" style="display:none;">
         <div class="header-bar">
-            <div class="header-row-top"><div class="company-name" id="company-name-area">---</div></div>
-            <div class="header-row-main"><div class="user-name" id="disp-name">---</div><div class="safety-msg">本日もご安全に！</div><button class="btn-refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i>更新</button></div>
+            <div class="header-row-top">
+                <div class="company-name" id="company-name-area">---</div>
+            </div>
+            <div class="header-row-main">
+                <div class="user-name" id="disp-name">---</div>
+                <div class="safety-msg">本日もご安全に！</div>
+                <button class="btn-refresh" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i>更新
+                </button>
+            </div>
         </div>
+
         <div id="view-list" class="view-section" style="display:block;">
             <div class="body-date-label" id="list-date-label">--/--</div>
             <div class="today-section"><div class="today-label-col">本日の予定</div><div class="today-content" id="today-container"></div></div>
             <div class="future-list" id="future-container"></div>
         </div>
+
         <div id="view-detail" class="view-section container pt-3" style="display:none;">
-            <div class="debug-row"><div class="detail-date" id="detail-date-label">--/--</div><div class="debug-id-area"><span class="yousha-mark" id="dt-yousha-mark">傭車</span><span class="debug-id" id="dt-debug-id">---</span></div></div>
-            <div class="detail-info-row"><div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div><div class="info-box"><label>貸切</label><span id="dt-type">---</span></div><div class="info-box"><label>車両</label><span id="dt-vehicle">---</span></div></div>
+            <div class="debug-row">
+                <div class="detail-date" id="detail-date-label">--/--</div>
+                <div class="debug-id-area">
+                    <span class="yousha-mark" id="dt-yousha-mark">傭車</span>
+                    <span class="debug-id" id="dt-debug-id">---</span>
+                </div>
+            </div>
+            
+            <div class="detail-info-row">
+                <div class="info-box"><label>時間</label><span id="dt-time">--:--</span></div>
+                <div class="info-box"><label>貸切</label><span id="dt-type">---</span></div>
+                <div class="info-box"><label>車両</label><span id="dt-vehicle">---</span></div>
+            </div>
+            
             <div class="detail-card">
                 <div class="detail-row"><div class="detail-label">得意先</div><div class="detail-val" id="dt-client">---</div></div>
                 <div class="detail-row" id="row-site"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
@@ -130,150 +246,593 @@
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
                 <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">無線機 x 1</div></div>
             </div>
+            
             <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
             <div class="detail-actions"><a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a></div>
             <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div><div id="dt-doc-list"></div></div>
-            
-            <div class="mt-4 p-3 bg-dark text-white rounded mb-5">
-                <h6>🛠 デバッグ情報 (開発用)</h6>
-                <div id="debug-view" style="font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all;"></div>
+        </div>
+    </div>
+
+    <div class="footer-nav" id="footer-list">
+        <button class="nav-btn active">今日の稼働<span class="badge-count" id="count-today">0</span></button><button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button><button class="nav-btn">その他</button>
+    </div>
+    <div class="footer-detail" id="footer-detail">
+        <button class="btn-back" onclick="goBack()">戻る</button><button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button>
+        <button id="btn-do-finish" class="btn-finish" onclick="confirmCompletion()">作業完了通知</button>
+        <button id="btn-do-undo" class="btn-undo" onclick="confirmUndo()">完了取消</button>
+    </div>
+
+    <div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light"><h5 class="modal-title fw-bold text-danger">作業完了の報告</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body text-center p-4">
+                    <p class="mb-3" style="font-size:1.1rem;">作業完了を通知しますか？</p>
+                    <p class="text-muted small mb-4">位置情報が送信されます。<br>許可を求められた場合は「許可」を選択してください。</p>
+                    <div class="d-grid gap-2 d-flex justify-content-center">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
+                        <button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="footer-nav" id="footer-list"><button class="nav-btn active">今日の稼働<span class="badge-count" id="count-today">0</span></button><button class="nav-btn">お知らせ<span class="badge-count badge-alert">未読あり</span></button><button class="nav-btn">その他</button></div>
-    <div class="footer-detail" id="footer-detail"><button class="btn-back" onclick="goBack()">戻る</button><button class="btn-camera"><i class="fas fa-camera me-2"></i>写真/メモ</button><button id="btn-do-finish" class="btn-finish" onclick="confirmCompletion()">作業完了通知</button><button id="btn-do-undo" class="btn-undo" onclick="confirmUndo()">完了取消</button></div>
-    <div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-light"><h5 class="modal-title fw-bold text-danger">作業完了の報告</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center p-4"><p class="mb-3" style="font-size:1.1rem;">作業完了を通知しますか？</p><p class="text-muted small mb-4">位置情報が送信されます。<br>許可を求められた場合は「許可」を選択してください。</p><div class="d-grid gap-2 d-flex justify-content-center"><button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button><button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button></div></div></div></div></div>
-    <div class="modal fade" id="undoModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-light"><h5 class="modal-title fw-bold text-secondary">完了の取り消し</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center p-4"><p class="mb-4" style="font-size:1.1rem;">作業完了を取り消して、<br>ステータスを元に戻しますか？</p><div class="d-grid gap-2 d-flex justify-content-center"><button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button><button type="button" class="btn btn-secondary px-5 fw-bold" onclick="executeUndo()">はい</button></div></div></div></div></div>
+    <div class="modal fade" id="undoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light"><h5 class="modal-title fw-bold text-secondary">完了の取り消し</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body text-center p-4">
+                    <p class="mb-4" style="font-size:1.1rem;">作業完了を取り消して、<br>ステータスを元に戻しますか？</p>
+                    <div class="d-grid gap-2 d-flex justify-content-center">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
+                        <button type="button" class="btn btn-secondary px-5 fw-bold" onclick="executeUndo()">はい</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 即時関数内で変数を保護しつつ、windowオブジェクトに必要な関数を公開する
         (function() {
             let globalData = [];
             let currentHaishaId = null;
-            let debugInfoData = null; // APIから受け取ったデバッグ情報
-            let completeModal = null; let undoModal = null;
-            const STATUS_MAP = { 100000000: { text: "予 定", class: "st-yet" }, 100000001: { text: "現場確定", class: "st-fix" }, 100000002: { text: "通知済み", class: "st-not" }, 100000003: { text: "確認済", class: "st-con" }, 100000004: { text: "作業完了", class: "st-don" }, 100000005: { text: "変更有り", class: "st-chg" } };
+            let completeModal = null; // Bootstrap Modal Instance
+            let undoModal = null;     // Bootstrap Modal Instance
+
+            const STATUS_MAP = {
+                100000000: { text: "予 定", class: "st-yet" },
+                100000001: { text: "現場確定", class: "st-fix" },
+                100000002: { text: "通知済み", class: "st-not" },
+                100000003: { text: "確認済", class: "st-con" },
+                100000004: { text: "作業完了", class: "st-don" },
+                100000005: { text: "変更有り", class: "st-chg" }
+            };
+            
             const VALID_STATUSES = [100000002, 100000003, 100000004, 100000005];
+
+            // --- Helper Functions ---
             function getWeekDay(d) { return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]; }
             function formatDateHeader(d) { return `${d.getMonth() + 1}月${d.getDate()}日(${getWeekDay(d)})`; }
-            function formatTime(iso) { if(!iso) return ""; const d = new Date(iso); return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`; }
-            function getLocalYMD(dateObj) { const y = dateObj.getFullYear(); const m = (dateObj.getMonth() + 1).toString().padStart(2, '0'); const d = dateObj.getDate().toString().padStart(2, '0'); return `${y}-${m}-${d}`; }
-            function getRecordLocalYMD(isoStr) { if(!isoStr) return ""; const d = new Date(isoStr); return getLocalYMD(d); }
-            function checkNewStatus(iso) { if (!iso) return { isNew: false }; let safeIso = iso; if (!iso.endsWith('Z')) safeIso += 'Z'; const now = new Date(); const target = new Date(safeIso); const diff = now - target; const isNew = (diff >= -3600000 && diff < 21600000); return { isNew: isNew }; }
-            async function renderPdfThumbnail(url, canvasId, spinnerId) { try { const loadingTask = pdfjsLib.getDocument(url); const pdf = await loadingTask.promise; const page = await pdf.getPage(1); const canvas = document.getElementById(canvasId); const spinner = document.getElementById(spinnerId); if (!canvas) return; const context = canvas.getContext('2d'); const viewport = page.getViewport({ scale: 0.6 }); canvas.height = viewport.height; canvas.width = viewport.width; const renderContext = { canvasContext: context, viewport: viewport }; await page.render(renderContext).promise; if(spinner) spinner.style.display = 'none'; canvas.style.display = 'block'; } catch (error) { console.error("PDF Render Error:", error); const spinner = document.getElementById(spinnerId); if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; } }
-            
+            function formatTime(iso) {
+                if(!iso) return "";
+                const d = new Date(iso);
+                return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
+            }
+
+            // ローカル時間の YYYY-MM-DD 文字列を返す
+            function getLocalYMD(dateObj) {
+                const y = dateObj.getFullYear();
+                const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const d = dateObj.getDate().toString().padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            // UTC文字列の日付をローカルタイムの YYYY-MM-DD に変換する
+            function getRecordLocalYMD(isoStr) {
+                if(!isoStr) return "";
+                const d = new Date(isoStr);
+                return getLocalYMD(d);
+            }
+
+            function checkNewStatus(iso) {
+                if (!iso) return { isNew: false };
+                let safeIso = iso;
+                if (!iso.endsWith('Z')) safeIso += 'Z';
+                const now = new Date();
+                const target = new Date(safeIso);
+                const diff = now - target;
+                const isNew = (diff >= -3600000 && diff < 21600000); 
+                return { isNew: isNew };
+            }
+
+            async function renderPdfThumbnail(url, canvasId, spinnerId) {
+                try {
+                    const loadingTask = pdfjsLib.getDocument(url);
+                    const pdf = await loadingTask.promise;
+                    const page = await pdf.getPage(1);
+                    const canvas = document.getElementById(canvasId);
+                    const spinner = document.getElementById(spinnerId);
+                    if (!canvas) return;
+                    const context = canvas.getContext('2d');
+                    const viewport = page.getViewport({ scale: 0.6 });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    const renderContext = { canvasContext: context, viewport: viewport };
+                    await page.render(renderContext).promise;
+                    if(spinner) spinner.style.display = 'none';
+                    canvas.style.display = 'block';
+                } catch (error) {
+                    console.error("PDF Render Error:", error);
+                    const spinner = document.getElementById(spinnerId);
+                    if(spinner) spinner.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i>'; 
+                }
+            }
+
+            // --- Window公開関数 (HTMLから呼ばれる) ---
+
             window.switchScreen = function(screenId) {
                 document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
                 const target = document.getElementById('view-' + screenId);
                 if(target) target.style.display = 'block';
-                if (screenId === 'list') { document.getElementById('footer-list').style.display = 'flex'; document.getElementById('footer-detail').style.display = 'none'; }
-                else if (screenId === 'detail') { document.getElementById('footer-list').style.display = 'none'; document.getElementById('footer-detail').style.display = 'flex'; }
-                else { document.getElementById('footer-list').style.display = 'none'; document.getElementById('footer-detail').style.display = 'none'; }
+                
+                // Footer制御
+                if (screenId === 'list') {
+                    document.getElementById('footer-list').style.display = 'flex';
+                    document.getElementById('footer-detail').style.display = 'none';
+                } else if (screenId === 'detail') {
+                    document.getElementById('footer-list').style.display = 'none';
+                    document.getElementById('footer-detail').style.display = 'flex';
+                } else {
+                    document.getElementById('footer-list').style.display = 'none';
+                    document.getElementById('footer-detail').style.display = 'none';
+                }
                 window.scrollTo(0, 0);
             };
 
             window.openDetail = async function(id) {
                 const rec = globalData.find(r => r.new_table2id === id);
                 if(!rec) return;
-                
-                // --- デバッグ情報の表示 ---
-                const debugArea = document.getElementById('debug-view');
-                if(debugArea) {
-                    const relevantAnken = (debugInfoData && debugInfoData.rawAnkenData) 
-                        ? debugInfoData.rawAnkenData.find(a => a.new_ankenid === rec._new_id_value) 
-                        : "Not Found in API Response";
-                    
-                    const dump = {
-                        "Record ID": rec.new_table2id,
-                        "Anken ID (_new_id_value)": rec._new_id_value,
-                        "Genba Name (Text)": rec.new_genbamei,
-                        "GoogleMap Link (Result)": rec.googlemap_link,
-                        "API Logs": debugInfoData ? debugInfoData.logs : "No logs",
-                        "Matched Anken Data": relevantAnken
-                    };
-                    debugArea.textContent = JSON.stringify(dump, null, 2);
-                }
-                // ---------------------------
 
+                // 1. ステータス更新 (通知済/変更有 -> 確認済)
                 if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                     document.getElementById('loading').style.display = 'flex';
-                    const loadMsg = document.getElementById('loading-text'); const orgMsg = loadMsg.textContent; loadMsg.textContent = "確認処理中...";
+                    const loadMsg = document.getElementById('loading-text');
+                    const orgMsg = loadMsg.textContent;
+                    loadMsg.textContent = "確認処理中..."; 
+
                     try {
-                        const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: id, mode: 'confirm' }) });
-                        if (res.status === 401) { alert("セキュリティ保護のためセッションが切れました。\n再接続します。"); window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href); return; }
-                        if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Update Error"); }
-                        rec.new_shinkoujoukyou = 100000003; renderList();
-                    } catch(e) { console.error(e); alert("ステータス更新に失敗しました: " + e.message); } finally { document.getElementById('loading').style.display = 'none'; loadMsg.textContent = orgMsg; }
+                        const res = await fetch('/api/update-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ haishaId: id, mode: 'confirm' })
+                        });
+
+                        if (res.status === 401) {
+                             alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
+                             window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
+                             return;
+                        }
+
+                        if (!res.ok) {
+                            const err = await res.json();
+                            throw new Error(err.error || "Update Error");
+                        }
+                        rec.new_shinkoujoukyou = 100000003;
+                        renderList(); // リストのバッジを更新
+                    } catch(e) {
+                        console.error(e);
+                        alert("ステータス更新に失敗しました: " + e.message);
+                    } finally {
+                        document.getElementById('loading').style.display = 'none';
+                        loadMsg.textContent = orgMsg;
+                    }
                 }
+
                 currentHaishaId = id;
-                const btnFinish = document.getElementById('btn-do-finish'); const btnUndo = document.getElementById('btn-do-undo');
-                if (rec.new_shinkoujoukyou === 100000004) { btnFinish.style.display = 'none'; btnUndo.style.display = 'block'; } else { btnFinish.style.display = 'block'; btnUndo.style.display = 'none'; }
-                document.getElementById('dt-debug-id').textContent = rec.new_table2id; document.getElementById('dt-yousha-mark').style.display = rec.new_yousha_irai ? 'inline' : 'none';
-                const jobDate = new Date(rec.new_day); document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
-                let timeDisp = formatTime(rec.new_start_time); if (timeDisp) timeDisp += " ～"; document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
-                let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-"; document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
-                let dtVehicle = "-"; if (rec.new_sharyou) { const shaban = rec.new_sharyou.new_shaban || ""; const spec = rec.new_sharyou.new_tsuriage ? rec.new_sharyou.new_tsuriage + "t" : ""; dtVehicle = `<div class="vehicle-spec">${spec}</div><div class="vehicle-no">${shaban}</div>`; } else { dtVehicle = `<span class="info-normal-text">-</span>`; } document.getElementById('dt-vehicle').innerHTML = dtVehicle;
-                const client = rec.new_tokuisaki_mei || "-"; const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || ""; document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
+                const btnFinish = document.getElementById('btn-do-finish');
+                const btnUndo = document.getElementById('btn-do-undo');
                 
-                let mapUrl = null; if (rec.googlemap_link) { mapUrl = rec.googlemap_link; }
+                if (rec.new_shinkoujoukyou === 100000004) {
+                    btnFinish.style.display = 'none';
+                    btnUndo.style.display = 'block';
+                } else {
+                    btnFinish.style.display = 'block';
+                    btnUndo.style.display = 'none';
+                }
+
+                document.getElementById('dt-debug-id').textContent = rec.new_table2id;
+                document.getElementById('dt-yousha-mark').style.display = rec.new_yousha_irai ? 'inline' : 'none';
+                
+                const jobDate = new Date(rec.new_day);
+                document.getElementById('detail-date-label').textContent = formatDateHeader(jobDate);
+
+                let timeDisp = formatTime(rec.new_start_time);
+                if (timeDisp) timeDisp += " ～"; 
+                
+                document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
+                
+                let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
+                document.getElementById('dt-type').innerHTML = `<span class="info-normal-text">${dtType}</span>`;
+                
+                let dtVehicle = "-";
+                if (rec.new_sharyou) {
+                    const shaban = rec.new_sharyou.new_shaban || "";
+                    const spec = rec.new_sharyou.new_tsuriage ? rec.new_sharyou.new_tsuriage + "t" : "";
+                    dtVehicle = `<div class="vehicle-spec">${spec}</div><div class="vehicle-no">${shaban}</div>`;
+                } else {
+                    dtVehicle = `<span class="info-normal-text">-</span>`;
+                }
+                document.getElementById('dt-vehicle').innerHTML = dtVehicle;
+
+                const client = rec.new_tokuisaki_mei || "-";
+                const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
+                document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
+                
+                // Googleマップリンクの制御
+                let mapUrl = null;
+                if (rec.googlemap_link) {
+                    mapUrl = rec.googlemap_link;
+                }
+
+                // 現場名の表示切り替え
                 const siteValEl = document.getElementById('dt-site');
-                if (mapUrl) { siteValEl.innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${rec.new_genbamei || "-"} <i class="fas fa-external-link-alt small"></i></a>`; } else { siteValEl.textContent = rec.new_genbamei || "-"; }
-                const mapBtn = document.getElementById('link-map'); if (mapUrl) { mapBtn.href = mapUrl; mapBtn.style.display = ''; } else { mapBtn.href = "#"; mapBtn.style.display = 'none'; }
-                document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-"; document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-"; document.getElementById('dt-items').textContent = "無線機 x 1"; document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
-                
+                if (mapUrl) {
+                    siteValEl.innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${rec.new_genbamei || "-"} <i class="fas fa-external-link-alt small"></i></a>`;
+                } else {
+                    siteValEl.textContent = rec.new_genbamei || "-";
+                }
+
+                // 下部ボタンの制御
+                const mapBtn = document.getElementById('link-map');
+                if (mapUrl) {
+                    mapBtn.href = mapUrl;
+                    mapBtn.style.display = ''; 
+                } else {
+                    mapBtn.href = "#";
+                    mapBtn.style.display = 'none'; 
+                }
+
+                document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
+                document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
+                document.getElementById('dt-items').textContent = "無線機 x 1"; 
+                document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
+
+                // ★修正: 作業場リストの動的挿入（ラベル結合・罫線制御・インデント）
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
-                    const siteRow = document.getElementById('row-site'); const fragment = document.createDocumentFragment();
+                    const siteRow = document.getElementById('row-site'); 
+                    const fragment = document.createDocumentFragment();
                     rec.sagyouba_list.forEach((item, index) => {
-                        const div = document.createElement('div'); div.className = 'detail-row-sub dynamic-sagyouba-row'; 
-                        let valHtml = item.name; if(item.mapLink) { valHtml = `<a href="${item.mapLink}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${item.name} <i class="fas fa-external-link-alt small"></i></a>`; }
-                        const labelText = (index === 0) ? '作業場' : ''; const isLast = (index === rec.sagyouba_list.length - 1); const labelStyle = isLast ? 'border-bottom: 1px solid #ddd;' : 'border-bottom: none;';
-                        div.innerHTML = `<div class="detail-label-sub" style="${labelStyle}">${labelText}</div><div class="detail-val-sub">${valHtml}</div>`; fragment.appendChild(div);
+                        const div = document.createElement('div');
+                        div.className = 'detail-row-sub dynamic-sagyouba-row'; 
+                        
+                        let valHtml = item.name;
+                        if(item.mapLink) {
+                            valHtml = `<a href="${item.mapLink}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${item.name} <i class="fas fa-external-link-alt small"></i></a>`;
+                        }
+                        
+                        // 1行目のみ「作業場」表示
+                        const labelText = (index === 0) ? '作業場' : '';
+                        
+                        // 最後の行のみ下線を表示（結合表現）
+                        const isLast = (index === rec.sagyouba_list.length - 1);
+                        const labelStyle = isLast ? 'border-bottom: 1px solid #ddd;' : 'border-bottom: none;';
+
+                        div.innerHTML = `<div class="detail-label-sub" style="${labelStyle}">${labelText}</div><div class="detail-val-sub">${valHtml}</div>`;
+                        fragment.appendChild(div);
                     });
                     siteRow.after(fragment);
                 }
-                const docContainer = document.getElementById('dt-doc-list'); docContainer.innerHTML = ''; const pdfRenderQueue = [];
+
+                const docContainer = document.getElementById('dt-doc-list');
+                docContainer.innerHTML = '';
+                const pdfRenderQueue = [];
+
                 if (rec.documents && rec.documents.length > 0) {
-                    let docHtml = ''; rec.documents.forEach((doc, index) => {
-                        const url = doc.new_url || "#"; const ext = (doc.new_kakuchoushi || "").toLowerCase(); const thumbUrl = doc.new_blobthmbnailurl; let previewContent = '';
-                        if (ext.match(/(jpg|jpeg|png|gif)/i)) { const imgSrc = thumbUrl || url; previewContent = `<img src="${imgSrc}" class="doc-thumb-img">`; } else if (ext.includes("pdf")) { const canvasId = `pdf-canvas-${index}`; const spinnerId = `pdf-spinner-${index}`; previewContent = `<div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div><canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`; pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId }); } else { let iconClass = "fa-file"; if(ext.includes("xls")) iconClass = "fa-file-excel"; previewContent = `<i class="fas ${iconClass} doc-icon"></i>`; }
+                    let docHtml = '';
+                    rec.documents.forEach((doc, index) => {
+                        const url = doc.new_url || "#";
+                        const ext = (doc.new_kakuchoushi || "").toLowerCase();
+                        const thumbUrl = doc.new_blobthmbnailurl;
+                        
+                        let previewContent = '';
+                        if (ext.match(/(jpg|jpeg|png|gif)/i)) {
+                            const imgSrc = thumbUrl || url; 
+                            previewContent = `<img src="${imgSrc}" class="doc-thumb-img">`;
+                        } else if (ext.includes("pdf")) {
+                            const canvasId = `pdf-canvas-${index}`;
+                            const spinnerId = `pdf-spinner-${index}`;
+                            previewContent = `<div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div><canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`;
+                            pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId });
+                        } else {
+                            let iconClass = "fa-file";
+                            if(ext.includes("xls")) iconClass = "fa-file-excel";
+                            previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
+                        }
+
                         docHtml += `<a href="${url}" target="_blank" class="doc-item"><div class="doc-preview-box">${previewContent}</div><div class="doc-info"><div class="doc-title">${doc.new_name || '無題の資料'}</div><div class="doc-meta">${ext.toUpperCase()} ファイル</div></div><i class="fas fa-chevron-right text-muted"></i></a>`;
                     });
-                    docContainer.innerHTML = docHtml; pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId); });
-                } else { docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; }
+                    docContainer.innerHTML = docHtml;
+                    pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId); });
+                } else { 
+                    docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; 
+                }
+
                 window.switchScreen('detail');
             };
-            window.goBack = function() { const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now); window.switchScreen('list'); };
-            window.confirmCompletion = function() { const el = document.getElementById('completeModal'); if(!el) return; const modal = new bootstrap.Modal(el); modal.show(); };
-            window.executeComplete = async function() { const el = document.getElementById('completeModal'); const modal = bootstrap.Modal.getInstance(el); if(modal) modal.hide(); if(!currentHaishaId) return; document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "完了登録中..."; try { const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) }); if(!res.ok) throw new Error("完了登録に失敗しました"); alert("作業完了を登録しました"); const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000004; window.goBack(); renderList(); } catch(e) { alert(e.message); } finally { document.getElementById('loading').style.display = 'none'; } };
-            window.confirmUndo = function() { const el = document.getElementById('undoModal'); if(!el) return; const modal = new bootstrap.Modal(el); modal.show(); };
-            window.executeUndo = async function() { const el = document.getElementById('undoModal'); const modal = bootstrap.Modal.getInstance(el); if(modal) modal.hide(); if(!currentHaishaId) return; document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "取消中..."; try { const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) }); if(!res.ok) throw new Error("取消に失敗しました"); alert("完了を取り消しました"); const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000003; window.openDetail(currentHaishaId); } catch(e) { alert(e.message); } finally { document.getElementById('loading').style.display = 'none'; } };
-            window.showLocationHelp = function() { alert("ブラウザの設定から位置情報の許可を確認してください。"); };
-            function renderList() {
-                const now = new Date(); const todayStr = getLocalYMD(now); const yest = new Date(now); yest.setDate(yest.getDate()-1); const yestStr = getLocalYMD(yest);
-                const todayContainer = document.getElementById('today-container'); const futureContainer = document.getElementById('future-container'); todayContainer.innerHTML = ''; futureContainer.innerHTML = ''; let hasToday = false;
-                for (let i = 1; i <= 14; i++) {
-                    const targetDate = new Date(now); targetDate.setDate(now.getDate() + i); const dateKey = getLocalYMD(targetDate); const wDay = getWeekDay(targetDate); const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
-                    const dayRecords = globalData.filter(r => { const rDateStr = getRecordLocalYMD(r.new_day); return rDateStr === dateKey && VALID_STATUSES.includes(r.new_shinkoujoukyou); });
-                    let jobsHtml = ''; if (dayRecords.length > 0) { dayRecords.forEach(rec => { const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" }; const modDate = rec.modifiedon || rec.ModifiedOn; const check = checkNewStatus(modDate); let newIconHtml = ''; if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) { const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png"; newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW">`; } if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) { let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認"; let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red"; jobsHtml += `<div class="future-job-item" onclick="openDetail('${rec.new_table2id}')"><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>${newIconHtml}<div class="masked-container"><span class="masked-text ${colorClass}">${msgText}</span></div></div>`; } else { let timeStr = formatTime(rec.new_start_time); if(timeStr) timeStr += " ～"; const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || ""; const tokuisaki = rec.new_tokuisaki_mei || ""; jobsHtml += `<div class="future-job-item" onclick="openDetail('${rec.new_table2id}')"><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>${newIconHtml}<div class="mb-1"><span class="time-badge">${timeStr}</span><span class="meta-info">${kashikiri}</span></div><div class="client-name">${tokuisaki}</div><div class="site-name">${rec.new_genbamei || '現場名未定'}</div></div>`; } }); } else { jobsHtml = `<div class="d-flex align-items-center"><div class="no-job-text">予定なし</div></div>`; }
-                    futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col">${jobsHtml}</div></div>`;
+
+            window.goBack = function() { 
+                const now = new Date();
+                document.getElementById('list-date-label').textContent = formatDateHeader(now);
+                window.switchScreen('list'); 
+            };
+
+            // Modal Controls
+            window.confirmCompletion = function() {
+                const el = document.getElementById('completeModal');
+                if(!el) return;
+                const modal = new bootstrap.Modal(el);
+                modal.show();
+            };
+
+            window.executeComplete = async function() {
+                // Modalを閉じる
+                const el = document.getElementById('completeModal');
+                const modal = bootstrap.Modal.getInstance(el);
+                if(modal) modal.hide();
+
+                // APIコール (status -> 100000004)
+                if(!currentHaishaId) return;
+                
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('loading-text').textContent = "完了登録中...";
+
+                try {
+                    // 位置情報取得 (省略可だが要件にあるなら追加実装が必要。今回は完了のみ)
+                    const res = await fetch('/api/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) // mode: completeを想定
+                    });
+                    
+                    if(!res.ok) throw new Error("完了登録に失敗しました");
+                    
+                    alert("作業完了を登録しました");
+                    // データ再読み込みまたはローカル更新
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId);
+                    if(rec) rec.new_shinkoujoukyou = 100000004;
+                    
+                    window.goBack();
+                    renderList();
+                } catch(e) {
+                    alert(e.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
                 }
+            };
+
+            window.confirmUndo = function() {
+                const el = document.getElementById('undoModal');
+                if(!el) return;
+                const modal = new bootstrap.Modal(el);
+                modal.show();
+            };
+
+            window.executeUndo = async function() {
+                const el = document.getElementById('undoModal');
+                const modal = bootstrap.Modal.getInstance(el);
+                if(modal) modal.hide();
+
+                if(!currentHaishaId) return;
+
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('loading-text').textContent = "取消中...";
+
+                try {
+                     const res = await fetch('/api/update-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) // mode: undoを想定
+                    });
+                    if(!res.ok) throw new Error("取消に失敗しました");
+
+                    alert("完了を取り消しました");
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId);
+                    if(rec) rec.new_shinkoujoukyou = 100000003; // 確認済に戻す
+                    
+                    // 画面更新
+                    window.openDetail(currentHaishaId);
+                } catch(e) {
+                    alert(e.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+            
+            window.showLocationHelp = function() {
+                alert("ブラウザの設定から位置情報の許可を確認してください。");
+            };
+
+            // --- Render Logic ---
+            function renderList() {
+                const now = new Date();
+                const todayStr = getLocalYMD(now);
+                const yest = new Date(now); yest.setDate(yest.getDate()-1);
+                const yestStr = getLocalYMD(yest);
+
+                const todayContainer = document.getElementById('today-container');
+                const futureContainer = document.getElementById('future-container');
+                todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
+                let hasToday = false;
+
+                // 未来14日分
+                for (let i = 1; i <= 14; i++) {
+                    const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
+                    const dateKey = getLocalYMD(targetDate);
+
+                    const wDay = getWeekDay(targetDate);
+                    const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+                    
+                    const dayRecords = globalData.filter(r => {
+                        const rDateStr = getRecordLocalYMD(r.new_day);
+                        return rDateStr === dateKey && VALID_STATUSES.includes(r.new_shinkoujoukyou);
+                    });
+
+                    let jobsHtml = '';
+                    if (dayRecords.length > 0) {
+                        dayRecords.forEach(rec => {
+                            const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
+                            const modDate = rec.modifiedon || rec.ModifiedOn;
+                            const check = checkNewStatus(modDate);
+                            
+                            let newIconHtml = '';
+                            if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) {
+                                const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png";
+                                newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW">`;
+                            }
+
+                            if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
+                                let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認";
+                                let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red";
+                                
+                                jobsHtml += `
+                                    <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                        ${newIconHtml}
+                                        <div class="masked-container">
+                                            <span class="masked-text ${colorClass}">${msgText}</span>
+                                        </div>
+                                    </div>`;
+                            } else {
+                                let timeStr = formatTime(rec.new_start_time);
+                                if(timeStr) timeStr += " ～";
+                                const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                                const tokuisaki = rec.new_tokuisaki_mei || "";
+
+                                jobsHtml += `
+                                    <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
+                                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                                        ${newIconHtml}
+                                        <div class="mb-1">
+                                            <span class="time-badge">${timeStr}</span>
+                                            <span class="meta-info">${kashikiri}</span>
+                                        </div>
+                                        <div class="client-name">${tokuisaki}</div>
+                                        <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
+                                    </div>`;
+                            }
+                        });
+                    } else {
+                        jobsHtml = `<div class="d-flex align-items-center"><div class="no-job-text">予定なし</div></div>`;
+                    }
+
+                    futureContainer.innerHTML += `
+                        <div class="future-row">
+                            <div class="date-col ${dateColor}">
+                                <span class="month-label">${targetDate.getMonth()+1}/</span>
+                                <div class="day-label">${targetDate.getDate()}</div>
+                                <div class="weekday-label">(${wDay})</div>
+                            </div>
+                            <div class="job-col">${jobsHtml}</div>
+                        </div>`;
+                }
+                
                 globalData.forEach(rec => {
-                    const jobDateStr = getRecordLocalYMD(rec.new_day); const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
-                    if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) { hasToday = true; const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" }; const modDate = rec.modifiedon || rec.ModifiedOn; const check = checkNewStatus(modDate); let newIconHtml = ''; if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) { const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png"; newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW" style="top:35px; right:8px;">`; } if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) { let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認"; let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red"; todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;"><div class="d-flex justify-content-between align-items-start mb-1"><div></div><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div>${newIconHtml}<div class="masked-container"><span class="masked-text ${colorClass}">${msgText}</span></div></div>`; } else { let timeStr = formatTime(rec.new_start_time); if(timeStr) timeStr += " ～"; const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || ""; const tokuisaki = rec.new_tokuisaki_mei || ""; const workContent = rec.new_sagyou_naiyou || ""; todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;"><div class="d-flex justify-content-between align-items-start mb-1"><div><span class="time-badge">${timeStr}</span><span class="meta-info">${kashikiri}</span></div><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div>${newIconHtml}<span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="client-name">${tokuisaki}</div><div class="work-content">${workContent}</div></div>`; } }
+                    const jobDateStr = getRecordLocalYMD(rec.new_day);
+                    const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
+                    if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
+                        hasToday = true;
+                        const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
+                        const modDate = rec.modifiedon || rec.ModifiedOn;
+                        const check = checkNewStatus(modDate);
+                        
+                        let newIconHtml = '';
+                        if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) {
+                            const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png";
+                            newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW" style="top:35px; right:8px;">`;
+                        }
+
+                        if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
+                            let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認";
+                            let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red";
+                            
+                            todayContainer.innerHTML += `
+                                <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <div></div>
+                                        <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
+                                    </div>
+                                    ${newIconHtml}
+                                    <div class="masked-container">
+                                        <span class="masked-text ${colorClass}">${msgText}</span>
+                                    </div>
+                                </div>`;
+                        } else {
+                            let timeStr = formatTime(rec.new_start_time);
+                            if(timeStr) timeStr += " ～";
+                            const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
+                            const tokuisaki = rec.new_tokuisaki_mei || "";
+                            const workContent = rec.new_sagyou_naiyou || "";
+
+                            todayContainer.innerHTML += `
+                                <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <div>
+                                            <span class="time-badge">${timeStr}</span>
+                                            <span class="meta-info">${kashikiri}</span>
+                                        </div>
+                                        <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
+                                    </div>
+                                    ${newIconHtml}
+                                    <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
+                                    <div class="client-name">${tokuisaki}</div>
+                                    <div class="work-content">${workContent}</div>
+                                </div>`;
+                        }
+                    }
                 });
                 if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
             }
+
+            // --- Init ---
             (async () => {
                 try {
-                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime()); const authData = await authRes.json();
-                    if (!authData.clientPrincipal) { document.getElementById('loading').style.display = 'none'; document.getElementById('view-login').style.display = 'flex'; return; }
-                    const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
-                    const apiRes = await fetch('/api/show-env'); if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
-                    const data = await apiRes.json(); globalData = data.records; debugInfoData = data.debug; // ★デバッグ情報保存
-                    document.getElementById('disp-name').textContent = data.user.name; document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム"; document.getElementById('count-today').textContent = data.todayCount;
-                    renderList(); document.getElementById('loading').style.display = 'none'; document.getElementById('view-app-wrapper').style.display = 'block'; window.switchScreen('list');
-                } catch (e) { console.error(e); document.getElementById('error-message').textContent = e.message; document.getElementById('loading').style.display = 'none'; document.getElementById('view-error').style.display = 'block'; }
+                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
+                    const authData = await authRes.json();
+                    if (!authData.clientPrincipal) { 
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('view-login').style.display = 'flex';
+                        return; 
+                    }
+                    
+                    const now = new Date();
+                    document.getElementById('list-date-label').textContent = formatDateHeader(now);
+                    
+                    const apiRes = await fetch('/api/show-env');
+                    if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
+                    
+                    const data = await apiRes.json();
+                    globalData = data.records;
+                    
+                    document.getElementById('disp-name').textContent = data.user.name;
+                    document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
+                    document.getElementById('count-today').textContent = data.todayCount;
+                    
+                    renderList();
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('view-app-wrapper').style.display = 'block';
+                    window.switchScreen('list');
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('error-message').textContent = e.message;
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('view-error').style.display = 'block';
+                }
             })();
+
         })();
     </script>
 </body>
