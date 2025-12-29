@@ -152,13 +152,13 @@
             display: flex;
             align-items: center;
             font-weight: bold;
-            color: #555;
-            font-size: 0.95rem;
-            margin-bottom: 2px;
+            color: #666; /* 色を統一 */
+            font-size: 1.3rem; /* ★修正: 文字サイズ統一 (0.95rem -> 1.3rem) */
+            margin-bottom: 5px;
         }
         .map-icon-img {
-            width: 60px; /* ★修正: 60px に拡大 */
-            height: 60px;
+            width: 55px; /* ★修正: 55px に調整 */
+            height: 55px;
             object-fit: contain;
             margin-right: 8px;
         }
@@ -203,21 +203,20 @@
 
         .doc-list-area { margin-top: 10px; }
         
-        /* ★修正: 添付資料ヘッダーのデザイン変更 */
+        /* ★修正: 添付資料ヘッダーのデザイン統一 */
         .doc-header { 
-            font-size: 1.3rem; /* 文字サイズ拡大 */
+            font-size: 1.3rem; 
             font-weight: bold; 
             color: #666; 
             margin-bottom: 10px; 
-            /* border-left, padding-left 削除 */
-            border-left: none; 
+            border-left: none; /* 青いバー削除 */
             padding-left: 0;
             display: flex;
             align-items: center;
         }
-        /* アイコンを大きく */
+        /* アイコンサイズ調整 */
         .doc-header i {
-            font-size: 2.5rem; /* アイコンサイズ拡大 (約40px相当) */
+            font-size: 50px; /* ★修正: 50px に設定 */
             color: #0078d4;
             margin-right: 10px;
         }
@@ -306,7 +305,7 @@
             <div class="detail-actions" id="map-links-area">
                 </div>
 
-            <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div><div id="dt-doc-list"></div></div>
+            <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip"></i> 添付資料</div><div id="dt-doc-list"></div></div>
         </div>
     </div>
 
@@ -404,12 +403,10 @@
                 return { isNew: isNew };
             }
 
-            // ★追加: 電話番号を自動リンク化する関数
+            // 電話番号を自動リンク化する関数
             function linkifyPhone(text) {
                 if (!text) return "-";
-                // 簡易的な日本の電話番号正規表現 (090-xxxx-xxxx, 03-xxxx-xxxx など)
                 const phoneRegex = /(0\d{1,4}[\s-]?\d{1,4}[\s-]?\d{4})/g;
-                
                 return text.replace(phoneRegex, function(match) {
                     const telNum = match.replace(/[\s-]/g, '');
                     return `<a href="tel:${telNum}" style="color:#005a9e; text-decoration:underline;">${match}</a>`;
@@ -553,22 +550,19 @@
                     siteValEl.textContent = rec.new_genbamei || "-";
                 }
 
-                // ★修正: linkifyPhone 関数を使用して電話番号をリンク化
-                // 作業内容
+                // linkifyPhone 関数を使用して電話番号をリンク化
                 const workContent = rec.new_sagyou_naiyou || "-";
                 document.getElementById('dt-work').innerHTML = linkifyPhone(workContent);
                 
-                // 連絡先
                 const contact = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
                 document.getElementById('dt-contact').innerHTML = linkifyPhone(contact);
                 
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
                 
-                // 連絡事項
                 const note = rec.new_renraku_jikou || "特になし";
                 document.getElementById('dt-note').innerHTML = linkifyPhone(note);
 
-                // 作業場リストの動的挿入（ラベル結合・罫線制御・インデント）
+                // 作業場リストの動的挿入
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
                     const siteRow = document.getElementById('row-site'); 
