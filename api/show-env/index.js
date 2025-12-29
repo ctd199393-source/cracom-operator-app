@@ -97,7 +97,7 @@ module.exports = async function (context, req) {
             "new_table2id", "new_tokuisaki_mei", "new_kyakusaki", "new_sharyou", "new_kashikiri", 
             "new_renraku1", "new_renraku_jikou", "new_type", "new_haisha_zumi",
             "new_end_time", "new_yousha_irai", "modifiedon",
-            "_new_id_value", "_new_sagyouba_value", "_new_genba_value" // ★重要: 現場Lookupの値を取得
+            "_new_id_value", "_new_sagyouba_value" // ★修正: _new_genba_value を削除
         ].join(",");
 
         const dt = new Date();
@@ -130,7 +130,6 @@ module.exports = async function (context, req) {
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
 
             if (chuukanFilter) {
-                // new_title, new_googlemap を取得
                 const chuukanQuery = `${dataverseUrl}/api/data/v9.2/new_haisha_sagyouba_chuukans?$filter=${encodeURIComponent(chuukanFilter)}&$expand=new_sagyouba($select=new_title,new_googlemap)`;
                 
                 try {
@@ -158,7 +157,7 @@ module.exports = async function (context, req) {
             // B. 案件・現場マスタ（GoogleMapリンク）の別途取得
             // =========================================================
             
-            // パターン1: 案件(Anken)経由の現場
+            // 案件(Anken)経由の現場
             const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
             if (ankenIds.length > 0) {
                 const ankenFilter = ankenIds.map(id => `new_ankenid eq '${id}'`).join(" or ");
@@ -170,8 +169,10 @@ module.exports = async function (context, req) {
                         const ankenData = await ankenRes.json();
                         ankenData.value.forEach(a => {
                             if (a.new_genba) {
+                                // GoogleMapリンクを取得（大文字小文字対応）
                                 const linkVal = a.new_genba.new_googlemap_link || a.new_genba.new_Googlemap_link;
                                 if (linkVal) {
+                                    // 案件IDが一致する配車レコードすべてにリンクをセット
                                     records.filter(r => r._new_id_value === a.new_ankenid).forEach(r => {
                                         r.googlemap_link = linkVal;
                                     });
@@ -180,33 +181,6 @@ module.exports = async function (context, req) {
                         });
                     }
                 } catch (e) { console.error("案件・現場取得エラー:", e); }
-            }
-
-            // ★追加 パターン2: 直接紐づく現場マスタ(new_genba_masta)からの取得
-            // 配車データの _new_genba_value を使用
-            const directGenbaIds = [...new Set(records.map(r => r._new_genba_value).filter(id => id))];
-            if (directGenbaIds.length > 0) {
-                // 論理名: new_genba_masta -> API名: new_genba_mastas
-                // ID列: new_genba_mastaid (Dataverseの命名規則に基づく)
-                const genbaFilter = directGenbaIds.map(id => `new_genba_mastaid eq '${id}'`).join(" or ");
-                // 全列取得は重いので必要な列だけ指定
-                const genbaQuery = `${dataverseUrl}/api/data/v9.2/new_genba_mastas?$filter=${encodeURIComponent(genbaFilter)}&$select=new_genba_mastaid,new_googlemap_link`;
-
-                try {
-                    const genbaRes = await fetch(genbaQuery, { headers: { "Authorization": `Bearer ${token}` } });
-                    if (genbaRes.ok) {
-                        const genbaData = await genbaRes.json();
-                        genbaData.value.forEach(g => {
-                            const linkVal = g.new_googlemap_link || g.new_Googlemap_link;
-                            if (linkVal) {
-                                // _new_genba_value が一致するレコードにリンクをセット（上書き）
-                                records.filter(r => r._new_genba_value === g.new_genba_mastaid).forEach(r => {
-                                    r.googlemap_link = linkVal;
-                                });
-                            }
-                        });
-                    }
-                } catch(e) { console.error("直接現場マスタ取得エラー:", e); }
             }
         }
 
