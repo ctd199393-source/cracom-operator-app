@@ -138,7 +138,7 @@
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word; }
         
-        /* detail-actions のスタイル調整 (リスト表示用) */
+        /* detail-actions のスタイル調整 */
         .detail-actions { 
             display: flex; 
             flex-direction: column; 
@@ -156,71 +156,66 @@
             font-size: 1.2rem;
             margin-bottom: 2px;
         }
-        .map-icon-img {
-            width: 55px;
-            height: 55px;
-            object-fit: contain;
-            margin-right: 8px;
-        }
+        .map-icon-img { width: 55px; height: 55px; object-fit: contain; margin-right: 8px; }
         .map-link-btn {
-            text-decoration: none;
-            color: #005a9e;
-            font-weight: bold;
-            font-size: 1.2rem;
-            border-bottom: 1px solid transparent;
-            transition: all 0.1s;
-            display: inline-block;
-            line-height: 1.3;
+            text-decoration: none; color: #005a9e; font-weight: bold;
+            font-size: 1.2rem; border-bottom: 1px solid transparent;
+            transition: all 0.1s; display: inline-block; line-height: 1.3;
         }
         .map-link-btn:hover { border-bottom: 1px solid #005a9e; }
         .map-link-btn:active { opacity: 0.7; }
 
         .detail-row-sub { display: flex; }
         .detail-label-sub { 
-            width: 95px; 
-            background: #f0f8ff; 
-            color: #005a9e; 
-            font-weight: bold; 
-            font-size: 0.95rem; 
-            display: flex; 
-            align-items: center; 
-            padding: 4px 8px;
-            padding-left: 25px; 
-            border-right: 1px solid #ddd;
-            flex-shrink: 0;
+            width: 95px; background: #f0f8ff; color: #005a9e; 
+            font-weight: bold; font-size: 0.95rem; display: flex; 
+            align-items: center; padding: 4px 8px; padding-left: 25px; 
+            border-right: 1px solid #ddd; flex-shrink: 0;
         }
         .detail-val-sub { 
-            flex: 1; 
-            padding: 6px 12px 6px 25px; 
-            font-size: 1.1rem; 
-            color: #444; 
-            display: flex; 
-            align-items: center; 
-            line-height: 1.3; 
-            font-weight: 500; 
-            border-bottom: 1px solid #ddd;
+            flex: 1; padding: 6px 12px 6px 25px; font-size: 1.1rem; 
+            color: #444; display: flex; align-items: center; 
+            line-height: 1.3; font-weight: 500; border-bottom: 1px solid #ddd;
         }
 
         .doc-list-area { margin-top: 10px; }
         
-        /* 添付資料ヘッダーのデザイン統一 */
-        .doc-header { 
-            font-size: 1.2rem;
-            font-weight: bold; 
-            color: #666; 
-            margin-bottom: 10px; 
-            border-left: none;
-            padding-left: 0;
+        /* 添付資料ヘッダーのデザイン */
+        .doc-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .doc-title-group {
             display: flex;
             align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #666;
         }
-        /* アイコンサイズ調整 */
-        .doc-header i {
-            font-size: 30px; /* ★修正: 40px -> 30px に縮小 */
+        .doc-title-group i {
+            font-size: 30px; 
             color: #0078d4;
             margin-right: 10px;
         }
+        
+        /* ★追加: 表示切替トグルボタン */
+        .view-toggle-group {
+            display: flex;
+            gap: 15px;
+            margin-right: 5px;
+        }
+        .view-toggle-btn {
+            font-size: 1.5rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .view-toggle-btn:active { transform: scale(0.95); }
+        .view-toggle-btn.active { color: #0078d4; }
 
+        /* リスト表示 (デフォルト) */
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
         .doc-preview-box { width: 120px; height: 90px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; position: relative; flex-shrink: 0; }
@@ -230,6 +225,44 @@
         .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
+
+        /* ★追加: グリッド表示 (大アイコン) */
+        .doc-list-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2列 */
+            gap: 10px;
+        }
+        .doc-list-grid .doc-item {
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            height: 100%;
+            margin-bottom: 0;
+        }
+        .doc-list-grid .doc-preview-box {
+            width: 100%;
+            height: 150px; /* 大きく */
+            margin-right: 0;
+            margin-bottom: 10px;
+        }
+        .doc-list-grid .doc-info {
+            width: 100%;
+            text-align: center;
+        }
+        .doc-list-grid .doc-title {
+            white-space: normal; /* 折り返し許可 */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+        .doc-list-grid .doc-meta {
+            text-align: center;
+        }
+        .doc-list-grid .fa-chevron-right {
+            display: none;
+        }
 
         .footer-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ccc; display: none; justify-content: space-around; align-items: center; z-index: 100; }
         .nav-btn { background: white; border: 1px solid var(--app-blue); color: var(--app-blue); width: 30%; height: 45px; border-radius: 4px; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8rem; position: relative; }
@@ -302,10 +335,18 @@
             
             <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
             
-            <div class="detail-actions" id="map-links-area">
-                </div>
+            <div class="detail-actions" id="map-links-area"></div>
 
-            <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip"></i> 添付資料</div><div id="dt-doc-list"></div></div>
+            <div class="doc-list-area">
+                <div class="doc-header-row">
+                    <div class="doc-title-group"><i class="fas fa-paperclip"></i> 添付資料</div>
+                    <div class="view-toggle-group">
+                        <i class="fas fa-list view-toggle-btn active" id="btn-view-list" onclick="switchDocView('list')"></i>
+                        <i class="fas fa-th-large view-toggle-btn" id="btn-view-grid" onclick="switchDocView('grid')"></i>
+                    </div>
+                </div>
+                <div id="dt-doc-list"></div>
+            </div>
         </div>
     </div>
 
@@ -350,12 +391,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 即時関数内で変数を保護しつつ、windowオブジェクトに必要な関数を公開する
         (function() {
             let globalData = [];
             let currentHaishaId = null;
-            let completeModal = null; // Bootstrap Modal Instance
-            let undoModal = null;     // Bootstrap Modal Instance
+            let currentDocViewMode = 'list'; // 'list' or 'grid'
 
             const STATUS_MAP = {
                 100000000: { text: "予 定", class: "st-yet" },
@@ -376,22 +415,17 @@
                 const d = new Date(iso);
                 return `${d.getUTCHours()}:${d.getUTCMinutes().toString().padStart(2, '0')}`;
             }
-
-            // ローカル時間の YYYY-MM-DD 文字列を返す
             function getLocalYMD(dateObj) {
                 const y = dateObj.getFullYear();
                 const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
                 const d = dateObj.getDate().toString().padStart(2, '0');
                 return `${y}-${m}-${d}`;
             }
-
-            // UTC文字列の日付をローカルタイムの YYYY-MM-DD に変換する
             function getRecordLocalYMD(isoStr) {
                 if(!isoStr) return "";
                 const d = new Date(isoStr);
                 return getLocalYMD(d);
             }
-
             function checkNewStatus(iso) {
                 if (!iso) return { isNew: false };
                 let safeIso = iso;
@@ -402,8 +436,6 @@
                 const isNew = (diff >= -3600000 && diff < 21600000); 
                 return { isNew: isNew };
             }
-
-            // 電話番号を自動リンク化する関数
             function linkifyPhone(text) {
                 if (!text) return "-";
                 const phoneRegex = /(0\d{1,4}[\s-]?\d{1,4}[\s-]?\d{4})/g;
@@ -422,7 +454,10 @@
                     const spinner = document.getElementById(spinnerId);
                     if (!canvas) return;
                     const context = canvas.getContext('2d');
-                    const viewport = page.getViewport({ scale: 0.6 });
+                    
+                    // Scale 1.0 に変更（グリッド表示時にぼやけないように）
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
                     const renderContext = { canvasContext: context, viewport: viewport };
@@ -436,14 +471,12 @@
                 }
             }
 
-            // --- Window公開関数 (HTMLから呼ばれる) ---
-
+            // --- Window Functions ---
             window.switchScreen = function(screenId) {
                 document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
                 const target = document.getElementById('view-' + screenId);
                 if(target) target.style.display = 'block';
                 
-                // Footer制御
                 if (screenId === 'list') {
                     document.getElementById('footer-list').style.display = 'flex';
                     document.getElementById('footer-detail').style.display = 'none';
@@ -457,40 +490,48 @@
                 window.scrollTo(0, 0);
             };
 
+            // ★追加: 資料表示切替
+            window.switchDocView = function(mode) {
+                currentDocViewMode = mode;
+                const container = document.getElementById('dt-doc-list');
+                const btnList = document.getElementById('btn-view-list');
+                const btnGrid = document.getElementById('btn-view-grid');
+
+                if (mode === 'grid') {
+                    container.className = 'doc-list-grid';
+                    btnList.classList.remove('active');
+                    btnGrid.classList.add('active');
+                } else {
+                    container.className = '';
+                    btnList.classList.add('active');
+                    btnGrid.classList.remove('active');
+                }
+            };
+
             window.openDetail = async function(id) {
                 const rec = globalData.find(r => r.new_table2id === id);
                 if(!rec) return;
 
-                // 1. ステータス更新 (通知済/変更有 -> 確認済)
                 if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                     document.getElementById('loading').style.display = 'flex';
                     const loadMsg = document.getElementById('loading-text');
                     const orgMsg = loadMsg.textContent;
                     loadMsg.textContent = "確認処理中..."; 
-
                     try {
                         const res = await fetch('/api/update-status', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ haishaId: id, mode: 'confirm' })
                         });
-
                         if (res.status === 401) {
                              alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
                              window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
                              return;
                         }
-
-                        if (!res.ok) {
-                            const err = await res.json();
-                            throw new Error(err.error || "Update Error");
-                        }
+                        if (!res.ok) throw new Error("Update Error");
                         rec.new_shinkoujoukyou = 100000003;
-                        renderList(); // リストのバッジを更新
-                    } catch(e) {
-                        console.error(e);
-                        alert("ステータス更新に失敗しました: " + e.message);
-                    } finally {
+                        renderList(); 
+                    } catch(e) { console.error(e); } finally {
                         document.getElementById('loading').style.display = 'none';
                         loadMsg.textContent = orgMsg;
                     }
@@ -499,13 +540,10 @@
                 currentHaishaId = id;
                 const btnFinish = document.getElementById('btn-do-finish');
                 const btnUndo = document.getElementById('btn-do-undo');
-                
                 if (rec.new_shinkoujoukyou === 100000004) {
-                    btnFinish.style.display = 'none';
-                    btnUndo.style.display = 'block';
+                    btnFinish.style.display = 'none'; btnUndo.style.display = 'block';
                 } else {
-                    btnFinish.style.display = 'block';
-                    btnUndo.style.display = 'none';
+                    btnFinish.style.display = 'block'; btnUndo.style.display = 'none';
                 }
 
                 document.getElementById('dt-debug-id').textContent = rec.new_table2id;
@@ -516,7 +554,6 @@
 
                 let timeDisp = formatTime(rec.new_start_time);
                 if (timeDisp) timeDisp += " ～"; 
-                
                 document.getElementById('dt-time').innerHTML = `<span class="info-normal-text">${timeDisp}</span>`;
                 
                 let dtType = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "-";
@@ -536,13 +573,9 @@
                 const customer = rec["new_kyakusaki@OData.Community.Display.V1.FormattedValue"] || "";
                 document.getElementById('dt-client').innerHTML = `${client} <br><small class="text-primary">${customer}</small>`;
                 
-                // Googleマップリンクの制御
                 let mapUrl = null;
-                if (rec.googlemap_link) {
-                    mapUrl = rec.googlemap_link;
-                }
+                if (rec.googlemap_link) mapUrl = rec.googlemap_link;
 
-                // 現場名の表示切り替え
                 const siteValEl = document.getElementById('dt-site');
                 if (mapUrl) {
                     siteValEl.innerHTML = `<a href="${mapUrl}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${rec.new_genbamei || "-"} <i class="fas fa-external-link-alt small"></i></a>`;
@@ -550,19 +583,11 @@
                     siteValEl.textContent = rec.new_genbamei || "-";
                 }
 
-                // linkifyPhone 関数を使用して電話番号をリンク化
-                const workContent = rec.new_sagyou_naiyou || "-";
-                document.getElementById('dt-work').innerHTML = linkifyPhone(workContent);
-                
-                const contact = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
-                document.getElementById('dt-contact').innerHTML = linkifyPhone(contact);
-                
+                document.getElementById('dt-work').innerHTML = linkifyPhone(rec.new_sagyou_naiyou || "-");
+                document.getElementById('dt-contact').innerHTML = linkifyPhone(rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-");
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
-                
-                const note = rec.new_renraku_jikou || "特になし";
-                document.getElementById('dt-note').innerHTML = linkifyPhone(note);
+                document.getElementById('dt-note').innerHTML = linkifyPhone(rec.new_renraku_jikou || "特になし");
 
-                // 作業場リストの動的挿入
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
                     const siteRow = document.getElementById('row-site'); 
@@ -575,18 +600,15 @@
                         if(item.mapLink) {
                             valHtml = `<a href="${item.mapLink}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${item.name} <i class="fas fa-external-link-alt small"></i></a>`;
                         }
-                        
                         const labelText = (index === 0) ? '作業場' : '';
                         const isLast = (index === rec.sagyouba_list.length - 1);
                         const labelStyle = isLast ? 'border-bottom: 1px solid #ddd;' : 'border-bottom: none;';
-
                         div.innerHTML = `<div class="detail-label-sub" style="${labelStyle}">${labelText}</div><div class="detail-val-sub">${valHtml}</div>`;
                         fragment.appendChild(div);
                     });
                     siteRow.after(fragment);
                 }
 
-                // 現場地図リンクのリスト生成 (Googlemap.pngを使用)
                 const mapLinkContainer = document.getElementById('map-links-area');
                 mapLinkContainer.innerHTML = '';
                 
@@ -597,9 +619,7 @@
                     const headerDiv = document.createElement('div');
                     headerDiv.className = "map-header";
                     let headerText = "現場地図";
-                    if (hasWorkAreaLinks) {
-                        headerText += "、作業場";
-                    }
+                    if (hasWorkAreaLinks) headerText += "、作業場";
                     headerDiv.innerHTML = `<img src="Googlemap.png" class="map-icon-img"> ${headerText}`;
                     mapLinkContainer.appendChild(headerDiv);
 
@@ -612,7 +632,6 @@
                         siteLink.textContent = rec.new_genbamei || '現場';
                         mapLinkContainer.appendChild(siteLink);
                     }
-
                     if (hasWorkAreaLinks) {
                         rec.sagyouba_list.forEach(item => {
                             if(item.mapLink) {
@@ -630,6 +649,9 @@
 
                 const docContainer = document.getElementById('dt-doc-list');
                 docContainer.innerHTML = '';
+                // デフォルトはリスト表示
+                switchDocView(currentDocViewMode); 
+
                 const pdfRenderQueue = [];
 
                 if (rec.documents && rec.documents.length > 0) {
@@ -671,265 +693,112 @@
                 window.switchScreen('list'); 
             };
 
-            // Modal Controls
-            window.confirmCompletion = function() {
-                const el = document.getElementById('completeModal');
-                if(!el) return;
-                const modal = new bootstrap.Modal(el);
-                modal.show();
-            };
-
+            window.confirmCompletion = function() { const el = document.getElementById('completeModal'); if(!el) return; const modal = new bootstrap.Modal(el); modal.show(); };
             window.executeComplete = async function() {
-                const el = document.getElementById('completeModal');
-                const modal = bootstrap.Modal.getInstance(el);
-                if(modal) modal.hide();
-
+                const el = document.getElementById('completeModal'); const modal = bootstrap.Modal.getInstance(el); if(modal) modal.hide();
                 if(!currentHaishaId) return;
-                
-                document.getElementById('loading').style.display = 'flex';
-                document.getElementById('loading-text').textContent = "完了登録中...";
-
+                document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "完了登録中...";
                 try {
-                    const res = await fetch('/api/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) 
-                    });
-                    
+                    const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) });
                     if(!res.ok) throw new Error("完了登録に失敗しました");
-                    
                     alert("作業完了を登録しました");
-                    const rec = globalData.find(r => r.new_table2id === currentHaishaId);
-                    if(rec) rec.new_shinkoujoukyou = 100000004;
-                    
-                    window.goBack();
-                    renderList();
-                } catch(e) {
-                    alert(e.message);
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
-                }
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000004;
+                    window.goBack(); renderList();
+                } catch(e) { alert(e.message); } finally { document.getElementById('loading').style.display = 'none'; }
             };
 
-            window.confirmUndo = function() {
-                const el = document.getElementById('undoModal');
-                if(!el) return;
-                const modal = new bootstrap.Modal(el);
-                modal.show();
-            };
-
+            window.confirmUndo = function() { const el = document.getElementById('undoModal'); if(!el) return; const modal = new bootstrap.Modal(el); modal.show(); };
             window.executeUndo = async function() {
-                const el = document.getElementById('undoModal');
-                const modal = bootstrap.Modal.getInstance(el);
-                if(modal) modal.hide();
-
+                const el = document.getElementById('undoModal'); const modal = bootstrap.Modal.getInstance(el); if(modal) modal.hide();
                 if(!currentHaishaId) return;
-
-                document.getElementById('loading').style.display = 'flex';
-                document.getElementById('loading-text').textContent = "取消中...";
-
+                document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "取消中...";
                 try {
-                     const res = await fetch('/api/update-status', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) 
-                    });
+                     const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) });
                     if(!res.ok) throw new Error("取消に失敗しました");
-
                     alert("完了を取り消しました");
-                    const rec = globalData.find(r => r.new_table2id === currentHaishaId);
-                    if(rec) rec.new_shinkoujoukyou = 100000003; 
-                    
-                    // 画面更新
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000003; 
                     window.openDetail(currentHaishaId);
-                } catch(e) {
-                    alert(e.message);
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
-                }
+                } catch(e) { alert(e.message); } finally { document.getElementById('loading').style.display = 'none'; }
             };
             
-            window.showLocationHelp = function() {
-                alert("ブラウザの設定から位置情報の許可を確認してください。");
-            };
+            window.showLocationHelp = function() { alert("ブラウザの設定から位置情報の許可を確認してください。"); };
 
-            // --- Render Logic ---
             function renderList() {
-                const now = new Date();
-                const todayStr = getLocalYMD(now);
-                const yest = new Date(now); yest.setDate(yest.getDate()-1);
-                const yestStr = getLocalYMD(yest);
-
-                const todayContainer = document.getElementById('today-container');
-                const futureContainer = document.getElementById('future-container');
+                const now = new Date(); const todayStr = getLocalYMD(now);
+                const todayContainer = document.getElementById('today-container'); const futureContainer = document.getElementById('future-container');
                 todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
                 let hasToday = false;
 
                 for (let i = 1; i <= 14; i++) {
-                    const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
-                    const dateKey = getLocalYMD(targetDate);
-
-                    const wDay = getWeekDay(targetDate);
-                    const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
-                    
-                    const dayRecords = globalData.filter(r => {
-                        const rDateStr = getRecordLocalYMD(r.new_day);
-                        return rDateStr === dateKey && VALID_STATUSES.includes(r.new_shinkoujoukyou);
-                    });
-
+                    const targetDate = new Date(now); targetDate.setDate(now.getDate() + i); const dateKey = getLocalYMD(targetDate);
+                    const wDay = getWeekDay(targetDate); const dateColor = wDay === '日' ? 'is-red' : (wDay === '土' ? 'is-blue' : '');
+                    const dayRecords = globalData.filter(r => { const rDateStr = getRecordLocalYMD(r.new_day); return rDateStr === dateKey && VALID_STATUSES.includes(r.new_shinkoujoukyou); });
                     let jobsHtml = '';
                     if (dayRecords.length > 0) {
                         dayRecords.forEach(rec => {
                             const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                             const modDate = rec.modifiedon || rec.ModifiedOn;
                             const check = checkNewStatus(modDate);
-                            
                             let newIconHtml = '';
                             if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) {
                                 const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png";
                                 newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW">`;
                             }
-
                             if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                                 let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認";
                                 let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red";
-                                
-                                jobsHtml += `
-                                    <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
-                                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
-                                        ${newIconHtml}
-                                        <div class="masked-container">
-                                            <span class="masked-text ${colorClass}">${msgText}</span>
-                                        </div>
-                                    </div>`;
+                                jobsHtml += `<div class="future-job-item" onclick="openDetail('${rec.new_table2id}')"><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>${newIconHtml}<div class="masked-container"><span class="masked-text ${colorClass}">${msgText}</span></div></div>`;
                             } else {
-                                let timeStr = formatTime(rec.new_start_time);
-                                if(timeStr) timeStr += " ～";
+                                let timeStr = formatTime(rec.new_start_time); if(timeStr) timeStr += " ～";
                                 const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                                 const tokuisaki = rec.new_tokuisaki_mei || "";
-
-                                jobsHtml += `
-                                    <div class="future-job-item" onclick="openDetail('${rec.new_table2id}')">
-                                        <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
-                                        ${newIconHtml}
-                                        <div class="mb-1">
-                                            <span class="time-badge">${timeStr}</span>
-                                            <span class="meta-info">${kashikiri}</span>
-                                        </div>
-                                        <div class="client-name">${tokuisaki}</div>
-                                        <div class="site-name">${rec.new_genbamei || '現場名未定'}</div>
-                                    </div>`;
+                                jobsHtml += `<div class="future-job-item" onclick="openDetail('${rec.new_table2id}')"><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>${newIconHtml}<div class="mb-1"><span class="time-badge">${timeStr}</span><span class="meta-info">${kashikiri}</span></div><div class="client-name">${tokuisaki}</div><div class="site-name">${rec.new_genbamei || '現場名未定'}</div></div>`;
                             }
                         });
-                    } else {
-                        jobsHtml = `<div class="d-flex align-items-center"><div class="no-job-text">予定なし</div></div>`;
-                    }
-
-                    futureContainer.innerHTML += `
-                        <div class="future-row">
-                            <div class="date-col ${dateColor}">
-                                <span class="month-label">${targetDate.getMonth()+1}/</span>
-                                <div class="day-label">${targetDate.getDate()}</div>
-                                <div class="weekday-label">(${wDay})</div>
-                            </div>
-                            <div class="job-col">${jobsHtml}</div>
-                        </div>`;
+                    } else { jobsHtml = `<div class="d-flex align-items-center"><div class="no-job-text">予定なし</div></div>`; }
+                    futureContainer.innerHTML += `<div class="future-row"><div class="date-col ${dateColor}"><span class="month-label">${targetDate.getMonth()+1}/</span><div class="day-label">${targetDate.getDate()}</div><div class="weekday-label">(${wDay})</div></div><div class="job-col">${jobsHtml}</div></div>`;
                 }
                 
                 globalData.forEach(rec => {
-                    const jobDateStr = getRecordLocalYMD(rec.new_day);
-                    const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
-                    if ((jobDateStr === todayStr || (jobDateStr === yestStr && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
+                    const jobDateStr = getRecordLocalYMD(rec.new_day); const isNight = (rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "").includes("夜間");
+                    if ((jobDateStr === getLocalYMD(now) || (jobDateStr === getLocalYMD(new Date(now.getTime() - 86400000)) && isNight)) && VALID_STATUSES.includes(rec.new_shinkoujoukyou)) {
                         hasToday = true;
                         const statusInfo = STATUS_MAP[rec.new_shinkoujoukyou] || { text: "未定", class: "st-yet" };
                         const modDate = rec.modifiedon || rec.ModifiedOn;
                         const check = checkNewStatus(modDate);
-                        
                         let newIconHtml = '';
                         if (check.isNew && (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000003 || rec.new_shinkoujoukyou === 100000005)) {
                             const iconSrc = (rec.new_shinkoujoukyou === 100000003) ? "new-icon0103.png" : "new-icon0101.png";
                             newIconHtml = `<img src="${iconSrc}" class="new-icon" alt="NEW" style="top:35px; right:8px;">`;
                         }
-
                         if (rec.new_shinkoujoukyou === 100000002 || rec.new_shinkoujoukyou === 100000005) {
                             let msgText = (rec.new_shinkoujoukyou === 100000002) ? "通知済みの予定を確認" : "変更有りの予定を確認";
                             let colorClass = (rec.new_shinkoujoukyou === 100000002) ? "msg-blue" : "msg-red";
-                            
-                            todayContainer.innerHTML += `
-                                <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;">
-                                    <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <div></div>
-                                        <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
-                                    </div>
-                                    ${newIconHtml}
-                                    <div class="masked-container">
-                                        <span class="masked-text ${colorClass}">${msgText}</span>
-                                    </div>
-                                </div>`;
+                            todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative; min-height:80px;"><div class="d-flex justify-content-between align-items-start mb-1"><div></div><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div>${newIconHtml}<div class="masked-container"><span class="masked-text ${colorClass}">${msgText}</span></div></div>`;
                         } else {
-                            let timeStr = formatTime(rec.new_start_time);
-                            if(timeStr) timeStr += " ～";
+                            let timeStr = formatTime(rec.new_start_time); if(timeStr) timeStr += " ～";
                             const kashikiri = rec["new_kashikiri@OData.Community.Display.V1.FormattedValue"] || "";
                             const tokuisaki = rec.new_tokuisaki_mei || "";
                             const workContent = rec.new_sagyou_naiyou || "";
-
-                            todayContainer.innerHTML += `
-                                <div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;">
-                                    <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <div>
-                                            <span class="time-badge">${timeStr}</span>
-                                            <span class="meta-info">${kashikiri}</span>
-                                        </div>
-                                        <span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span>
-                                    </div>
-                                    ${newIconHtml}
-                                    <span class="site-name">${rec.new_genbamei || '現場名なし'}</span>
-                                    <div class="client-name">${tokuisaki}</div>
-                                    <div class="work-content">${workContent}</div>
-                                </div>`;
+                            todayContainer.innerHTML += `<div class="mb-2 border-bottom pb-2" onclick="openDetail('${rec.new_table2id}')" style="position:relative;"><div class="d-flex justify-content-between align-items-start mb-1"><div><span class="time-badge">${timeStr}</span><span class="meta-info">${kashikiri}</span></div><span class="status-badge ${statusInfo.class}" style="position:static;">${statusInfo.text}</span></div>${newIconHtml}<span class="site-name">${rec.new_genbamei || '現場名なし'}</span><div class="client-name">${tokuisaki}</div><div class="work-content">${workContent}</div></div>`;
                         }
                     }
                 });
                 if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
             }
 
-            // --- Init ---
             (async () => {
                 try {
-                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime());
-                    const authData = await authRes.json();
-                    if (!authData.clientPrincipal) { 
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('view-login').style.display = 'flex';
-                        return; 
-                    }
-                    
-                    const now = new Date();
-                    document.getElementById('list-date-label').textContent = formatDateHeader(now);
-                    
-                    const apiRes = await fetch('/api/show-env');
-                    if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
-                    
-                    const data = await apiRes.json();
-                    globalData = data.records;
-                    
-                    document.getElementById('disp-name').textContent = data.user.name;
-                    document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
-                    document.getElementById('count-today').textContent = data.todayCount;
-                    
+                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime()); const authData = await authRes.json();
+                    if (!authData.clientPrincipal) { document.getElementById('loading').style.display = 'none'; document.getElementById('view-login').style.display = 'flex'; return; }
+                    const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
+                    const apiRes = await fetch('/api/show-env'); if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
+                    const data = await apiRes.json(); globalData = data.records;
+                    document.getElementById('disp-name').textContent = data.user.name; document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム"; document.getElementById('count-today').textContent = data.todayCount;
                     renderList();
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('view-app-wrapper').style.display = 'block';
-                    window.switchScreen('list');
-                } catch (e) {
-                    console.error(e);
-                    document.getElementById('error-message').textContent = e.message;
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('view-error').style.display = 'block';
-                }
+                    document.getElementById('loading').style.display = 'none'; document.getElementById('view-app-wrapper').style.display = 'block'; window.switchScreen('list');
+                } catch (e) { console.error(e); document.getElementById('error-message').textContent = e.message; document.getElementById('loading').style.display = 'none'; document.getElementById('view-error').style.display = 'block'; }
             })();
-
         })();
     </script>
 </body>
