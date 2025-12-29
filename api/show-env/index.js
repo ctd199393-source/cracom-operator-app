@@ -37,7 +37,7 @@ module.exports = async function (context, req) {
     // デバッグ用オブジェクト
     let debugInfo = {
         logs: [],
-        rawAnkenData: [] // 取得した案件データの生ログ
+        rawAnkenData: []
     };
 
     try {
@@ -137,24 +137,23 @@ module.exports = async function (context, req) {
             }
 
             // =========================================================
-            // B. 案件・現場マスタ（GoogleMapリンク） - デバッグ強化
+            // B. 案件・現場マスタ（GoogleMapリンク）
             // =========================================================
             const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
             
-            debugInfo.logs.push(`Extracted Anken IDs: ${ankenIds.join(', ')}`);
-
             if (ankenIds.length > 0) {
                 const ankenFilter = ankenIds.map(id => `new_ankenid eq '${id}'`).join(" or ");
-                const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_ankens?$filter=${encodeURIComponent(ankenFilter)}&$select=new_ankenid&$expand=new_genba`;
                 
-                debugInfo.logs.push(`Executing Anken Query...`);
+                // ★修正: テーブル名を new_ankens -> new_anken_tables に変更
+                const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_anken_tables?$filter=${encodeURIComponent(ankenFilter)}&$select=new_ankenid&$expand=new_genba`;
+                
+                debugInfo.logs.push(`Executing Anken Query (new_anken_tables)...`);
 
                 try {
                     const ankenRes = await fetch(ankenQuery, { headers: { "Authorization": `Bearer ${token}` } });
                     if (ankenRes.ok) {
                         const ankenData = await ankenRes.json();
                         
-                        // ★デバッグ用: 取得した案件データを保存
                         debugInfo.rawAnkenData = ankenData.value;
                         debugInfo.logs.push(`Fetched ${ankenData.value.length} anken records.`);
 
@@ -185,7 +184,7 @@ module.exports = async function (context, req) {
             }
         }
 
-        // 資料データ (省略なし)
+        // 資料データ
         if (records.length > 0 && storageConnString) {
             let filterParts = [];
             records.forEach(r => {
@@ -235,7 +234,7 @@ module.exports = async function (context, req) {
                 user: { name: user.new_sagyouin_id, buId: buId, buName: buName },
                 records: records,
                 todayCount: buCount,
-                debug: debugInfo // ★デバッグ情報をレスポンスに追加
+                debug: debugInfo
             }
         };
 
