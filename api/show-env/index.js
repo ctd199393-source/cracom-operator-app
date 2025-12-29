@@ -142,10 +142,11 @@ module.exports = async function (context, req) {
             const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
             
             if (ankenIds.length > 0) {
-                const ankenFilter = ankenIds.map(id => `new_ankenid eq '${id}'`).join(" or ");
+                // ★修正: new_ankenid -> new_anken_tableid に変更
+                const ankenFilter = ankenIds.map(id => `new_anken_tableid eq '${id}'`).join(" or ");
                 
-                // ★修正: テーブル名を new_ankens -> new_anken_tables に変更
-                const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_anken_tables?$filter=${encodeURIComponent(ankenFilter)}&$select=new_ankenid&$expand=new_genba`;
+                // ★修正: テーブル名 new_anken_tables, ID列 new_anken_tableid
+                const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_anken_tables?$filter=${encodeURIComponent(ankenFilter)}&$select=new_anken_tableid&$expand=new_genba`;
                 
                 debugInfo.logs.push(`Executing Anken Query (new_anken_tables)...`);
 
@@ -159,18 +160,18 @@ module.exports = async function (context, req) {
 
                         ankenData.value.forEach(a => {
                             if (a.new_genba) {
-                                // リンクがあるか確認し、ログに残す
                                 const linkVal = a.new_genba.new_googlemap_link || a.new_genba.new_Googlemap_link;
                                 if (linkVal) {
-                                    debugInfo.logs.push(`[Success] Link found for Anken ${a.new_ankenid}: ${linkVal}`);
-                                    records.filter(r => r._new_id_value === a.new_ankenid).forEach(r => {
+                                    // ★修正: 照合も new_anken_tableid で行う
+                                    debugInfo.logs.push(`[Success] Link found for Anken ${a.new_anken_tableid}: ${linkVal}`);
+                                    records.filter(r => r._new_id_value === a.new_anken_tableid).forEach(r => {
                                         r.googlemap_link = linkVal;
                                     });
                                 } else {
-                                    debugInfo.logs.push(`[Warn] Genba found but NO LINK for Anken ${a.new_ankenid}`);
+                                    debugInfo.logs.push(`[Warn] Genba found but NO LINK for Anken`);
                                 }
                             } else {
-                                debugInfo.logs.push(`[Warn] No Genba (new_genba) in Anken ${a.new_ankenid}`);
+                                debugInfo.logs.push(`[Warn] No Genba (new_genba) in Anken`);
                             }
                         });
                     } else {
