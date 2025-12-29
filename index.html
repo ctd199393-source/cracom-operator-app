@@ -196,25 +196,25 @@
         .doc-icon { font-size: 2.5rem; color: #d13438; } 
         .doc-info { flex: 1; overflow: hidden; }
         
-        /* ★修正: リスト表示でも文字切れさせない */
+        /* リスト表示でも文字切れさせない */
         .doc-title { 
             font-weight: bold; 
             font-size: 1.1rem; 
             white-space: normal; /* 折り返し許可 */
-            overflow: visible;   /* はみ出し許可（親要素で調整） */
+            overflow: visible;   /* はみ出し許可 */
             line-height: 1.4;
         }
         
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
         
-        /* ★修正: ページ数バッジ (赤色・太字) */
+        /* ★修正: ページ数バッジ */
         .page-count-badge {
-            display: inline-block;
+            display: none; /* ★初期状態は非表示（これで不要な「_」が消えます） */
             background: #eee;
             color: #d13438; /* 赤色 */
             font-weight: bold; /* 太字 */
-            font-size: 0.8rem;
+            font-size: inherit; /* ★修正: ファイル名と同じサイズ */
             padding: 1px 5px;
             border-radius: 4px;
             margin-left: 5px;
@@ -444,9 +444,15 @@
                     const loadingTask = pdfjsLib.getDocument(url);
                     const pdf = await loadingTask.promise;
                     
+                    // ページ数表示 (2ページ以上の場合のみ)
                     if (pdf.numPages > 1 && pageCountId) {
                         const countEl = document.getElementById(pageCountId);
-                        if (countEl) countEl.textContent = `(${pdf.numPages}ページ)`;
+                        if (countEl) {
+                            // ★修正: 文言を「(Xページあり)」に変更
+                            countEl.textContent = `(${pdf.numPages}ページあり)`;
+                            // ★修正: ページ数がある場合のみ表示 (初期はdisplay:none)
+                            countEl.style.display = 'inline-block';
+                        }
                     }
 
                     const page = await pdf.getPage(1);
