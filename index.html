@@ -138,7 +138,7 @@
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
         
-        /* ★修正: detail-actions のスタイル調整 (リスト表示用) */
+        /* detail-actions のスタイル調整 (リスト表示用) */
         .detail-actions { 
             display: flex; 
             flex-direction: column; /* 縦並び */
@@ -147,7 +147,7 @@
             margin: 20px 0 10px 0; 
         }
         
-        /* ★追加: マップリンク用のヘッダーとアイテムのスタイル */
+        /* マップリンク用のヘッダーとアイテムのスタイル */
         .map-header {
             display: flex;
             align-items: center;
@@ -157,10 +157,10 @@
             margin-bottom: 2px;
         }
         .map-icon-img {
-            width: 24px;
-            height: 24px;
+            width: 40px; /* ★修正: 24px -> 40px (約1.7倍) */
+            height: 40px;
             object-fit: contain;
-            margin-right: 6px;
+            margin-right: 8px; /* アイコンが大きくなったので余白も少し調整 */
         }
         .map-link-btn {
             text-decoration: none;
@@ -551,7 +551,7 @@
                     siteRow.after(fragment);
                 }
 
-                // ★修正: 現場地図リンクのリスト生成 (Googlemap.pngを使用)
+                // 現場地図リンクのリスト生成 (Googlemap.pngを使用)
                 const mapLinkContainer = document.getElementById('map-links-area');
                 mapLinkContainer.innerHTML = '';
                 
