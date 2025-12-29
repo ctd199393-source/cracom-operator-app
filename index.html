@@ -138,37 +138,42 @@
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
         
-        /* ★修正: detail-actions のスタイル調整 */
+        /* ★修正: detail-actions のスタイル調整 (リスト表示用) */
         .detail-actions { 
             display: flex; 
             flex-direction: column; /* 縦並び */
             align-items: flex-end;  /* 右寄せ */
-            gap: 10px; 
-            margin: 15px 0; 
+            gap: 8px; 
+            margin: 20px 0 10px 0; 
         }
         
-        /* ★追加: マップリンク用のスタイル */
-        .map-link-item {
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            font-size: 1.1rem;
+        /* ★追加: マップリンク用のヘッダーとアイテムのスタイル */
+        .map-header {
             display: flex;
             align-items: center;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            padding: 5px 15px;
-            transition: background 0.1s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #555;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
         }
-        .map-link-item:active { background: #f0f0f0; }
         .map-icon-img {
             width: 24px;
             height: 24px;
             object-fit: contain;
-            margin-right: 8px;
+            margin-right: 6px;
         }
+        .map-link-btn {
+            text-decoration: none;
+            color: #005a9e;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-bottom: 1px solid transparent;
+            transition: all 0.1s;
+            display: inline-block;
+            line-height: 1.3;
+        }
+        .map-link-btn:hover { border-bottom: 1px solid #005a9e; }
+        .map-link-btn:active { opacity: 0.7; }
 
         .detail-row-sub { display: flex; }
         .detail-label-sub { 
@@ -546,32 +551,53 @@
                     siteRow.after(fragment);
                 }
 
-                // ★修正: 現場地図リンクのリスト生成
+                // ★修正: 現場地図リンクのリスト生成 (Googlemap.pngを使用)
                 const mapLinkContainer = document.getElementById('map-links-area');
                 mapLinkContainer.innerHTML = '';
                 
-                // 1. 現場リンク
-                if (mapUrl) {
-                    const siteLink = document.createElement('a');
-                    siteLink.href = mapUrl;
-                    siteLink.target = "_blank";
-                    siteLink.className = "map-link-item";
-                    siteLink.innerHTML = `<img src="Googlemap.jpg" class="map-icon-img"> 現場: ${rec.new_genbamei || '現場'}`;
-                    mapLinkContainer.appendChild(siteLink);
-                }
+                // リンクがあるか確認
+                const hasSiteLink = !!mapUrl;
+                const hasWorkAreaLinks = rec.sagyouba_list && rec.sagyouba_list.some(i => i.mapLink);
 
-                // 2. 作業場リンク
-                if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
-                    rec.sagyouba_list.forEach(item => {
-                        if(item.mapLink) {
-                            const subLink = document.createElement('a');
-                            subLink.href = item.mapLink;
-                            subLink.target = "_blank";
-                            subLink.className = "map-link-item";
-                            subLink.innerHTML = `<img src="Googlemap.jpg" class="map-icon-img"> 作業場: ${item.name}`;
-                            mapLinkContainer.appendChild(subLink);
-                        }
-                    });
+                if (hasSiteLink || hasWorkAreaLinks) {
+                    // ヘッダー作成
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = "map-header";
+                    
+                    let headerText = "現場地図";
+                    if (hasWorkAreaLinks) {
+                        headerText += "、作業場";
+                    }
+                    
+                    // アイコン画像（Googlemap.png に修正）
+                    headerDiv.innerHTML = `<img src="Googlemap.png" class="map-icon-img"> ${headerText}`;
+                    mapLinkContainer.appendChild(headerDiv);
+
+                    // 1. 現場リンク
+                    if (hasSiteLink) {
+                        const siteLink = document.createElement('a');
+                        siteLink.href = mapUrl;
+                        siteLink.target = "_blank"; // アプリ優先
+                        siteLink.rel = "noopener noreferrer";
+                        siteLink.className = "map-link-btn";
+                        siteLink.textContent = rec.new_genbamei || '現場';
+                        mapLinkContainer.appendChild(siteLink);
+                    }
+
+                    // 2. 作業場リンク
+                    if (hasWorkAreaLinks) {
+                        rec.sagyouba_list.forEach(item => {
+                            if(item.mapLink) {
+                                const subLink = document.createElement('a');
+                                subLink.href = item.mapLink;
+                                subLink.target = "_blank"; // アプリ優先
+                                subLink.rel = "noopener noreferrer";
+                                subLink.className = "map-link-btn";
+                                subLink.textContent = item.name;
+                                mapLinkContainer.appendChild(subLink);
+                            }
+                        });
+                    }
                 }
 
                 const docContainer = document.getElementById('dt-doc-list');
