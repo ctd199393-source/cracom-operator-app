@@ -137,9 +137,39 @@
         .detail-label { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; flex-shrink: 0; }
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
-        .detail-actions { display: flex; gap: 15px; margin: 15px 0; justify-content: flex-end; }
-        .link-btn { text-decoration: none; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; color: #005a9e; }
         
+        /* ★修正: detail-actions のスタイル調整 */
+        .detail-actions { 
+            display: flex; 
+            flex-direction: column; /* 縦並び */
+            align-items: flex-end;  /* 右寄せ */
+            gap: 10px; 
+            margin: 15px 0; 
+        }
+        
+        /* ★追加: マップリンク用のスタイル */
+        .map-link-item {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            padding: 5px 15px;
+            transition: background 0.1s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .map-link-item:active { background: #f0f0f0; }
+        .map-icon-img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            margin-right: 8px;
+        }
+
         .detail-row-sub { display: flex; }
         .detail-label-sub { 
             width: 95px; 
@@ -248,7 +278,10 @@
             </div>
             
             <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
-            <div class="detail-actions"><a href="#" class="link-btn" id="link-map" target="_blank"><i class="fas fa-map-marker-alt fa-2x me-2 text-danger"></i> 現場地図</a></div>
+            
+            <div class="detail-actions" id="map-links-area">
+                </div>
+
             <div class="doc-list-area"><div class="doc-header"><i class="fas fa-paperclip me-1"></i> 添付資料</div><div id="dt-doc-list"></div></div>
         </div>
     </div>
@@ -484,22 +517,12 @@
                     siteValEl.textContent = rec.new_genbamei || "-";
                 }
 
-                // 下部ボタンの制御
-                const mapBtn = document.getElementById('link-map');
-                if (mapUrl) {
-                    mapBtn.href = mapUrl;
-                    mapBtn.style.display = ''; 
-                } else {
-                    mapBtn.href = "#";
-                    mapBtn.style.display = 'none'; 
-                }
-
                 document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
                 document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
                 document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
 
-                // ★修正: 作業場リストの動的挿入（ラベル結合・罫線制御・インデント）
+                // 作業場リストの動的挿入（ラベル結合・罫線制御・インデント）
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
                     const siteRow = document.getElementById('row-site'); 
@@ -513,10 +536,7 @@
                             valHtml = `<a href="${item.mapLink}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${item.name} <i class="fas fa-external-link-alt small"></i></a>`;
                         }
                         
-                        // 1行目のみ「作業場」表示
                         const labelText = (index === 0) ? '作業場' : '';
-                        
-                        // 最後の行のみ下線を表示（結合表現）
                         const isLast = (index === rec.sagyouba_list.length - 1);
                         const labelStyle = isLast ? 'border-bottom: 1px solid #ddd;' : 'border-bottom: none;';
 
@@ -524,6 +544,34 @@
                         fragment.appendChild(div);
                     });
                     siteRow.after(fragment);
+                }
+
+                // ★修正: 現場地図リンクのリスト生成
+                const mapLinkContainer = document.getElementById('map-links-area');
+                mapLinkContainer.innerHTML = '';
+                
+                // 1. 現場リンク
+                if (mapUrl) {
+                    const siteLink = document.createElement('a');
+                    siteLink.href = mapUrl;
+                    siteLink.target = "_blank";
+                    siteLink.className = "map-link-item";
+                    siteLink.innerHTML = `<img src="Googlemap.jpg" class="map-icon-img"> 現場: ${rec.new_genbamei || '現場'}`;
+                    mapLinkContainer.appendChild(siteLink);
+                }
+
+                // 2. 作業場リンク
+                if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
+                    rec.sagyouba_list.forEach(item => {
+                        if(item.mapLink) {
+                            const subLink = document.createElement('a');
+                            subLink.href = item.mapLink;
+                            subLink.target = "_blank";
+                            subLink.className = "map-link-item";
+                            subLink.innerHTML = `<img src="Googlemap.jpg" class="map-icon-img"> 作業場: ${item.name}`;
+                            mapLinkContainer.appendChild(subLink);
+                        }
+                    });
                 }
 
                 const docContainer = document.getElementById('dt-doc-list');
