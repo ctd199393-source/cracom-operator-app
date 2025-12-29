@@ -136,7 +136,6 @@
         .detail-row:last-child { border-bottom: none; }
         .detail-label { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; flex-shrink: 0; }
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
-        /* 連絡事項など、改行を含むテキスト用のスタイル修正（リンクが含まれても崩れないように） */
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word; }
         
         /* detail-actions のスタイル調整 (リスト表示用) */
@@ -158,8 +157,8 @@
             margin-bottom: 2px;
         }
         .map-icon-img {
-            width: 40px; 
-            height: 40px;
+            width: 60px; /* ★修正: 60px に拡大 */
+            height: 60px;
             object-fit: contain;
             margin-right: 8px;
         }
@@ -203,7 +202,26 @@
         }
 
         .doc-list-area { margin-top: 10px; }
-        .doc-header { font-size: 1.0rem; font-weight: bold; color: #666; margin-bottom: 5px; border-left: 4px solid #0078d4; padding-left: 8px; }
+        
+        /* ★修正: 添付資料ヘッダーのデザイン変更 */
+        .doc-header { 
+            font-size: 1.3rem; /* 文字サイズ拡大 */
+            font-weight: bold; 
+            color: #666; 
+            margin-bottom: 10px; 
+            /* border-left, padding-left 削除 */
+            border-left: none; 
+            padding-left: 0;
+            display: flex;
+            align-items: center;
+        }
+        /* アイコンを大きく */
+        .doc-header i {
+            font-size: 2.5rem; /* アイコンサイズ拡大 (約40px相当) */
+            color: #0078d4;
+            margin-right: 10px;
+        }
+
         .doc-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; text-decoration: none; color: #333; transition: background 0.2s; }
         .doc-item:active { background: #f0f0f0; }
         .doc-preview-box { width: 120px; height: 90px; margin-right: 15px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px; overflow: hidden; border: 1px solid #eee; position: relative; flex-shrink: 0; }
@@ -390,11 +408,9 @@
             function linkifyPhone(text) {
                 if (!text) return "-";
                 // 簡易的な日本の電話番号正規表現 (090-xxxx-xxxx, 03-xxxx-xxxx など)
-                // ハイフンやスペースが含まれていても、または無くても検出
                 const phoneRegex = /(0\d{1,4}[\s-]?\d{1,4}[\s-]?\d{4})/g;
                 
                 return text.replace(phoneRegex, function(match) {
-                    // 実際に電話をかける番号はハイフンなどを除去
                     const telNum = match.replace(/[\s-]/g, '');
                     return `<a href="tel:${telNum}" style="color:#005a9e; text-decoration:underline;">${match}</a>`;
                 });
