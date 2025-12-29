@@ -138,54 +138,26 @@
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word; }
         
-        /* detail-actions のスタイル調整 */
-        .detail-actions { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: flex-end; 
-            gap: 8px; 
-            margin: 20px 0 10px 0; 
-        }
-        
-        /* マップリンク用のヘッダーとアイテムのスタイル */
-        .map-header {
-            display: flex;
-            align-items: center;
-            font-weight: bold;
-            color: #666;
-            font-size: 1.2rem;
-            margin-bottom: 2px;
-        }
+        .detail-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin: 20px 0 10px 0; }
+        .map-header { display: flex; align-items: center; font-weight: bold; color: #666; font-size: 1.2rem; margin-bottom: 2px; }
         .map-icon-img { width: 55px; height: 55px; object-fit: contain; margin-right: 8px; }
-        .map-link-btn {
-            text-decoration: none; color: #005a9e; font-weight: bold;
-            font-size: 1.2rem; border-bottom: 1px solid transparent;
-            transition: all 0.1s; display: inline-block; line-height: 1.3;
-        }
+        .map-link-btn { text-decoration: none; color: #005a9e; font-weight: bold; font-size: 1.2rem; border-bottom: 1px solid transparent; transition: all 0.1s; display: inline-block; line-height: 1.3; }
         .map-link-btn:hover { border-bottom: 1px solid #005a9e; }
         .map-link-btn:active { opacity: 0.7; }
 
         .detail-row-sub { display: flex; }
-        .detail-label-sub { 
-            width: 95px; background: #f0f8ff; color: #005a9e; 
-            font-weight: bold; font-size: 0.95rem; display: flex; 
-            align-items: center; padding: 4px 8px; padding-left: 25px; 
-            border-right: 1px solid #ddd; flex-shrink: 0;
-        }
-        .detail-val-sub { 
-            flex: 1; padding: 6px 12px 6px 25px; font-size: 1.1rem; 
-            color: #444; display: flex; align-items: center; 
-            line-height: 1.3; font-weight: 500; border-bottom: 1px solid #ddd;
-        }
+        .detail-label-sub { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 4px 8px; padding-left: 25px; border-right: 1px solid #ddd; flex-shrink: 0; }
+        .detail-val-sub { flex: 1; padding: 6px 12px 6px 25px; font-size: 1.1rem; color: #444; display: flex; align-items: center; line-height: 1.3; font-weight: 500; border-bottom: 1px solid #ddd; }
 
         .doc-list-area { margin-top: 10px; }
         
-        /* 添付資料ヘッダーのデザイン */
+        /* 添付資料ヘッダー */
         .doc-header-row {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; /* 左寄せ */
             align-items: center;
             margin-bottom: 10px;
+            gap: 20px; /* 文字とボタンの間隔 */
         }
         .doc-title-group {
             display: flex;
@@ -200,11 +172,11 @@
             margin-right: 10px;
         }
         
-        /* ★追加: 表示切替トグルボタン */
+        /* 表示切替トグル */
         .view-toggle-group {
             display: flex;
             gap: 15px;
-            margin-right: 5px;
+            align-items: center;
         }
         .view-toggle-btn {
             font-size: 1.5rem;
@@ -225,25 +197,39 @@
         .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
+        
+        /* ページ数バッジ */
+        .page-count-badge {
+            display: inline-block;
+            background: #eee;
+            color: #555;
+            font-size: 0.75rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-left: 5px;
+            font-weight: normal;
+        }
 
-        /* ★追加: グリッド表示 (大アイコン) */
+        /* ★修正: グリッド表示 (大アイコン・1列・画面幅いっぱい) */
         .doc-list-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 2列 */
-            gap: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         .doc-list-grid .doc-item {
             flex-direction: column;
             align-items: center;
             padding: 10px;
-            height: 100%;
+            height: auto;
             margin-bottom: 0;
+            width: 100%; /* 幅いっぱい */
         }
         .doc-list-grid .doc-preview-box {
             width: 100%;
-            height: 150px; /* 大きく */
+            height: auto; /* 高さは自動調整 */
             margin-right: 0;
             margin-bottom: 10px;
+            background: #000; /* 背景を黒っぽくして視認性アップ */
         }
         .doc-list-grid .doc-info {
             width: 100%;
@@ -251,14 +237,12 @@
         }
         .doc-list-grid .doc-title {
             white-space: normal; /* 折り返し許可 */
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            font-size: 0.95rem;
-            margin-bottom: 2px;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
         }
         .doc-list-grid .doc-meta {
             text-align: center;
+            font-size: 1.0rem;
         }
         .doc-list-grid .fa-chevron-right {
             display: none;
@@ -394,7 +378,7 @@
         (function() {
             let globalData = [];
             let currentHaishaId = null;
-            let currentDocViewMode = 'list'; // 'list' or 'grid'
+            let currentDocViewMode = 'list';
 
             const STATUS_MAP = {
                 100000000: { text: "予 定", class: "st-yet" },
@@ -445,17 +429,23 @@
                 });
             }
 
-            async function renderPdfThumbnail(url, canvasId, spinnerId) {
+            async function renderPdfThumbnail(url, canvasId, spinnerId, pageCountId) {
                 try {
                     const loadingTask = pdfjsLib.getDocument(url);
                     const pdf = await loadingTask.promise;
+                    
+                    // ページ数表示 (2ページ以上の場合のみ)
+                    if (pdf.numPages > 1 && pageCountId) {
+                        const countEl = document.getElementById(pageCountId);
+                        if (countEl) countEl.textContent = `(1/${pdf.numPages})`;
+                    }
+
                     const page = await pdf.getPage(1);
                     const canvas = document.getElementById(canvasId);
                     const spinner = document.getElementById(spinnerId);
                     if (!canvas) return;
                     const context = canvas.getContext('2d');
                     
-                    // Scale 1.0 に変更（グリッド表示時にぼやけないように）
                     const viewport = page.getViewport({ scale: 1.0 });
                     
                     canvas.height = viewport.height;
@@ -490,7 +480,6 @@
                 window.scrollTo(0, 0);
             };
 
-            // ★追加: 資料表示切替
             window.switchDocView = function(mode) {
                 currentDocViewMode = mode;
                 const container = document.getElementById('dt-doc-list');
@@ -649,7 +638,6 @@
 
                 const docContainer = document.getElementById('dt-doc-list');
                 docContainer.innerHTML = '';
-                // デフォルトはリスト表示
                 switchDocView(currentDocViewMode); 
 
                 const pdfRenderQueue = [];
@@ -660,6 +648,7 @@
                         const url = doc.new_url || "#";
                         const ext = (doc.new_kakuchoushi || "").toLowerCase();
                         const thumbUrl = doc.new_blobthmbnailurl;
+                        const pageCountId = `pdf-page-count-${index}`; // ページ数表示用ID
                         
                         let previewContent = '';
                         if (ext.match(/(jpg|jpeg|png|gif)/i)) {
@@ -669,17 +658,29 @@
                             const canvasId = `pdf-canvas-${index}`;
                             const spinnerId = `pdf-spinner-${index}`;
                             previewContent = `<div id="${spinnerId}" class="preview-spinner"><i class="fas fa-spinner fa-spin"></i></div><canvas id="${canvasId}" class="doc-thumb-img" style="display:none;"></canvas>`;
-                            pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId });
+                            pdfRenderQueue.push({ url: url, canvasId: canvasId, spinnerId: spinnerId, pageCountId: pageCountId });
                         } else {
                             let iconClass = "fa-file";
                             if(ext.includes("xls")) iconClass = "fa-file-excel";
                             previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
                         }
 
-                        docHtml += `<a href="${url}" target="_blank" class="doc-item"><div class="doc-preview-box">${previewContent}</div><div class="doc-info"><div class="doc-title">${doc.new_name || '無題の資料'}</div><div class="doc-meta">${ext.toUpperCase()} ファイル</div></div><i class="fas fa-chevron-right text-muted"></i></a>`;
+                        // ファイル名 + ページ数バッジ(span)
+                        docHtml += `
+                            <a href="${url}" target="_blank" class="doc-item">
+                                <div class="doc-preview-box">${previewContent}</div>
+                                <div class="doc-info">
+                                    <div class="doc-title">
+                                        ${doc.new_name || '無題の資料'}
+                                        <span id="${pageCountId}" class="page-count-badge"></span>
+                                    </div>
+                                    <div class="doc-meta">${ext.toUpperCase()} ファイル</div>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </a>`;
                     });
                     docContainer.innerHTML = docHtml;
-                    pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId); });
+                    pdfRenderQueue.forEach(item => { renderPdfThumbnail(item.url, item.canvasId, item.spinnerId, item.pageCountId); });
                 } else { 
                     docContainer.innerHTML = '<div class="text-muted small p-2">資料はありません</div>'; 
                 }
