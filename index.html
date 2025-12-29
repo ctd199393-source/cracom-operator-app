@@ -141,29 +141,34 @@
         .link-btn { text-decoration: none; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; color: #005a9e; }
         
         /* ★追加・修正: 作業場用サブ行のスタイル */
-        .detail-row-sub { display: flex; border-bottom: 1px solid #eee; }
+        /* detail-rowのデフォルトのborder-bottomを上書きしないよう、ここではborderを指定せず子要素で制御 */
+        .detail-row-sub { display: flex; }
+        
         .detail-label-sub { 
             width: 95px; 
-            background: #f8fbff; /* 現場より少し薄い色 */
+            background: #f0f8ff; /* 他のラベルと同じ色 */
             color: #005a9e; 
             font-weight: bold; 
-            font-size: 0.85rem; 
+            font-size: 0.95rem; /* 他のラベルと同じサイズ */
             display: flex; 
             align-items: center; 
-            padding: 4px 8px; /* パディング縮小 */
-            padding-left: 15px; /* インデント */
+            padding: 4px 8px;
+            padding-left: 25px; /* インデント: 階層構造の表現 */
             border-right: 1px solid #ddd;
             flex-shrink: 0;
+            /* border-bottomはJSで制御（結合表現のため） */
         }
+        
         .detail-val-sub { 
             flex: 1; 
-            padding: 6px 12px; /* 高さを低くする */
-            font-size: 1.1rem; /* 文字サイズを小さく (1.3 -> 1.1) */
+            padding: 6px 12px; /* 高さを低く */
+            font-size: 1.1rem; /* 文字サイズ小さめ */
             color: #444; 
             display: flex; 
             align-items: center; 
             line-height: 1.3; 
             font-weight: 500; 
+            border-bottom: 1px solid #ddd; /* 値には常に下線を入れる */
         }
 
         .doc-list-area { margin-top: 10px; }
@@ -499,26 +504,28 @@
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
                 document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
 
-                // ★修正: 作業場リストの動的挿入（ラベル制御・スタイル変更）
+                // ★修正: 作業場リストの動的挿入（ラベル結合・罫線制御・インデント）
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
                 if (rec.sagyouba_list && rec.sagyouba_list.length > 0) {
                     const siteRow = document.getElementById('row-site'); 
                     const fragment = document.createDocumentFragment();
                     rec.sagyouba_list.forEach((item, index) => {
                         const div = document.createElement('div');
-                        // スタイル変更: detail-row-subクラスを使用
-                        div.className = 'detail-row detail-row-sub dynamic-sagyouba-row'; 
+                        div.className = 'detail-row-sub dynamic-sagyouba-row'; 
                         
                         let valHtml = item.name;
                         if(item.mapLink) {
                             valHtml = `<a href="${item.mapLink}" target="_blank" style="text-decoration:none; color:#005a9e; font-weight:bold;">${item.name} <i class="fas fa-external-link-alt small"></i></a>`;
                         }
                         
-                        // ラベル表示制御: 2行目以降は空文字
+                        // 1行目のみ「作業場」表示
                         const labelText = (index === 0) ? '作業場' : '';
+                        
+                        // 最後の行のみ下線を表示（結合表現）
+                        const isLast = (index === rec.sagyouba_list.length - 1);
+                        const labelStyle = isLast ? 'border-bottom: 1px solid #ddd;' : 'border-bottom: none;';
 
-                        // スタイル変更: detail-label-sub, detail-val-subを使用
-                        div.innerHTML = `<div class="detail-label-sub">${labelText}</div><div class="detail-val-sub">${valHtml}</div>`;
+                        div.innerHTML = `<div class="detail-label-sub" style="${labelStyle}">${labelText}</div><div class="detail-val-sub">${valHtml}</div>`;
                         fragment.appendChild(div);
                     });
                     siteRow.after(fragment);
