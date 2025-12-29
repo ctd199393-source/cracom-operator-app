@@ -138,6 +138,7 @@
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word; }
         
+        /* detail-actions のスタイル調整 */
         .detail-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; margin: 20px 0 10px 0; }
         .map-header { display: flex; align-items: center; font-weight: bold; color: #666; font-size: 1.2rem; margin-bottom: 2px; }
         .map-icon-img { width: 55px; height: 55px; object-fit: contain; margin-right: 8px; }
@@ -154,10 +155,10 @@
         /* 添付資料ヘッダー */
         .doc-header-row {
             display: flex;
-            justify-content: flex-start; /* 左寄せ */
+            justify-content: flex-start;
             align-items: center;
             margin-bottom: 10px;
-            gap: 20px; /* 文字とボタンの間隔 */
+            gap: 20px;
         }
         .doc-title-group {
             display: flex;
@@ -194,23 +195,32 @@
         .doc-thumb-img, canvas.doc-thumb-img { width: 100%; height: 100%; object-fit: contain; }
         .doc-icon { font-size: 2.5rem; color: #d13438; } 
         .doc-info { flex: 1; overflow: hidden; }
-        .doc-title { font-weight: bold; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* ★修正: リスト表示でも文字切れさせない */
+        .doc-title { 
+            font-weight: bold; 
+            font-size: 1.1rem; 
+            white-space: normal; /* 折り返し許可 */
+            overflow: visible;   /* はみ出し許可（親要素で調整） */
+            line-height: 1.4;
+        }
+        
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
         
-        /* ページ数バッジ */
+        /* ★修正: ページ数バッジ (赤色・太字) */
         .page-count-badge {
             display: inline-block;
             background: #eee;
-            color: #555;
-            font-size: 0.75rem;
+            color: #d13438; /* 赤色 */
+            font-weight: bold; /* 太字 */
+            font-size: 0.8rem;
             padding: 1px 5px;
             border-radius: 4px;
             margin-left: 5px;
-            font-weight: normal;
         }
 
-        /* ★修正: グリッド表示 (大アイコン・1列・画面幅いっぱい) */
+        /* グリッド表示 */
         .doc-list-grid {
             display: flex;
             flex-direction: column;
@@ -222,21 +232,21 @@
             padding: 10px;
             height: auto;
             margin-bottom: 0;
-            width: 100%; /* 幅いっぱい */
+            width: 100%;
         }
         .doc-list-grid .doc-preview-box {
             width: 100%;
-            height: auto; /* 高さは自動調整 */
+            height: auto;
             margin-right: 0;
             margin-bottom: 10px;
-            background: #000; /* 背景を黒っぽくして視認性アップ */
+            background: #000;
         }
         .doc-list-grid .doc-info {
             width: 100%;
             text-align: center;
         }
         .doc-list-grid .doc-title {
-            white-space: normal; /* 折り返し許可 */
+            white-space: normal;
             font-size: 1.2rem;
             margin-bottom: 5px;
         }
@@ -434,10 +444,9 @@
                     const loadingTask = pdfjsLib.getDocument(url);
                     const pdf = await loadingTask.promise;
                     
-                    // ページ数表示 (2ページ以上の場合のみ)
                     if (pdf.numPages > 1 && pageCountId) {
                         const countEl = document.getElementById(pageCountId);
-                        if (countEl) countEl.textContent = `(1/${pdf.numPages})`;
+                        if (countEl) countEl.textContent = `(${pdf.numPages}ページ)`;
                     }
 
                     const page = await pdf.getPage(1);
@@ -648,7 +657,7 @@
                         const url = doc.new_url || "#";
                         const ext = (doc.new_kakuchoushi || "").toLowerCase();
                         const thumbUrl = doc.new_blobthmbnailurl;
-                        const pageCountId = `pdf-page-count-${index}`; // ページ数表示用ID
+                        const pageCountId = `pdf-page-count-${index}`; 
                         
                         let previewContent = '';
                         if (ext.match(/(jpg|jpeg|png|gif)/i)) {
@@ -665,7 +674,6 @@
                             previewContent = `<i class="fas ${iconClass} doc-icon"></i>`;
                         }
 
-                        // ファイル名 + ページ数バッジ(span)
                         docHtml += `
                             <a href="${url}" target="_blank" class="doc-item">
                                 <div class="doc-preview-box">${previewContent}</div>
