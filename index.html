@@ -136,13 +136,14 @@
         .detail-row:last-child { border-bottom: none; }
         .detail-label { width: 95px; background: #f0f8ff; color: #005a9e; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; padding: 8px; border-right: 1px solid #ddd; flex-shrink: 0; }
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
-        .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; }
+        /* 連絡事項など、改行を含むテキスト用のスタイル修正（リンクが含まれても崩れないように） */
+        .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word; }
         
         /* detail-actions のスタイル調整 (リスト表示用) */
         .detail-actions { 
             display: flex; 
-            flex-direction: column; /* 縦並び */
-            align-items: flex-end;  /* 右寄せ */
+            flex-direction: column; 
+            align-items: flex-end; 
             gap: 8px; 
             margin: 20px 0 10px 0; 
         }
@@ -157,10 +158,10 @@
             margin-bottom: 2px;
         }
         .map-icon-img {
-            width: 40px; /* ★修正: 24px -> 40px (約1.7倍) */
+            width: 40px; 
             height: 40px;
             object-fit: contain;
-            margin-right: 8px; /* アイコンが大きくなったので余白も少し調整 */
+            margin-right: 8px;
         }
         .map-link-btn {
             text-decoration: none;
@@ -385,6 +386,20 @@
                 return { isNew: isNew };
             }
 
+            // ★追加: 電話番号を自動リンク化する関数
+            function linkifyPhone(text) {
+                if (!text) return "-";
+                // 簡易的な日本の電話番号正規表現 (090-xxxx-xxxx, 03-xxxx-xxxx など)
+                // ハイフンやスペースが含まれていても、または無くても検出
+                const phoneRegex = /(0\d{1,4}[\s-]?\d{1,4}[\s-]?\d{4})/g;
+                
+                return text.replace(phoneRegex, function(match) {
+                    // 実際に電話をかける番号はハイフンなどを除去
+                    const telNum = match.replace(/[\s-]/g, '');
+                    return `<a href="tel:${telNum}" style="color:#005a9e; text-decoration:underline;">${match}</a>`;
+                });
+            }
+
             async function renderPdfThumbnail(url, canvasId, spinnerId) {
                 try {
                     const loadingTask = pdfjsLib.getDocument(url);
@@ -522,10 +537,20 @@
                     siteValEl.textContent = rec.new_genbamei || "-";
                 }
 
-                document.getElementById('dt-work').textContent = rec.new_sagyou_naiyou || "-";
-                document.getElementById('dt-contact').textContent = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
+                // ★修正: linkifyPhone 関数を使用して電話番号をリンク化
+                // 作業内容
+                const workContent = rec.new_sagyou_naiyou || "-";
+                document.getElementById('dt-work').innerHTML = linkifyPhone(workContent);
+                
+                // 連絡先
+                const contact = rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-";
+                document.getElementById('dt-contact').innerHTML = linkifyPhone(contact);
+                
                 document.getElementById('dt-items').textContent = "無線機 x 1"; 
-                document.getElementById('dt-note').textContent = rec.new_renraku_jikou || "特になし";
+                
+                // 連絡事項
+                const note = rec.new_renraku_jikou || "特になし";
+                document.getElementById('dt-note').innerHTML = linkifyPhone(note);
 
                 // 作業場リストの動的挿入（ラベル結合・罫線制御・インデント）
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
@@ -555,42 +580,35 @@
                 const mapLinkContainer = document.getElementById('map-links-area');
                 mapLinkContainer.innerHTML = '';
                 
-                // リンクがあるか確認
                 const hasSiteLink = !!mapUrl;
                 const hasWorkAreaLinks = rec.sagyouba_list && rec.sagyouba_list.some(i => i.mapLink);
 
                 if (hasSiteLink || hasWorkAreaLinks) {
-                    // ヘッダー作成
                     const headerDiv = document.createElement('div');
                     headerDiv.className = "map-header";
-                    
                     let headerText = "現場地図";
                     if (hasWorkAreaLinks) {
                         headerText += "、作業場";
                     }
-                    
-                    // アイコン画像（Googlemap.png に修正）
                     headerDiv.innerHTML = `<img src="Googlemap.png" class="map-icon-img"> ${headerText}`;
                     mapLinkContainer.appendChild(headerDiv);
 
-                    // 1. 現場リンク
                     if (hasSiteLink) {
                         const siteLink = document.createElement('a');
                         siteLink.href = mapUrl;
-                        siteLink.target = "_blank"; // アプリ優先
+                        siteLink.target = "_blank"; 
                         siteLink.rel = "noopener noreferrer";
                         siteLink.className = "map-link-btn";
                         siteLink.textContent = rec.new_genbamei || '現場';
                         mapLinkContainer.appendChild(siteLink);
                     }
 
-                    // 2. 作業場リンク
                     if (hasWorkAreaLinks) {
                         rec.sagyouba_list.forEach(item => {
                             if(item.mapLink) {
                                 const subLink = document.createElement('a');
                                 subLink.href = item.mapLink;
-                                subLink.target = "_blank"; // アプリ優先
+                                subLink.target = "_blank"; 
                                 subLink.rel = "noopener noreferrer";
                                 subLink.className = "map-link-btn";
                                 subLink.textContent = item.name;
@@ -652,29 +670,25 @@
             };
 
             window.executeComplete = async function() {
-                // Modalを閉じる
                 const el = document.getElementById('completeModal');
                 const modal = bootstrap.Modal.getInstance(el);
                 if(modal) modal.hide();
 
-                // APIコール (status -> 100000004)
                 if(!currentHaishaId) return;
                 
                 document.getElementById('loading').style.display = 'flex';
                 document.getElementById('loading-text').textContent = "完了登録中...";
 
                 try {
-                    // 位置情報取得 (省略可だが要件にあるなら追加実装が必要。今回は完了のみ)
                     const res = await fetch('/api/update-status', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) // mode: completeを想定
+                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) 
                     });
                     
                     if(!res.ok) throw new Error("完了登録に失敗しました");
                     
                     alert("作業完了を登録しました");
-                    // データ再読み込みまたはローカル更新
                     const rec = globalData.find(r => r.new_table2id === currentHaishaId);
                     if(rec) rec.new_shinkoujoukyou = 100000004;
                     
@@ -708,13 +722,13 @@
                      const res = await fetch('/api/update-status', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) // mode: undoを想定
+                        body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) 
                     });
                     if(!res.ok) throw new Error("取消に失敗しました");
 
                     alert("完了を取り消しました");
                     const rec = globalData.find(r => r.new_table2id === currentHaishaId);
-                    if(rec) rec.new_shinkoujoukyou = 100000003; // 確認済に戻す
+                    if(rec) rec.new_shinkoujoukyou = 100000003; 
                     
                     // 画面更新
                     window.openDetail(currentHaishaId);
@@ -741,7 +755,6 @@
                 todayContainer.innerHTML = ''; futureContainer.innerHTML = '';
                 let hasToday = false;
 
-                // 未来14日分
                 for (let i = 1; i <= 14; i++) {
                     const targetDate = new Date(now); targetDate.setDate(now.getDate() + i);
                     const dateKey = getLocalYMD(targetDate);
