@@ -372,7 +372,7 @@
                 <div class="detail-row" id="row-site"><div class="detail-label">現場名</div><div class="detail-val" id="dt-site">---</div></div>
                 <div class="detail-row"><div class="detail-label">作業内容</div><div class="detail-val" id="dt-work">---</div></div>
                 <div class="detail-row"><div class="detail-label">連絡先</div><div class="detail-val" id="dt-contact">---</div></div>
-                <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items"></div></div>
+                <div class="detail-row"><div class="detail-label">持参品</div><div class="detail-val" id="dt-items">---</div></div>
             </div>
             
             <div class="detail-card"><div class="detail-label" style="width:100%; border:none; background:#f0f8ff;">連絡事項</div><div class="detail-note" id="dt-note"></div></div>
@@ -634,7 +634,7 @@
 
                 document.getElementById('dt-work').innerHTML = linkifyPhone(rec.new_sagyou_naiyou || "-");
                 document.getElementById('dt-contact').innerHTML = linkifyPhone(rec["new_renraku1@OData.Community.Display.V1.FormattedValue"] || "-");
-                document.getElementById('dt-items').textContent = "無線機 x 1"; 
+                document.getElementById('dt-items').textContent = "-"; 
                 document.getElementById('dt-note').innerHTML = linkifyPhone(rec.new_renraku_jikou || "特になし");
 
                 document.querySelectorAll('.dynamic-sagyouba-row').forEach(e => e.remove());
