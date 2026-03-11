@@ -8,8 +8,7 @@
           "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
         },
         "login": {
-          "nameClaimType": "name",
-          "isTokenRefreshEnabled": true
+          "nameClaimType": "name"
         }
       }
     }
