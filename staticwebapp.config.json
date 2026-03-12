@@ -1,4 +1,18 @@
 {
+  "auth": {
+    "identityProviders": {
+      "azureActiveDirectory": {
+        "registration": {
+          "openIdIssuer": "https://login.microsoftonline.com/365cf5fb-d7fb-40dd-94a3-5f413813c90b/v2.0",
+          "clientIdSettingName": "ENTRA_CLIENT_ID",
+          "clientSecretSettingName": "ENTRA_CLIENT_SECRET"
+        },
+        "login": {
+          "nameClaimType": "name"
+        }
+      }
+    }
+  },
   "routes": [
     {
       "route": "/api/*",
@@ -7,11 +21,14 @@
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/.auth/login/aad?post_login_redirect_uri=/",
-      "statusCode": 302
+      "statusCode": 302,
+      "redirect": "/.auth/login/aad"
     }
   },
   "globalHeaders": {
-    "Cache-Control": "no-store, must-revalidate"
+    "Cache-Control": "no-cache"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
   }
 }
