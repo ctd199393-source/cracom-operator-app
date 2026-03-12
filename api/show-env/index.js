@@ -1,45 +1,5 @@
 const { ClientSecretCredential } = require("@azure/identity");
-const { StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } = require("@azure/storage-blob");
 const fetch = require("node-fetch");
-
-// Helper: SASトークン生成
-function generateSasToken(connectionString, containerName, blobPath) {
-    try {
-        if (!connectionString || !containerName || !blobPath) return null;
-        
-        const parts = connectionString.split(';');
-        const accountNameMatch = parts.find(p => p.startsWith('AccountName='));
-        const accountKeyMatch = parts.find(p => p.startsWith('AccountKey='));
-
-        if (!accountNameMatch || !accountKeyMatch) return null;
-
-        const accountName = accountNameMatch.split('=')[1];
-        const accountKey = accountKeyMatch.split('=')[1];
-
-        // Blobパス正規化
-        let blobName = blobPath;
-        if (blobName.startsWith(`/${containerName}/`)) {
-            blobName = blobName.substring(containerName.length + 2);
-        } else if (blobName.startsWith("/")) {
-             blobName = blobName.substring(1);
-        }
-
-        const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
-        const expiresOn = new Date(new Date().valueOf() + 60 * 60 * 1000); // 1時間有効
-
-        const sasToken = generateBlobSASQueryParameters({
-            containerName: containerName,
-            blobName: blobName,
-            permissions: BlobSASPermissions.parse("r"),
-            expiresOn: expiresOn
-        }, sharedKeyCredential).toString();
-
-        return `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${sasToken}`;
-    } catch (e) {
-        console.error("SAS Gen Error:", e);
-        return null;
-    }
-}
 
 module.exports = async function (context, req) {
     try {
@@ -48,7 +8,6 @@ module.exports = async function (context, req) {
         const clientId = process.env.CLIENT_ID;
         const clientSecret = process.env.CLIENT_SECRET;
         const dataverseUrl = process.env.DATAVERSE_URL; 
-        const storageConnString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
         if (!tenantId || !clientId || !clientSecret || !dataverseUrl) {
             throw new Error(`環境変数が不足しています。チェック状況: TENANT_ID:${!!tenantId}, CLIENT_ID:${!!clientId}, CLIENT_SECRET:${!!clientSecret}, DATAVERSE_URL:${!!dataverseUrl}`);
@@ -140,9 +99,8 @@ module.exports = async function (context, req) {
         const dispatchData = await dispatchRes.json();
         let records = dispatchData.value;
 
-        // 6. 中間テーブルや資料データの紐付け処理 (ロジックは維持)
+        // 6. 中間テーブル（作業場）の取得 & 結合
         if (records.length > 0) {
-            // A. 中間テーブル（作業場）の取得 & 結合
             records.forEach(r => r.sagyouba_list = []);
             const haishaIds = records.map(r => r.new_table2id);
             const chuukanFilter = haishaIds.map(id => `_new_haisha_id_value eq '${id}'`).join(" or ");
@@ -168,6 +126,7 @@ module.exports = async function (context, req) {
                 } catch (e) { context.log.error("中間テーブル取得エラー:", e); }
             }
         }
+        // ★注意: PDF等の添付ファイルを取得するロジックは、以前のコードから消失しているためここでは除外しています。
 
         // 7. 部署稼働数の取得
         const today = new Date().toISOString().split('T')[0];
@@ -193,7 +152,7 @@ module.exports = async function (context, req) {
             body: {
                 error: "API実行中にエラーが発生しました",
                 details: e.message,
-                hint: "環境変数(CLIENT_SECRETなど)や、Dataverse側のアプリケーションユーザー権限、APIのアクセス許可を再確認してください。"
+                hint: "環境変数や権限を確認してください。"
             }
         };
     }
