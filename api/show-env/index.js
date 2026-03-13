@@ -1,5 +1,5 @@
 const { ClientSecretCredential } = require("@azure/identity");
-const fetch = require("node-fetch");
+// ★ここにあった node-fetch の読み込みを削除しました（Node 22内蔵のfetchを使います）
 
 module.exports = async function (context, req) {
     try {
@@ -126,7 +126,7 @@ module.exports = async function (context, req) {
                 } catch (e) { context.log.error("中間テーブル取得エラー:", e); }
             }
         }
-        // ★注意: PDF等の添付ファイルを取得するロジックは、以前のコードから消失しているためここでは除外しています。
+        // ★注意: 起動確認後、過去のコミットから「添付ファイル取得ロジック」を復活させます。
 
         // 7. 部署稼働数の取得
         const today = new Date().toISOString().split('T')[0];
