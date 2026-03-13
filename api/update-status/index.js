@@ -1,5 +1,3 @@
-const fetch = require("node-fetch");
-
 module.exports = async function (context, req) {
     context.log("Status Update Triggered");
 
@@ -37,7 +35,7 @@ module.exports = async function (context, req) {
             targetTime = now.toISOString().replace('Z', '');
         }
 
-        // Power Automate へ送信
+        // Power Automate へ送信 (標準内蔵の fetch を使用)
         const flowRes = await fetch(flowUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
