@@ -138,13 +138,12 @@
         .detail-val { flex: 1; padding: 12px; font-size: 1.3rem; color: #222; display: flex; align-items: center; line-height: 1.4; font-weight: 500; } 
         .detail-note { padding: 14px; font-size: 1.2rem; color: #222; white-space: pre-wrap; line-height: 1.6; overflow-wrap: break-word; }
         
-        /* ★修正: 余白の削減 */
         .detail-actions { 
             display: flex; 
             flex-direction: column; 
             align-items: flex-end; 
             gap: 8px; 
-            margin: 5px 0 5px 0; /* ★上5px, 下5px に短縮 */
+            margin: 5px 0 5px 0; 
         }
         
         .map-header {
@@ -200,9 +199,8 @@
             border-bottom: 1px solid #ddd;
         }
 
-        /* ★修正: 余白の削減 */
         .doc-list-area { 
-            margin-top: 0px; /* ★10px -> 0px に変更 */
+            margin-top: 0px; 
         }
         
         .doc-header-row {
@@ -257,12 +255,11 @@
         .doc-meta { font-size: 0.8rem; color: #888; margin-top: 2px;}
         .preview-spinner { font-size: 1.5rem; color: #ccc; }
         
-        /* ★修正: ページ数バッジ（太字解除） */
         .page-count-badge {
             display: none; 
             background: #eee;
             color: #d13438;
-            font-weight: normal; /* ★修正: bold -> normal */
+            font-weight: normal; 
             font-size: inherit; 
             padding: 1px 5px;
             border-radius: 4px;
@@ -438,6 +435,59 @@
             let currentHaishaId = null;
             let currentDocViewMode = 'list';
 
+            // --- スライディングセッション（24時間監視）の追加ロジック ---
+            const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+            function updateLastActivity() {
+                const now = Date.now();
+                const lastActivityStr = localStorage.getItem('cracomLastActivity');
+                
+                if (lastActivityStr) {
+                    const lastActivity = parseInt(lastActivityStr, 10);
+                    // 24時間以上経過してからの画面操作は、完全にアウトとする
+                    if (now - lastActivity >= TWENTY_FOUR_HOURS) {
+                        localStorage.removeItem('cracomLastActivity');
+                        alert("長時間（24時間以上）操作が行われなかったため、安全のためにログアウトします。");
+                        window.location.href = "/.auth/logout";
+                        return;
+                    }
+                }
+                // 24時間以内の操作なら、現在時刻で上書き（寿命を延ばす）
+                localStorage.setItem('cracomLastActivity', now.toString());
+            }
+
+            // ユーザーの操作（タッチ、クリック、キー入力）を検知して寿命を延ばす
+            window.addEventListener('click', updateLastActivity, { passive: true });
+            window.addEventListener('touchstart', updateLastActivity, { passive: true });
+            window.addEventListener('keypress', updateLastActivity, { passive: true });
+
+            // API呼び出しをラップし、401（8時間切れ）が起きたら自動再ログインする関数
+            async function fetchWithSlidingSession(url, options = {}) {
+                const res = await fetch(url, options);
+                if (res.status === 401) {
+                    const lastActivityStr = localStorage.getItem('cracomLastActivity');
+                    const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : 0;
+                    const now = Date.now();
+
+                    if (now - lastActivity < TWENTY_FOUR_HOURS) {
+                        // 24時間以内なら、裏側で自動再ログイン（サイレントリフレッシュ）を実行
+                        console.log("SWAセッション(8h)切れ。24時間以内のため自動再ログインします。");
+                        const currentUrl = encodeURIComponent(window.location.href);
+                        window.location.href = `/.auth/login/aad?post_login_redirect_uri=${currentUrl}`;
+                        // リダイレクト処理が終わるまで待機
+                        return new Promise(() => {});
+                    } else {
+                        // 24時間以上放置されていた場合
+                        localStorage.removeItem('cracomLastActivity');
+                        alert("セッションの有効期限が切れました。再度ログインしてください。");
+                        window.location.href = "/.auth/logout";
+                        return new Promise(() => {});
+                    }
+                }
+                return res;
+            }
+            // -----------------------------------------------------------
+
             const STATUS_MAP = {
                 100000000: { text: "予 定", class: "st-yet" },
                 100000001: { text: "現場確定", class: "st-fix" },
@@ -567,16 +617,11 @@
                     const orgMsg = loadMsg.textContent;
                     loadMsg.textContent = "確認処理中..."; 
                     try {
-                        const res = await fetch('/api/update-status', {
+                        const res = await fetchWithSlidingSession('/api/update-status', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ haishaId: id, mode: 'confirm' })
                         });
-                        if (res.status === 401) {
-                             alert("セキュリティ保護のためセッションが切れました。\n再接続します。");
-                             window.location.href = "/.auth/login/aad?post_login_redirect_uri=" + encodeURIComponent(window.location.href);
-                             return;
-                        }
                         if (!res.ok) throw new Error("Update Error");
                         rec.new_shinkoujoukyou = 100000003;
                         renderList(); 
@@ -759,7 +804,7 @@
                 if(!currentHaishaId) return;
                 document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "完了登録中...";
                 try {
-                    const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) });
+                    const res = await fetchWithSlidingSession('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'complete' }) });
                     if(!res.ok) throw new Error("完了登録に失敗しました");
                     alert("作業完了を登録しました");
                     const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000004;
@@ -773,7 +818,7 @@
                 if(!currentHaishaId) return;
                 document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "取消中...";
                 try {
-                     const res = await fetch('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) });
+                     const res = await fetchWithSlidingSession('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) });
                     if(!res.ok) throw new Error("取消に失敗しました");
                     alert("完了を取り消しました");
                     const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000003; 
@@ -849,15 +894,42 @@
 
             (async () => {
                 try {
-                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime()); const authData = await authRes.json();
-                    if (!authData.clientPrincipal) { document.getElementById('loading').style.display = 'none'; document.getElementById('view-login').style.display = 'flex'; return; }
+                    // 初期ロード時の監視も追加
+                    updateLastActivity();
+
+                    const authRes = await fetch('/.auth/me?t=' + new Date().getTime()); 
+                    const authData = await authRes.json();
+                    
+                    if (!authData.clientPrincipal) { 
+                        // SWAセッションが切れている（または初回アクセス）の場合、24時間ルールを判定
+                        const lastActStr = localStorage.getItem('cracomLastActivity');
+                        const now = Date.now();
+                        if (lastActStr && (now - parseInt(lastActStr, 10) < TWENTY_FOUR_HOURS)) {
+                            console.log("初期ロード: 24時間以内のため自動再ログインを実行します");
+                            const currentUrl = encodeURIComponent(window.location.href);
+                            window.location.href = `/.auth/login/aad?post_login_redirect_uri=${currentUrl}`;
+                            return;
+                        }
+
+                        // 24時間以上経過、または完全な初回ログイン時は通常のログイン画面を表示
+                        localStorage.removeItem('cracomLastActivity');
+                        document.getElementById('loading').style.display = 'none'; 
+                        document.getElementById('view-login').style.display = 'flex'; 
+                        return; 
+                    }
+
                     const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
-                    const apiRes = await fetch('/api/show-env'); if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
+                    
+                    const apiRes = await fetchWithSlidingSession('/api/show-env'); 
+                    if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
+                    
                     const data = await apiRes.json(); globalData = data.records;
                     document.getElementById('disp-name').textContent = data.user.name; document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム"; document.getElementById('count-today').textContent = data.todayCount;
                     renderList();
                     document.getElementById('loading').style.display = 'none'; document.getElementById('view-app-wrapper').style.display = 'block'; window.switchScreen('list');
-                } catch (e) { console.error(e); document.getElementById('error-message').textContent = e.message; document.getElementById('loading').style.display = 'none'; document.getElementById('view-error').style.display = 'block'; }
+                } catch (e) { 
+                    console.error(e); document.getElementById('error-message').textContent = e.message; document.getElementById('loading').style.display = 'none'; document.getElementById('view-error').style.display = 'block'; 
+                }
             })();
         })();
     </script>
