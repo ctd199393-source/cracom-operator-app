@@ -881,10 +881,14 @@
                 if(!currentHaishaId) return;
                 document.getElementById('loading').style.display = 'flex'; document.getElementById('loading-text').textContent = "取消中...";
                 try {
-                     const res = await fetchWithSlidingSession('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) });
+                    const res = await fetchWithSlidingSession('/api/update-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ haishaId: currentHaishaId, mode: 'undo' }) });
                     if(!res.ok) throw new Error("取消に失敗しました");
                     alert("完了を取り消しました");
-                    const rec = globalData.find(r => r.new_table2id === currentHaishaId); if(rec) rec.new_shinkoujoukyou = 100000003; 
+                    
+                    const rec = globalData.find(r => r.new_table2id === currentHaishaId); 
+                    if(rec) rec.new_shinkoujoukyou = 100000003; 
+                    
+                    renderList(); // 取消後のリスト表示の更新
                     window.openDetail(currentHaishaId);
                 } catch(e) { alert(e.message); } finally { document.getElementById('loading').style.display = 'none'; }
             };
