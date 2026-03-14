@@ -340,8 +340,8 @@
                     <p class="mb-3" style="font-size:1.1rem;">作業完了を通知しますか？</p>
                     <p class="text-muted small mb-4">※「その他」メニューで位置情報がONの場合は、現在地も一緒に送信されます。</p>
                     <div class="d-grid gap-2 d-flex justify-content-center">
-                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                         <button type="button" class="btn btn-danger px-5 fw-bold" onclick="executeComplete()">はい</button>
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                     </div>
                 </div>
             </div>
@@ -355,8 +355,8 @@
                 <div class="modal-body text-center p-4">
                     <p class="mb-4" style="font-size:1.1rem;">作業完了を取り消して、<br>ステータスを元に戻しますか？</p>
                     <div class="d-grid gap-2 d-flex justify-content-center">
-                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                         <button type="button" class="btn btn-secondary px-5 fw-bold" onclick="executeUndo()">はい</button>
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">いいえ</button>
                     </div>
                 </div>
             </div>
@@ -759,15 +759,12 @@
                 window.switchScreen('list'); 
             };
 
-            // ★追加: アプリ内位置情報設定の切り替え
             window.toggleLocationPref = function() {
                 const isChecked = document.getElementById('locationToggle').checked;
                 localStorage.setItem('cracomLocationPref', isChecked ? 'on' : 'off');
             };
 
-            // ★追加: その他メニューの表示と手動ログアウト処理
             window.showOtherMenu = function() {
-                // メニューを開くときに現在の設定状態をスイッチに反映する
                 const pref = localStorage.getItem('cracomLocationPref') || 'on';
                 document.getElementById('locationToggle').checked = (pref === 'on');
 
@@ -789,7 +786,6 @@
 
             window.confirmCompletion = function() { const el = document.getElementById('completeModal'); if(!el) return; const modal = new bootstrap.Modal(el); modal.show(); };
             
-            // ★完全版: 位置情報アシスト機能付きの完了処理
             window.executeComplete = async function() {
                 const el = document.getElementById('completeModal'); 
                 const modal = bootstrap.Modal.getInstance(el); 
@@ -799,18 +795,15 @@
                 document.getElementById('loading').style.display = 'flex'; 
                 document.getElementById('loading-text').textContent = "完了登録中...";
 
-                // --- 位置情報を取得する関数（Promise） ---
                 const getPosition = () => {
                     return new Promise((resolve) => {
                         const pref = localStorage.getItem('cracomLocationPref') || 'on';
                         
-                        // 1. アプリ内の設定がOFFの場合はそもそも取得しない
                         if (pref === 'off') {
                             resolve({ lat: null, long: null });
                             return;
                         }
 
-                        // 2. 設定がONの場合、ブラウザの機能を呼び出す
                         if (!navigator.geolocation) {
                             resolve({ lat: null, long: null }); 
                         } else {
@@ -821,19 +814,18 @@
                                 (error) => {
                                     console.warn("位置情報取得エラー:", error);
                                     if (error.code === error.PERMISSION_DENIED) {
-                                        // ブラウザでブロックされている場合のアシスト警告
                                         const msg = "【位置情報がブロックされています】\n\n端末またはブラウザの設定で、このアプリへの位置情報の利用が許可されていません。\n\n" +
                                                     "▼ブラウザの設定を変更してやり直す場合は「キャンセル」を押してください。\n\n" +
                                                     "▼位置情報なしでこのまま完了報告を送信する場合は「OK」を押してください。\n" +
                                                     "(※位置情報を送らない場合は「その他」メニューから設定をOFFにできます)";
                                         const proceed = confirm(msg);
                                         if (proceed) {
-                                            resolve({ lat: null, long: null }); // 位置情報なしで続行
+                                            resolve({ lat: null, long: null }); 
                                         } else {
-                                            resolve('CANCEL'); // 処理を中断して設定をやり直させる
+                                            resolve('CANCEL'); 
                                         }
                                     } else {
-                                        resolve({ lat: null, long: null }); // その他のエラー（タイムアウト等）は空で進める
+                                        resolve({ lat: null, long: null }); 
                                     }
                                 },
                                 { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -845,7 +837,6 @@
                 try {
                     const pos = await getPosition();
                     
-                    // ユーザーが「キャンセル（設定を直す）」を選んだ場合は送信処理を中止する
                     if (pos === 'CANCEL') {
                         document.getElementById('loading').style.display = 'none';
                         return;
