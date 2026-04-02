@@ -1,5 +1,32 @@
+// ★ 新規追加：セッション確認用のライブラリ
+const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
+
 module.exports = async function (context, req) {
     context.log("Status Update Triggered");
+
+    // --- ▼ここから追加：48時間入館証のチェック（見張り番）▼ ---
+    let decodedToken = null;
+    try {
+        const cookieHeader = req.headers.cookie;
+        if (!cookieHeader) throw new Error("Cookieが存在しません");
+        
+        const cookies = cookie.parse(cookieHeader);
+        const token = cookies.cracom_session;
+        if (!token) throw new Error("トークンが存在しません");
+
+        const secretKey = process.env.JWT_SECRET_KEY;
+        if (!secretKey) throw new Error("サーバーの秘密鍵が設定されていません");
+
+        // トークンが本物か、有効期限（48時間）内かをチェック
+        decodedToken = jwt.verify(token, secretKey);
+    } catch (error) {
+        // チェックNG（偽造、または48時間経過）の場合はここで弾く
+        context.log.warn("Session Check Failed:", error.message);
+        context.res = { status: 401, body: { error: "セッションの有効期限が切れました。再ログインしてください。" } };
+        return; // ← これ以上下の処理を実行させない
+    }
+    // --- ▲追加ここまで▲ ---
 
     try {
         const flowUrl = process.env.FLOW_URL_COMPLETE;
