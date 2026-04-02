@@ -433,8 +433,9 @@
                     const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : 0;
                     const now = Date.now();
 
+                    // ★修正部分：401検知時のログメッセージを「48h」に変更
                     if (now - lastActivity < TWENTY_FOUR_HOURS) {
-                        console.log("SWAセッション(8h)切れ。24時間以内のため自動再ログインします。");
+                        console.log("独自セッション(48h)切れ。24時間以内のため自動再ログインします。");
                         const currentUrl = encodeURIComponent(window.location.href);
                         window.location.href = `/.auth/login/aad?post_login_redirect_uri=${currentUrl}`;
                         return new Promise(() => {});
@@ -977,6 +978,19 @@
                         document.getElementById('view-login').style.display = 'flex'; 
                         return; 
                     }
+
+                    // --- ▼ここから追加：ログイン確認直後に48時間Cookieを発行してもらう▼ ---
+                    try {
+                        const sessionRes = await fetch('/api/create-session', { method: 'POST' });
+                        if (sessionRes.ok) {
+                            console.log("48時間有効な独自セッションを開始しました！");
+                        } else {
+                            console.warn("セッション発行で警告があります");
+                        }
+                    } catch (e) {
+                        console.error("セッション発行エラー:", e);
+                    }
+                    // --- ▲追加ここまで▲ ---
 
                     isAuthenticated = true;
                     updateLastActivity();
