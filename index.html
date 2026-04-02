@@ -958,56 +958,77 @@
                 if(!hasToday) todayContainer.innerHTML = '<div class="p-3 text-center text-muted">本日の予定はありません</div>';
             }
 
+            // ▼▼▼ ここから差し替え：アプリ起動時のロジック ▼▼▼
             (async () => {
                 try {
+                    // 【変更点1】まず、私たちが作った「48時間Cookie」が有効か、APIを直接叩いて確認する
+                    // （※ここではリダイレクトを防ぐため、fetchWithSlidingSessionではなく通常のfetchを使います）
+                    const apiRes = await fetch('/api/show-env');
+                    
+                    if (apiRes.ok) {
+                        // 48時間入館証が有効！ ASWAの8時間が切れていてもそのままアプリを起動します。
+                        console.log("独自セッション(48h)が有効です。アプリを起動します。");
+                        isAuthenticated = true;
+                        updateLastActivity();
+                        const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
+
+                        const data = await apiRes.json();
+                        globalData = data.records;
+                        document.getElementById('disp-name').textContent = data.user.name;
+                        document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
+                        document.getElementById('count-today').textContent = data.todayCount;
+                        renderList();
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('view-app-wrapper').style.display = 'block';
+                        window.switchScreen('list');
+                        return; // ここで起動完了
+                    }
+
+                    // 【変更点2】48時間Cookieが無効(401)な場合のみ、ASWAの標準ログイン（初回ログイン）を確認する
                     const authRes = await fetch('/.auth/me?t=' + new Date().getTime()); 
                     const authData = await authRes.json();
                     
-                    if (!authData.clientPrincipal) { 
-                        const lastActStr = localStorage.getItem('cracomLastActivity');
-                        const now = Date.now();
-                        if (lastActStr && (now - parseInt(lastActStr, 10) < TWENTY_FOUR_HOURS)) {
-                            console.log("初期ロード: 24時間以内のため自動再ログインを実行します");
-                            const currentUrl = encodeURIComponent(window.location.href);
-                            window.location.href = `/.auth/login/aad?post_login_redirect_uri=${currentUrl}`;
-                            return;
-                        }
-
-                        localStorage.removeItem('cracomLastActivity');
-                        document.getElementById('loading').style.display = 'none'; 
-                        document.getElementById('view-login').style.display = 'flex'; 
-                        return; 
-                    }
-
-                    // --- ▼ここから追加：ログイン確認直後に48時間Cookieを発行してもらう▼ ---
-                    try {
+                    if (authData.clientPrincipal) {
+                        console.log("ASWAログイン検知。48時間セッションを発行します...");
                         const sessionRes = await fetch('/api/create-session', { method: 'POST' });
+                        
                         if (sessionRes.ok) {
-                            console.log("48時間有効な独自セッションを開始しました！");
-                        } else {
-                            console.warn("セッション発行で警告があります");
+                            // 発行成功後、再度業務データを取得して起動
+                            const newApiRes = await fetch('/api/show-env');
+                            if (newApiRes.ok) {
+                                isAuthenticated = true;
+                                updateLastActivity();
+                                const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
+
+                                const data = await newApiRes.json();
+                                globalData = data.records;
+                                document.getElementById('disp-name').textContent = data.user.name;
+                                document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム";
+                                document.getElementById('count-today').textContent = data.todayCount;
+                                renderList();
+                                document.getElementById('loading').style.display = 'none';
+                                document.getElementById('view-app-wrapper').style.display = 'block';
+                                window.switchScreen('list');
+                                return;
+                            }
                         }
-                    } catch (e) {
-                        console.error("セッション発行エラー:", e);
                     }
-                    // --- ▲追加ここまで▲ ---
 
-                    isAuthenticated = true;
-                    updateLastActivity();
+                    // 【変更点3】どちらもダメだった場合（未ログイン、または48時間経過後）
+                    console.log("有効なセッションがありません。ログイン画面を表示します。");
+                    localStorage.removeItem('cracomLastActivity');
+                    isAuthenticated = false;
+                    document.getElementById('loading').style.display = 'none'; 
+                    document.getElementById('view-login').style.display = 'flex'; 
 
-                    const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
-                    
-                    const apiRes = await fetchWithSlidingSession('/api/show-env'); 
-                    if(!apiRes.ok) throw new Error((await apiRes.json()).error || "API Error");
-                    
-                    const data = await apiRes.json(); globalData = data.records;
-                    document.getElementById('disp-name').textContent = data.user.name; document.getElementById('company-name-area').textContent = data.user.buName || "株式会社 クラコム"; document.getElementById('count-today').textContent = data.todayCount;
-                    renderList();
-                    document.getElementById('loading').style.display = 'none'; document.getElementById('view-app-wrapper').style.display = 'block'; window.switchScreen('list');
                 } catch (e) { 
-                    console.error(e); document.getElementById('error-message').textContent = e.message; document.getElementById('loading').style.display = 'none'; document.getElementById('view-error').style.display = 'block'; 
+                    console.error(e); 
+                    document.getElementById('error-message').textContent = e.message; 
+                    document.getElementById('loading').style.display = 'none'; 
+                    document.getElementById('view-error').style.display = 'block'; 
                 }
             })();
+            // ▲▲▲ 差し替えここまで ▲▲▲
         })();
     </script>
 </body>
