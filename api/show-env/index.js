@@ -1,6 +1,8 @@
 const { ClientSecretCredential } = require("@azure/identity");
 const { StorageSharedKeyCredential, generateBlobSASQueryParameters, BlobSASPermissions } = require("@azure/storage-blob");
-// ★ Node 22標準のfetchを使うため、ここにあった require("node-fetch") を削除しました
+// ★ 新規追加：セッション確認用のライブラリ
+const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
 
 // Helper: SASトークン生成
 function generateSasToken(connectionString, containerName, blobPath) {
@@ -42,6 +44,29 @@ function generateSasToken(connectionString, containerName, blobPath) {
 }
 
 module.exports = async function (context, req) {
+    // --- ▼ここから追加：48時間入館証のチェック（見張り番）▼ ---
+    let decodedToken = null;
+    try {
+        const cookieHeader = req.headers.cookie;
+        if (!cookieHeader) throw new Error("Cookieが存在しません");
+        
+        const cookies = cookie.parse(cookieHeader);
+        const token = cookies.cracom_session;
+        if (!token) throw new Error("トークンが存在しません");
+
+        const secretKey = process.env.JWT_SECRET_KEY;
+        if (!secretKey) throw new Error("サーバーの秘密鍵が設定されていません");
+
+        // トークンが本物か、有効期限（48時間）内かをチェック
+        decodedToken = jwt.verify(token, secretKey);
+    } catch (error) {
+        // チェックNG（偽造、または48時間経過）の場合はここで弾く
+        context.log.warn("Session Check Failed:", error.message);
+        context.res = { status: 401, body: { error: "セッションの有効期限が切れました。再ログインしてください。" } };
+        return; // ← これ以上下の処理を実行させない
+    }
+    // --- ▲追加ここまで▲ ---
+
     try {
         // 1. 環境設定
         const tenantId = process.env.TENANT_ID;
@@ -54,13 +79,14 @@ module.exports = async function (context, req) {
             throw new Error("環境変数が不足しています (Dataverse)");
         }
 
-        // 2. ユーザー特定
-        const header = req.headers["x-ms-client-principal"];
+        // 2. ユーザー特定（★変更：ASWAのヘッダーではなく、48時間有効なJWTから確実に取得する）
         let userEmail = "unknown";
-        if (header) {
-            const decoded = JSON.parse(Buffer.from(header, "base64").toString("ascii"));
-            userEmail = decoded.userDetails;
+        if (decodedToken && decodedToken.principal && decodedToken.principal.userDetails) {
+            userEmail = decodedToken.principal.userDetails;
+        } else {
+            throw new Error("トークンからユーザー情報が取得できません");
         }
+
         if (userEmail.includes("#EXT#")) {
             let temp = userEmail.split("#EXT#")[0];
             const last = temp.lastIndexOf("_");
@@ -152,10 +178,8 @@ module.exports = async function (context, req) {
             }
 
             // B. 案件・現場マスタ（GoogleMapリンク）の別途取得
-            // 案件(new_anken_table)経由の現場
             const ankenIds = [...new Set(records.map(r => r._new_id_value).filter(id => id))];
             if (ankenIds.length > 0) {
-                // ★修正確定: new_anken_tableid を使用
                 const ankenFilter = ankenIds.map(id => `new_anken_tableid eq '${id}'`).join(" or ");
                 const ankenQuery = `${dataverseUrl}/api/data/v9.2/new_anken_tables?$filter=${encodeURIComponent(ankenFilter)}&$select=new_anken_tableid&$expand=new_genba`;
                 
@@ -165,7 +189,7 @@ module.exports = async function (context, req) {
                         const ankenData = await ankenRes.json();
                         ankenData.value.forEach(a => {
                             if (a.new_genba) {
-                                // GoogleMapリンクを取得（大文字小文字対応）
+                                // GoogleMapリンクを取得
                                 const linkVal = a.new_genba.new_googlemap_link || a.new_genba.new_Googlemap_link;
                                 if (linkVal) {
                                     // 案件IDが一致する配車レコードすべてにリンクをセット
