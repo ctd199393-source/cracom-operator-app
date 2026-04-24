@@ -11,42 +11,42 @@ module.exports = async function (context, req) {
             return;
         }
 
-        // 2. Base64という形式で暗号化されている情報を解読する
+        // 2. Base64形式の情報をデコードしてJSONとして読み込む
         const encoded = Buffer.from(header, 'base64');
         const decoded = encoded.toString('ascii');
         const clientPrincipal = JSON.parse(decoded);
 
-        // 3. 先ほどAzureに設定した「秘密の鍵」を取り出す
+        // 3. Azureの環境変数から「秘密の鍵」を取り出す
         const secretKey = process.env.JWT_SECRET_KEY;
         if (!secretKey) {
             context.res = { status: 500, body: "サーバーの秘密鍵が設定されていません" };
             return;
         }
 
-        // 4. 48時間有効な「独自トークン（JWT）」を発行する
+        // 4. 【変更点】7日間有効な「独自トークン（JWT）」を発行する
         const token = jwt.sign(
             { principal: clientPrincipal },
             secretKey,
-            { expiresIn: '48h' }
+            { expiresIn: '7d' } // ★ '48h' から '7d' に変更
         );
 
-        // 5. 発行したトークンを、ブラウザに保存させるためのCookie（クッキー）に包む
+        // 5. 【変更点】発行したトークンを、ブラウザに保存させるためのCookieに包む
         const cookieString = cookie.serialize('cracom_session', token, {
-            httpOnly: true,       // JavaScriptからの盗み見を防止
-            secure: true,         // HTTPS通信のときだけ送信
-            sameSite: 'strict',   // 他のサイトからの干渉をブロック
-            maxAge: 48 * 60 * 60, // 48時間（秒で指定）
-            path: '/'             // アプリ全体で有効
+            httpOnly: true,       // JavaScriptからのアクセスを禁止（安全）
+            secure: true,         // HTTPS通信時のみ送信
+            sameSite: 'strict',   // クロスサイトリクエストをブロック
+            maxAge: 7 * 24 * 60 * 60, // ★ 7日間（秒数指定）に変更
+            path: '/'             // サイト全体で有効
         });
 
-        // 6. 出来上がったCookieをブラウザにお持ち帰りさせる
+        // 6. クッキーをブラウザに返却する
         context.res = {
             status: 200,
             headers: {
                 'Set-Cookie': cookieString,
                 'Content-Type': 'application/json'
             },
-            body: { message: "48時間有効なセッションを発行しました" }
+            body: { message: "7日間有効なセッションを発行しました" }
         };
 
     } catch (error) {
