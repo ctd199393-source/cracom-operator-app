@@ -402,8 +402,8 @@
             let currentDocViewMode = 'list';
             let isAuthenticated = false; 
 
-            // --- スライディングセッション（24時間監視）ロジック ---
-            const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+            // --- ★修正：スライディングセッション（無操作監視）ロジック ---
+            const IDLE_TIMEOUT = 48 * 60 * 60 * 1000; // 48時間に延長
 
             function updateLastActivity() {
                 if (!isAuthenticated) return;
@@ -412,11 +412,10 @@
                 
                 if (lastActivityStr) {
                     const lastActivity = parseInt(lastActivityStr, 10);
-                    if (now - lastActivity >= TWENTY_FOUR_HOURS) {
+                    if (now - lastActivity >= IDLE_TIMEOUT) {
                         localStorage.removeItem('cracomLastActivity');
-                        alert("長時間（24時間以上）操作が行われなかったため、安全のためにログアウトします。");
+                        alert("48時間以上操作が行われなかったため、安全のためにログアウトしました。");
                         
-                        // ★修正箇所：APIで48時間Cookieを破棄してから、ASWAをログアウトする
                         fetch('/api/clear-session')
                             .then(() => { window.location.href = "/.auth/logout"; })
                             .catch(() => { window.location.href = "/.auth/logout"; });
@@ -433,25 +432,14 @@
             async function fetchWithSlidingSession(url, options = {}) {
                 const res = await fetch(url, options);
                 if (res.status === 401) {
-                    const lastActivityStr = localStorage.getItem('cracomLastActivity');
-                    const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : 0;
-                    const now = Date.now();
-
-                    if (now - lastActivity < TWENTY_FOUR_HOURS) {
-                        console.log("独自セッション(48h)切れ。24時間以内のため自動再ログインします。");
-                        const currentUrl = encodeURIComponent(window.location.href);
-                        window.location.href = `/.auth/login/aad?post_login_redirect_uri=${currentUrl}`;
-                        return new Promise(() => {});
-                    } else {
-                        localStorage.removeItem('cracomLastActivity');
-                        alert("セッションの有効期限が切れました。再度ログインしてください。");
-                        
-                        // ★修正箇所：APIで48時間Cookieを破棄してから、ASWAをログアウトする
-                        fetch('/api/clear-session')
-                            .then(() => { window.location.href = "/.auth/logout"; })
-                            .catch(() => { window.location.href = "/.auth/logout"; });
-                        return new Promise(() => {});
-                    }
+                    // ★修正：401は「絶対寿命（7日間）」が尽きた時。完全にログアウトさせる。
+                    localStorage.removeItem('cracomLastActivity');
+                    alert("ログインから7日間が経過し、セッションの有効期限が切れました。再度ログインしてください。");
+                    
+                    fetch('/api/clear-session')
+                        .then(() => { window.location.href = "/.auth/logout"; })
+                        .catch(() => { window.location.href = "/.auth/logout"; });
+                    return new Promise(() => {});
                 }
                 return res;
             }
@@ -790,7 +778,6 @@
                 localStorage.removeItem('cracomLastActivity');
                 isAuthenticated = false;
                 
-                // ★修正箇所：APIで48時間Cookieを破棄してから、ASWAをログアウトする
                 fetch('/api/clear-session')
                     .then(() => { window.location.href = "/.auth/logout"; })
                     .catch(() => { window.location.href = "/.auth/logout"; });
@@ -974,7 +961,7 @@
                     const apiRes = await fetch('/api/show-env');
                     
                     if (apiRes.ok) {
-                        console.log("独自セッション(48h)が有効です。アプリを起動します。");
+                        console.log("独自セッション(7d)が有効です。アプリを起動します。");
                         isAuthenticated = true;
                         updateLastActivity();
                         const now = new Date(); document.getElementById('list-date-label').textContent = formatDateHeader(now);
@@ -995,7 +982,7 @@
                     const authData = await authRes.json();
                     
                     if (authData.clientPrincipal) {
-                        console.log("ASWAログイン検知。48時間セッションを発行します...");
+                        console.log("ASWAログイン検知。7日間セッションを発行します...");
                         const sessionRes = await fetch('/api/create-session', { method: 'POST' });
                         
                         if (sessionRes.ok) {
